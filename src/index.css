@@ -3,12 +3,27 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
-  --color-bg: #0A0A0A;
-  --color-surface: #1A1A2E;
-  --color-surface-2: #2A2A3E;
-  --color-volt: #C8F743;
-  --color-white: #FFFFFF;
+  /* Backgrounds */
+  --color-bg: #020D19;
+  --color-surface: #0A1628;
+  --color-surface-2: #132238;
+
+  /* Accent — Teal (campi hard court) */
+  --color-teal-light: #a1d6db;
+  --color-teal: #76c3c2;
+  --color-teal-dark: #48b3b0;
+
+  /* Accent — Ambra (terra rossa, heritage) */
+  --color-amber-light: #f3b44d;
+  --color-amber: #f4a300;
+  --color-amber-dark: #c97a2d;
+
+  /* Testo */
+  --color-white: #F5F0E8;
+  --color-secondary: #76c3c2;
   --color-slate: #6B7280;
+
+  /* Font */
   --font-display: 'DM Sans', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-mono: 'DM Mono', monospace;

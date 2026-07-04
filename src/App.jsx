@@ -13,11 +13,16 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: 'var(--color-bg)' }}>
+      <div className="flex items-center justify-center min-h-screen"
+           style={{ background: 'var(--color-bg)' }}>
         <div className="text-center">
-          <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin mx-auto mb-3"
-               style={{ borderColor: 'var(--color-volt)', borderTopColor: 'transparent' }} />
-          <p style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }} className="text-sm">
+          <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3"
+               style={{
+                 borderColor: 'var(--color-teal-dark)',
+                 borderTopColor: 'transparent'
+               }} />
+          <p className="text-sm"
+             style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
             Loading...
           </p>
         </div>
@@ -25,9 +30,7 @@ export default function App() {
     )
   }
 
-  if (!user) {
-    return <Login />
-  }
+  if (!user) return <Login />
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: 'var(--color-bg)' }}>

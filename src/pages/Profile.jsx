@@ -9,7 +9,7 @@ export default function Profile() {
   return (
     <div className="px-6 pt-8">
       <h1 className="text-2xl font-bold mb-8"
-          style={{ fontFamily: 'var(--font-display)' }}>
+          style={{ fontFamily: 'var(--font-display)', color: 'var(--color-white)' }}>
         Profile
       </h1>
 
@@ -18,7 +18,7 @@ export default function Profile() {
         className="w-full py-4 rounded-2xl font-semibold text-base transition-transform active:scale-95"
         style={{
           background: 'var(--color-surface)',
-          color: '#FF4444',
+          color: '#e05555',
           fontFamily: 'var(--font-display)',
           border: '1px solid var(--color-surface-2)'
         }}

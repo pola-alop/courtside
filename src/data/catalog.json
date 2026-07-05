@@ -1,0 +1,334 @@
+{
+  "racchette": [
+    {
+      "id": "wilson-pro-staff-97",
+      "brand": "Wilson",
+      "model": "Pro Staff 97 v14",
+      "weight": 315,
+      "balance": "310mm",
+      "headSize": 97,
+      "pattern": "16x19",
+      "flexibility": 58,
+      "surface": "all",
+      "imageUrl": "https://www.wilson.com/en-us/media/catalog/product/W/R/WR125611U_1.png",
+      "tags": ["controllo", "avanzato"]
+    },
+    {
+      "id": "wilson-blade-98",
+      "brand": "Wilson",
+      "model": "Blade 98 v9 16x19",
+      "weight": 305,
+      "balance": "320mm",
+      "headSize": 98,
+      "pattern": "16x19",
+      "flexibility": 62,
+      "surface": "all",
+      "imageUrl": "https://www.wilson.com/en-us/media/catalog/product/W/R/WR014011U_1.png",
+      "tags": ["versatile", "avanzato"]
+    },
+    {
+      "id": "wilson-clash-100",
+      "brand": "Wilson",
+      "model": "Clash 100 v2",
+      "weight": 295,
+      "balance": "325mm",
+      "headSize": 100,
+      "pattern": "16x19",
+      "flexibility": 55,
+      "surface": "all",
+      "imageUrl": "https://www.wilson.com/en-us/media/catalog/product/W/R/WR074011U_1.png",
+      "tags": ["flessibile", "intermedio"]
+    },
+    {
+      "id": "wilson-ultra-100",
+      "brand": "Wilson",
+      "model": "Ultra 100 v4",
+      "weight": 300,
+      "balance": "320mm",
+      "headSize": 100,
+      "pattern": "16x19",
+      "flexibility": 68,
+      "surface": "all",
+      "imageUrl": "https://www.wilson.com/en-us/media/catalog/product/W/R/WR108610U_1.png",
+      "tags": ["potenza", "intermedio"]
+    },
+    {
+      "id": "babolat-pure-aero",
+      "brand": "Babolat",
+      "model": "Pure Aero 2023",
+      "weight": 300,
+      "balance": "325mm",
+      "headSize": 100,
+      "pattern": "16x19",
+      "flexibility": 71,
+      "surface": "all",
+      "imageUrl": "https://www.babolat.com/images/101477-366_1.jpg",
+      "tags": ["topspin", "potenza", "intermedio"]
+    },
+    {
+      "id": "babolat-pure-drive",
+      "brand": "Babolat",
+      "model": "Pure Drive 2021",
+      "weight": 300,
+      "balance": "320mm",
+      "headSize": 100,
+      "pattern": "16x19",
+      "flexibility": 72,
+      "surface": "all",
+      "imageUrl": "https://www.babolat.com/images/101435-149_1.jpg",
+      "tags": ["potenza", "versatile", "intermedio"]
+    },
+    {
+      "id": "babolat-pure-strike",
+      "brand": "Babolat",
+      "model": "Pure Strike 97",
+      "weight": 305,
+      "balance": "315mm",
+      "headSize": 97,
+      "pattern": "16x19",
+      "flexibility": 64,
+      "surface": "all",
+      "imageUrl": "https://www.babolat.com/images/101406-260_1.jpg",
+      "tags": ["controllo", "precisione", "avanzato"]
+    },
+    {
+      "id": "babolat-pure-aero-rafa",
+      "brand": "Babolat",
+      "model": "Pure Aero Rafa",
+      "weight": 300,
+      "balance": "325mm",
+      "headSize": 100,
+      "pattern": "16x19",
+      "flexibility": 71,
+      "surface": "terra",
+      "imageUrl": "https://www.babolat.com/images/101510-258_1.jpg",
+      "tags": ["topspin", "terra rossa"]
+    },
+    {
+      "id": "head-speed-mp",
+      "brand": "Head",
+      "model": "Speed MP 2024",
+      "weight": 300,
+      "balance": "320mm",
+      "headSize": 100,
+      "pattern": "16x19",
+      "flexibility": 65,
+      "surface": "all",
+      "imageUrl": "https://www.head.com/on/demandware.static/-/Sites-head-master/default/dw3e3e3e3e/images/rackets/speed/235604_Speed_MP.png",
+      "tags": ["velocità", "versatile", "intermedio"]
+    },
+    {
+      "id": "head-radical-mp",
+      "brand": "Head",
+      "model": "Radical MP 2023",
+      "weight": 295,
+      "balance": "320mm",
+      "headSize": 98,
+      "pattern": "18x20",
+      "flexibility": 63,
+      "surface": "all",
+      "imageUrl": "/catalog/racchette/head-radical-mp-2023.webp",
+      "tags": ["controllo", "precisione"]
+    },
+    {
+      "id": "head-prestige-mp",
+      "brand": "Head",
+      "model": "Prestige MP 2023",
+      "weight": 320,
+      "balance": "305mm",
+      "headSize": 95,
+      "pattern": "18x20",
+      "flexibility": 60,
+      "surface": "all",
+      "imageUrl": "https://www.head.com/on/demandware.static/-/Sites-head-master/default/images/rackets/prestige/235703_Prestige_MP.png",
+      "tags": ["controllo", "avanzato", "pesante"]
+    },
+    {
+      "id": "head-gravity-mp",
+      "brand": "Head",
+      "model": "Gravity MP 2023",
+      "weight": 295,
+      "balance": "330mm",
+      "headSize": 100,
+      "pattern": "16x20",
+      "flexibility": 59,
+      "surface": "all",
+      "imageUrl": "https://www.head.com/on/demandware.static/-/Sites-head-master/default/images/rackets/gravity/235313_Gravity_MP.png",
+      "tags": ["topspin", "versatile"]
+    },
+    {
+      "id": "yonex-vcore-98",
+      "brand": "Yonex",
+      "model": "VCore 98 2023",
+      "weight": 305,
+      "balance": "315mm",
+      "headSize": 98,
+      "pattern": "16x19",
+      "flexibility": 65,
+      "surface": "all",
+      "imageUrl": "https://www.yonex.com/media/catalog/product/v/c/vcore98_2023_535.jpg",
+      "tags": ["topspin", "controllo", "avanzato"]
+    },
+    {
+      "id": "yonex-ezone-98",
+      "brand": "Yonex",
+      "model": "EZone 98 2022",
+      "weight": 305,
+      "balance": "315mm",
+      "headSize": 98,
+      "pattern": "16x19",
+      "flexibility": 70,
+      "surface": "all",
+      "imageUrl": "https://www.yonex.com/media/catalog/product/e/z/ezone98_2022_535.jpg",
+      "tags": ["potenza", "comfort", "intermedio"]
+    },
+    {
+      "id": "tecnifibre-tfight-305",
+      "brand": "Tecnifibre",
+      "model": "TFight 305 RS",
+      "weight": 305,
+      "balance": "315mm",
+      "headSize": 98,
+      "pattern": "16x19",
+      "flexibility": 63,
+      "surface": "all",
+      "imageUrl": "https://www.tecnifibre.com/media/catalog/product/t/f/tfight305rs_535.jpg",
+      "tags": ["controllo", "avanzato"]
+    },
+    {
+      "id": "dunlop-cx-200",
+      "brand": "Dunlop",
+      "model": "CX 200",
+      "weight": 305,
+      "balance": "310mm",
+      "headSize": 98,
+      "pattern": "16x19",
+      "flexibility": 62,
+      "surface": "all",
+      "imageUrl": "https://www.dunlopsports.com/media/catalog/product/c/x/cx200_535.jpg",
+      "tags": ["controllo", "avanzato"]
+    }
+  ],
+  "scarpe": [
+    {
+      "id": "nike-vapor-pro-2-terra",
+      "brand": "Nike",
+      "model": "Air Zoom Vapor Pro 2",
+      "surface": ["terra"],
+      "imageUrl": "https://static.nike.com/a/images/t_PDP_1280_v1/DV2020-700_1.jpg",
+      "tags": ["terra rossa", "leggera"]
+    },
+    {
+      "id": "nike-vapor-pro-2-cemento",
+      "brand": "Nike",
+      "model": "Air Zoom Vapor Pro 2 HC",
+      "surface": ["cemento"],
+      "imageUrl": "https://static.nike.com/a/images/t_PDP_1280_v1/DV2020-101_1.jpg",
+      "tags": ["cemento", "leggera"]
+    },
+    {
+      "id": "nike-cage-4",
+      "brand": "Nike",
+      "model": "NikeCourt Cage 4",
+      "surface": ["cemento", "indoor"],
+      "imageUrl": "https://static.nike.com/a/images/t_PDP_1280_v1/CD0424-100_1.jpg",
+      "tags": ["cemento", "indoor", "durabile"]
+    },
+    {
+      "id": "adidas-barricade-terra",
+      "brand": "Adidas",
+      "model": "Barricade Clay",
+      "surface": ["terra"],
+      "imageUrl": "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/barricade_clay.jpg",
+      "tags": ["terra rossa", "durabile"]
+    },
+    {
+      "id": "adidas-adizero-ubersonic",
+      "brand": "Adidas",
+      "model": "Adizero Ubersonic 4",
+      "surface": ["cemento"],
+      "imageUrl": "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/ubersonic4_hc.jpg",
+      "tags": ["cemento", "veloce", "leggera"]
+    },
+    {
+      "id": "babolat-propulse-fury-terra",
+      "brand": "Babolat",
+      "model": "Propulse Fury Clay",
+      "surface": ["terra"],
+      "imageUrl": "https://www.babolat.com/images/31S22631-100_1.jpg",
+      "tags": ["terra rossa", "grip", "stabilità"]
+    },
+    {
+      "id": "babolat-jet-mach-cemento",
+      "brand": "Babolat",
+      "model": "Jet Mach III HC",
+      "surface": ["cemento"],
+      "imageUrl": "https://www.babolat.com/images/30S22629-100_1.jpg",
+      "tags": ["cemento", "leggera", "veloce"]
+    },
+    {
+      "id": "head-sprint-pro-terra",
+      "brand": "Head",
+      "model": "Sprint Pro 3.5 Clay",
+      "surface": ["terra"],
+      "imageUrl": "https://www.head.com/on/demandware.static/-/Sites-head-master/default/images/shoes/273082_Sprint_Pro_3.5_Clay.png",
+      "tags": ["terra rossa", "precisione"]
+    },
+    {
+      "id": "head-sprint-pro-cemento",
+      "brand": "Head",
+      "model": "Sprint Pro 3.5 AC",
+      "surface": ["cemento"],
+      "imageUrl": "https://www.head.com/on/demandware.static/-/Sites-head-master/default/images/shoes/273082_Sprint_Pro_3.5_AC.png",
+      "tags": ["cemento", "comfort"]
+    },
+    {
+      "id": "wilson-rush-pro-terra",
+      "brand": "Wilson",
+      "model": "Rush Pro 4.0 Clay",
+      "surface": ["terra"],
+      "imageUrl": "https://www.wilson.com/en-us/media/catalog/product/W/R/WRS331060_1.png",
+      "tags": ["terra rossa", "stabilità"]
+    },
+    {
+      "id": "wilson-rush-pro-cemento",
+      "brand": "Wilson",
+      "model": "Rush Pro 4.0 HC",
+      "surface": ["cemento"],
+      "imageUrl": "https://www.wilson.com/en-us/media/catalog/product/W/R/WRS331050_1.png",
+      "tags": ["cemento", "durabile"]
+    },
+    {
+      "id": "asics-gel-resolution-terra",
+      "brand": "Asics",
+      "model": "Gel-Resolution 9 Clay",
+      "surface": ["terra"],
+      "imageUrl": "https://images.asics.com/is/image/asics/1041A458_100_SR_RT_GLB.jpg",
+      "tags": ["terra rossa", "comfort", "stabilità"]
+    },
+    {
+      "id": "asics-gel-resolution-cemento",
+      "brand": "Asics",
+      "model": "Gel-Resolution 9 HC",
+      "surface": ["cemento"],
+      "imageUrl": "https://images.asics.com/is/image/asics/1041A458_001_SR_RT_GLB.jpg",
+      "tags": ["cemento", "comfort", "durabile"]
+    },
+    {
+      "id": "new-balance-796-terra",
+      "brand": "New Balance",
+      "model": "Fresh Foam Lav v2 Clay",
+      "surface": ["terra"],
+      "imageUrl": "https://nb.scene7.com/is/image/NB/mchlavb2_nb_02_i.jpg",
+      "tags": ["terra rossa", "ammortizzazione"]
+    },
+    {
+      "id": "new-balance-796-cemento",
+      "brand": "New Balance",
+      "model": "Fresh Foam Lav v2 HC",
+      "surface": ["cemento"],
+      "imageUrl": "https://nb.scene7.com/is/image/NB/mchlavw2_nb_02_i.jpg",
+      "tags": ["cemento", "ammortizzazione"]
+    }
+  ]
+}

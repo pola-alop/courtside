@@ -1,7 +1,7 @@
 export default function EquipmentCard({ item, matchCount = 0, onClick }) {
   const wearInfo = getWearInfo(item, matchCount)
   const subtitle = getSubtitle(item)
-  const displayName = item.nickname || item.model || item.name || '—'
+  const modelName = item.model || item.name || '—'
 
   return (
     <button
@@ -52,18 +52,18 @@ export default function EquipmentCard({ item, matchCount = 0, onClick }) {
           )}
         </div>
 
-        {/* Bottom — nome e info */}
+        {/* Bottom — modello, nickname, info corde */}
         <div>
-          {item.brand && (
-            <p className="text-xs mb-0.5"
-               style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
-              {item.brand}
+          <p className="text-base font-bold leading-tight"
+             style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+            {modelName}
+          </p>
+          {item.nickname && (
+            <p className="text-xs mt-0.5"
+               style={{ color: 'var(--color-teal-light)', fontFamily: 'var(--font-display)' }}>
+              {item.nickname}
             </p>
           )}
-          <p className="text-sm font-bold leading-tight"
-             style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-            {displayName}
-          </p>
           {subtitle && (
             <p className="text-xs mt-1"
                style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>

@@ -20,16 +20,30 @@ const CLUSTER_ORDER = [
 ]
 
 export default function Equipment() {
-  const { equipment, loading, add, archive } = useEquipment()
+  const { equipment, loading, add, update, archive, unarchive, remove, addStrings, deleteStringsHistory } = useEquipment()
   const [activeTab, setActiveTab]     = useState('all')
   const [showAdd, setShowAdd]         = useState(false)
-  const [selectedItem, setSelectedItem] = useState(null)
+  const [selectedId, setSelectedId]   = useState(null)
+  const [deleteToast, setDeleteToast] = useState(false)
 
-  const activeEquipment = equipment.filter(e => e.active !== false)
+  // Derivato da equipment (non copiato in uno state a parte) così la modale
+  // di dettaglio resta sempre sincronizzata dopo un reload (es. cambio corde)
+  const selectedItem = selectedId ? equipment.find(e => e.id === selectedId) || null : null
 
-  const filtered = activeEquipment.filter(e =>
+  const activeEquipment   = equipment.filter(e => e.active !== false)
+  const archivedEquipment = equipment.filter(e => e.active === false)
+
+  // Vista "Tutto" mostra solo le attrezzature in uso, mai le archiviate
+  const filteredActive = activeEquipment.filter(e =>
     activeTab === 'all' || e.type === activeTab
   )
+
+  // Nei tab specifici le archiviate compaiono in una sezione dedicata
+  const filteredArchived = activeTab === 'all'
+    ? []
+    : archivedEquipment.filter(e => e.type === activeTab)
+
+  const isEmpty = filteredActive.length === 0 && filteredArchived.length === 0
 
   const modalInitialType = activeTab === 'all' ? null : activeTab
 
@@ -84,11 +98,11 @@ export default function Equipment() {
                  style={{ borderColor: 'var(--color-teal-dark)', borderTopColor: 'transparent' }} />
           </div>
 
-        ) : filtered.length === 0 ? (
+        ) : isEmpty ? (
           <EmptyState type={activeTab} onAdd={() => setShowAdd(true)} />
 
         ) : activeTab === 'all' ? (
-          /* Vista "Tutto" — cluster per tipo */
+          /* Vista "Tutto" — cluster per tipo, solo attrezzature in uso */
           <div className="space-y-6">
             {CLUSTER_ORDER.map(cluster => {
               const items = activeEquipment.filter(e => e.type === cluster.type)
@@ -111,7 +125,7 @@ export default function Equipment() {
                       <EquipmentCard
                         key={item.id}
                         item={item}
-                        onClick={() => setSelectedItem(item)}
+                        onClick={() => setSelectedId(item.id)}
                       />
                     ))}
                   </div>
@@ -121,15 +135,42 @@ export default function Equipment() {
           </div>
 
         ) : (
-          /* Vista tab specifica — griglia semplice */
-          <div className="grid grid-cols-2 gap-3">
-            {filtered.map(item => (
-              <EquipmentCard
-                key={item.id}
-                item={item}
-                onClick={() => setSelectedItem(item)}
-              />
-            ))}
+          /* Vista tab specifica — in uso + sezione archiviate */
+          <div className="space-y-6">
+            {filteredActive.length > 0 && (
+              <div className="grid grid-cols-2 gap-3">
+                {filteredActive.map(item => (
+                  <EquipmentCard
+                    key={item.id}
+                    item={item}
+                    onClick={() => setSelectedId(item.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {filteredArchived.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm">📦</span>
+                  <p className="text-xs font-semibold uppercase tracking-wider"
+                     style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
+                    Archiviate
+                  </p>
+                  <div className="flex-1 h-px ml-2"
+                       style={{ background: 'var(--color-surface-2)' }} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {filteredArchived.map(item => (
+                    <EquipmentCard
+                      key={item.id}
+                      item={item}
+                      onClick={() => setSelectedId(item.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -147,21 +188,64 @@ export default function Equipment() {
       {selectedItem && (
         <EquipmentDetailModal
           item={selectedItem}
-          onClose={() => setSelectedItem(null)}
+          onClose={() => setSelectedId(null)}
           onArchive={async (id) => {
             await archive(id)
-            setSelectedItem(null)
+            setSelectedId(null)
+          }}
+          onUnarchive={async (id) => {
+            await unarchive(id)
+            setSelectedId(null)
           }}
           onDelete={async (id) => {
             await remove(id)
-            setSelectedItem(null)
+            setSelectedId(null)
+            setDeleteToast(true)
           }}
           onUpdate={async (id, data) => {
             await update(id, data)
-            setSelectedItem({ ...selectedItem, ...data })
+          }}
+          onAddStrings={async (id, stringData) => {
+            await addStrings(id, stringData)
+          }}
+          onDeleteStringsHistory={async (id, entry) => {
+            await deleteStringsHistory(id, entry)
           }}
         />
       )}
+
+      {/* Toast conferma eliminazione */}
+      {deleteToast && (
+        <DeleteToast onClose={() => setDeleteToast(false)} />
+      )}
+    </div>
+  )
+}
+
+function DeleteToast({ onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      style={{ background: 'rgba(2,13,25,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="w-full max-w-xs rounded-3xl p-6 text-center"
+           style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
+        <span className="text-4xl mb-3 block">✅</span>
+        <p className="text-base font-semibold mb-1"
+           style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+          Attrezzatura eliminata
+        </p>
+        <p className="text-sm mb-5" style={{ color: 'var(--color-slate)' }}>
+          È stata rimossa definitivamente dal tuo gear.
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+          style={{ background: 'var(--color-amber)', color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}>
+          Ok
+        </button>
+      </div>
     </div>
   )
 }

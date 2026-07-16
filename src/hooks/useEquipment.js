@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuthState } from './useAuth'
 import {
   getEquipment, addEquipment, updateEquipment,
-  archiveEquipment, deleteEquipment, updateStrings
+  archiveEquipment, unarchiveEquipment, deleteEquipment,
+  addStringsEntry, deleteStringsHistoryEntry
 } from '../firebase/equipment'
 
 export function useEquipment() {
@@ -24,7 +25,9 @@ export function useEquipment() {
     }
   }, [user])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    ;(async () => { await load() })()
+  }, [load])
 
   const add = async (data) => {
     await addEquipment(user.uid, data)
@@ -41,16 +44,31 @@ export function useEquipment() {
     await load()
   }
 
+  const unarchive = async (itemId) => {
+    await unarchiveEquipment(user.uid, itemId)
+    await load()
+  }
+
   // NUOVO
   const remove = async (itemId) => {
     await deleteEquipment(user.uid, itemId)
     await load()
   }
 
-  const changeStrings = async (itemId, stringData) => {
-    await updateStrings(user.uid, itemId, stringData)
+  // Registra una nuova incordatura (l'attuale diventa storica)
+  const addStrings = async (itemId, stringData) => {
+    await addStringsEntry(user.uid, itemId, stringData)
     await load()
   }
 
-  return { equipment, loading, error, add, update, archive, remove, changeStrings, reload: load }
+  // Elimina una voce dallo storico incordature
+  const deleteStringsHistory = async (itemId, entry) => {
+    await deleteStringsHistoryEntry(user.uid, itemId, entry)
+    await load()
+  }
+
+  return {
+    equipment, loading, error, add, update, archive, unarchive, remove,
+    addStrings, deleteStringsHistory, reload: load
+  }
 }

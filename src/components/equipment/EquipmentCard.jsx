@@ -2,6 +2,7 @@ export default function EquipmentCard({ item, matchCount = 0, onClick }) {
   const wearInfo = getWearInfo(item, matchCount)
   const subtitle = getSubtitle(item)
   const modelName = item.model || item.name || '—'
+  const isArchived = item.active === false
 
   return (
     <button
@@ -10,6 +11,7 @@ export default function EquipmentCard({ item, matchCount = 0, onClick }) {
       style={{
         border: '1px solid var(--color-surface-2)',
         minHeight: '160px',
+        opacity: isArchived ? 0.65 : 1,
       }}
     >
       {/* Sfondo sfocato — layer separato per non sfuocare il testo */}
@@ -40,16 +42,28 @@ export default function EquipmentCard({ item, matchCount = 0, onClick }) {
         {/* Top — badge wear + tipo */}
         <div className="flex items-start justify-between">
           <span className="text-lg">{typeIcon(item.type)}</span>
-          {wearInfo && (
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                  style={{
-                    background: wearBg(wearInfo.level),
-                    color: wearColor(wearInfo.level),
-                    fontFamily: 'var(--font-display)'
-                  }}>
-              {wearIcon(wearInfo.level)} {wearInfo.shortLabel}
-            </span>
-          )}
+          <div className="flex flex-col items-end gap-1">
+            {isArchived && (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={{
+                      background: 'rgba(107,114,128,0.35)',
+                      color: 'var(--color-white)',
+                      fontFamily: 'var(--font-display)'
+                    }}>
+                📦 Archiviata
+              </span>
+            )}
+            {wearInfo && (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                    style={{
+                      background: wearBg(wearInfo.level),
+                      color: wearColor(wearInfo.level),
+                      fontFamily: 'var(--font-display)'
+                    }}>
+                {wearIcon(wearInfo.level)} {wearInfo.shortLabel}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Bottom — modello, nickname, info corde */}

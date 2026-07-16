@@ -10,6 +10,14 @@ const TYPES = [
 
 const SURFACES = ['terra', 'cemento', 'erba', 'indoor']
 
+const RACKETS = catalog.racchette.flatMap(({ racket }) =>
+  racket.flatMap(({ type, models }) => models.map(m => ({ ...m, type })))
+).map((m, i) => ({ ...m, catalogKey: `${m.id}-${i}` }))
+
+const SHOES = catalog.scarpe.flatMap(({ shoes }) =>
+  shoes.flatMap(({ type, models }) => models.map(m => ({ ...m, type })))
+).map((m, i) => ({ ...m, catalogKey: `${m.id}-${i}` }))
+
 export default function AddEquipmentModal({ onClose, onSave, initialType = null }) {
   const [step, setStep]     = useState(initialType ? 'form' : 'type')
   const [type, setType]     = useState(initialType)
@@ -103,25 +111,26 @@ export default function AddEquipmentModal({ onClose, onSave, initialType = null 
                 <SourceToggle value={source} onChange={setSource} />
                 {source === 'catalog' ? (
                   <select
-                    value={form.catalogId || ''}
+                    value={form.catalogKey || ''}
                     onChange={e => {
-                      const r = catalog.racchette.find(r => r.id === e.target.value)
+                      const r = RACKETS.find(r => r.catalogKey === e.target.value)
                       if (r) setForm(f => ({
                         ...f,
                         brand: r.brand, model: r.model, weight: r.weight,
                         balance: r.balance, headSize: r.headSize, pattern: r.pattern,
-                        flexibility: r.flexibility, imageUrl: r.imageUrl, catalogId: r.id
+                        flexibility: r.flexibility, imageUrl: r.imageUrl,
+                        catalogId: r.id, catalogKey: r.catalogKey
                       }))
                     }}
                     className="w-full p-3 rounded-xl text-sm"
                     style={{
                       background: 'var(--color-surface-2)',
-                      color: form.catalogId ? 'var(--color-white)' : 'var(--color-slate)',
+                      color: form.catalogKey ? 'var(--color-white)' : 'var(--color-slate)',
                       border: '1px solid var(--color-surface-2)'
                     }}>
                     <option value="">Seleziona racchetta...</option>
-                    {catalog.racchette.map(r => (
-                      <option key={r.id} value={r.id}>{r.brand} {r.model}</option>
+                    {RACKETS.map(r => (
+                      <option key={r.catalogKey} value={r.catalogKey}>{r.brand} {r.model}</option>
                     ))}
                   </select>
                 ) : (
@@ -180,24 +189,25 @@ export default function AddEquipmentModal({ onClose, onSave, initialType = null 
                 <SourceToggle value={source} onChange={setSource} />
                 {source === 'catalog' ? (
                   <select
-                    value={form.catalogId || ''}
+                    value={form.catalogKey || ''}
                     onChange={e => {
-                      const s = catalog.scarpe.find(s => s.id === e.target.value)
+                      const s = SHOES.find(s => s.catalogKey === e.target.value)
                       if (s) setForm(f => ({
                         ...f,
                         brand: s.brand, model: s.model,
-                        surface: s.surface, imageUrl: s.imageUrl, catalogId: s.id
+                        surface: s.surface, imageUrl: s.imageUrl,
+                        catalogId: s.id, catalogKey: s.catalogKey
                       }))
                     }}
                     className="w-full p-3 rounded-xl text-sm"
                     style={{
                       background: 'var(--color-surface-2)',
-                      color: form.catalogId ? 'var(--color-white)' : 'var(--color-slate)',
+                      color: form.catalogKey ? 'var(--color-white)' : 'var(--color-slate)',
                       border: '1px solid var(--color-surface-2)'
                     }}>
                     <option value="">Seleziona scarpa...</option>
-                    {catalog.scarpe.map(s => (
-                      <option key={s.id} value={s.id}>{s.brand} {s.model}</option>
+                    {SHOES.map(s => (
+                      <option key={s.catalogKey} value={s.catalogKey}>{s.brand} {s.model}</option>
                     ))}
                   </select>
                 ) : (
@@ -250,7 +260,7 @@ export default function AddEquipmentModal({ onClose, onSave, initialType = null 
                   <Input label="Calzini" value={form.calzini || ''} onChange={v => set('calzini', v)} />
                   <div className="grid grid-cols-2 gap-3">
                     <Input label="Polsini" value={form.polsini || ''} onChange={v => set('polsini', v)} />
-                    <Input label="Fascia / Cap" value={form.fascia || ''} onChange={v => set('fascia', v)} />
+                    <Input label="Fascia / Cappellino" value={form.fascia || ''} onChange={v => set('fascia', v)} />
                   </div>
                 </div>
               )}

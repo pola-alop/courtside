@@ -49,23 +49,27 @@ export async function addStringsEntry(userId, itemId, stringData) {
   const snap = await getDoc(ref)
   const current = snap.data() || {}
 
-  // Compatibilità con i vecchi campi flat (stringBrand/stringModel/...)
+  // Compatibilità con i vecchi campi flat (stringBrand/stringModel/...) e con
+  // la vecchia tensione unica (stringTension / strings.tension)
   const previousStrings = current.strings || (
-    (current.stringBrand || current.stringModel || current.stringTension || current.stringDate)
+    (current.stringBrand || current.stringModel || current.stringTensionMains ||
+     current.stringTensionCrosses || current.stringTension || current.stringDate)
       ? {
-          brand:     current.stringBrand   || null,
-          model:     current.stringModel   || null,
-          tension:   current.stringTension ?? null,
-          mountedAt: current.stringDate    || null,
+          brand:          current.stringBrand         || null,
+          model:          current.stringModel         || null,
+          tensionMains:   current.stringTensionMains   ?? current.stringTension ?? null,
+          tensionCrosses: current.stringTensionCrosses ?? current.stringTension ?? null,
+          mountedAt:      current.stringDate           || null,
         }
       : null
   )
 
   const newString = {
-    brand:     stringData.brand   || null,
-    model:     stringData.model   || null,
-    tension:   stringData.tension ?? null,
-    mountedAt: stringData.mountedAt || new Date().toISOString(),
+    brand:          stringData.brand          || null,
+    model:          stringData.model          || null,
+    tensionMains:   stringData.tensionMains   ?? null,
+    tensionCrosses: stringData.tensionCrosses ?? null,
+    mountedAt:      stringData.mountedAt || new Date().toISOString(),
   }
 
   const updates = { strings: newString, updatedAt: serverTimestamp() }

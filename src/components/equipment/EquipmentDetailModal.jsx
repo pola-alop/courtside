@@ -18,11 +18,13 @@ export default function EquipmentDetailModal({
   // incordatura): il form va quindi ricalcolato da item ad ogni apertura,
   // non una volta sola al mount, altrimenti "Modifica" mostra dati stantii.
   const openEdit = () => {
+    const { mains, crosses } = getCurrentTensions(item)
     setEditForm({
-      nickname:      item.nickname      || '',
-      stringBrand:   item.strings?.brand  || item.stringBrand  || '',
-      stringModel:   item.strings?.model  || item.stringModel  || '',
-      stringTension: item.strings?.tension || item.stringTension || '',
+      nickname:            item.nickname      || '',
+      stringBrand:         item.strings?.brand  || item.stringBrand  || '',
+      stringModel:         item.strings?.model  || item.stringModel  || '',
+      stringTensionMains:   mains   ?? '',
+      stringTensionCrosses: crosses ?? '',
       stringDate:    item.strings?.mountedAt
         ? item.strings.mountedAt.split('T')[0]
         : (item.stringDate || ''),
@@ -37,9 +39,10 @@ export default function EquipmentDetailModal({
     const data = { nickname: editForm.nickname }
     if (item.type === 'racchetta') {
       data.strings = {
-        brand:     editForm.stringBrand || null,
-        model:     editForm.stringModel || null,
-        tension:   editForm.stringTension ? Number(editForm.stringTension) : null,
+        brand:          editForm.stringBrand || null,
+        model:          editForm.stringModel || null,
+        tensionMains:   editForm.stringTensionMains   ? Number(editForm.stringTensionMains)   : null,
+        tensionCrosses: editForm.stringTensionCrosses ? Number(editForm.stringTensionCrosses) : null,
         mountedAt: editForm.stringDate ? new Date(editForm.stringDate).toISOString() : null,
       }
     }
@@ -50,10 +53,12 @@ export default function EquipmentDetailModal({
   }
 
   const openAddStrings = () => {
+    const { mains, crosses } = getCurrentTensions(item)
     setNewStringsForm({
-      brand:     item.strings?.brand    || item.stringBrand    || '',
-      model:     item.strings?.model    || item.stringModel    || '',
-      tension:   item.strings?.tension  ?? item.stringTension  ?? '',
+      brand:          item.strings?.brand    || item.stringBrand    || '',
+      model:          item.strings?.model    || item.stringModel    || '',
+      tensionMains:   mains   ?? '',
+      tensionCrosses: crosses ?? '',
       mountedAt: new Date().toISOString().split('T')[0],
     })
     setMode('addStrings')
@@ -63,9 +68,10 @@ export default function EquipmentDetailModal({
   const handleSaveNewStrings = async () => {
     setSaving(true)
     await onAddStrings(item.id, {
-      brand:     newStringsForm.brand || null,
-      model:     newStringsForm.model || null,
-      tension:   newStringsForm.tension ? Number(newStringsForm.tension) : null,
+      brand:          newStringsForm.brand || null,
+      model:          newStringsForm.model || null,
+      tensionMains:   newStringsForm.tensionMains   ? Number(newStringsForm.tensionMains)   : null,
+      tensionCrosses: newStringsForm.tensionCrosses ? Number(newStringsForm.tensionCrosses) : null,
       mountedAt: newStringsForm.mountedAt ? new Date(newStringsForm.mountedAt).toISOString() : new Date().toISOString(),
     })
     setSaving(false)
@@ -211,10 +217,8 @@ export default function EquipmentDetailModal({
                 <Section title="Corde attuali">
                   <Row label="Marca"      value={item.strings?.brand    || item.stringBrand    || '—'} />
                   <Row label="Modello"    value={item.strings?.model    || item.stringModel    || '—'} />
-                  <Row label="Tensione"   value={
-                    (item.strings?.tension || item.stringTension)
-                      ? `${item.strings?.tension || item.stringTension} kg` : '—'
-                  } />
+                  <Row label="Tensione verticali"   value={formatTension(getCurrentTensions(item).mains)} />
+                  <Row label="Tensione orizzontali" value={formatTension(getCurrentTensions(item).crosses)} />
                   <Row label="Montate il" value={formatDate(item.strings?.mountedAt || item.stringDate)} />
                 </Section>
                 <button
@@ -298,9 +302,10 @@ export default function EquipmentDetailModal({
                     <EditInput label="Modello corda"  value={editForm.stringModel}   onChange={v => setField('stringModel', v)} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <EditInput label="Tensione (kg)" type="number" value={editForm.stringTension} onChange={v => setField('stringTension', v)} />
-                    <EditInput label="Data montaggio" type="date"  value={editForm.stringDate}    onChange={v => setField('stringDate', v)} />
+                    <EditInput label="Tensione verticali (kg)"   type="number" value={editForm.stringTensionMains}   onChange={v => setField('stringTensionMains', v)} />
+                    <EditInput label="Tensione orizzontali (kg)" type="number" value={editForm.stringTensionCrosses} onChange={v => setField('stringTensionCrosses', v)} />
                   </div>
+                  <EditInput label="Data montaggio" type="date" value={editForm.stringDate} onChange={v => setField('stringDate', v)} />
                 </div>
               )}
 
@@ -347,9 +352,10 @@ export default function EquipmentDetailModal({
                 <EditInput label="Modello corda"  value={newStringsForm.model}   onChange={v => setNewStringsForm(f => ({ ...f, model: v }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <EditInput label="Tensione (kg)"  type="number" value={newStringsForm.tension}   onChange={v => setNewStringsForm(f => ({ ...f, tension: v }))} />
-                <EditInput label="Data montaggio" type="date"   value={newStringsForm.mountedAt} onChange={v => setNewStringsForm(f => ({ ...f, mountedAt: v }))} />
+                <EditInput label="Tensione verticali (kg)"   type="number" value={newStringsForm.tensionMains}   onChange={v => setNewStringsForm(f => ({ ...f, tensionMains: v }))} />
+                <EditInput label="Tensione orizzontali (kg)" type="number" value={newStringsForm.tensionCrosses} onChange={v => setNewStringsForm(f => ({ ...f, tensionCrosses: v }))} />
               </div>
+              <EditInput label="Data montaggio" type="date" value={newStringsForm.mountedAt} onChange={v => setNewStringsForm(f => ({ ...f, mountedAt: v }))} />
 
               <div className="flex gap-3 pt-2">
                 <button
@@ -610,7 +616,7 @@ function StringHistoryRow({ strings, onDelete }) {
       <div className="flex items-center gap-2 shrink-0 ml-3">
         <span className="text-xs font-medium"
               style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
-          {strings.tension ? `${strings.tension} kg` : '—'}
+          {formatTensionPair(strings)}
         </span>
         <button
           onClick={onDelete}
@@ -667,6 +673,32 @@ function ConfirmBox({ message, confirmLabel, confirmColor, onCancel, onConfirm }
       </div>
     </div>
   )
+}
+
+// Tensione verticali (mains) / orizzontali (crosses) attuali, con fallback
+// sulla vecchia tensione unica (strings.tension / stringTension) per i
+// documenti non ancora migrati
+function getCurrentTensions(item) {
+  const legacy = item.strings?.tension ?? item.stringTension ?? null
+  return {
+    mains:   item.strings?.tensionMains   ?? item.stringTensionMains   ?? legacy,
+    crosses: item.strings?.tensionCrosses ?? item.stringTensionCrosses ?? legacy,
+  }
+}
+
+function formatTension(value) {
+  return (value || value === 0) ? `${value} kg` : '—'
+}
+
+// Formato compatto per lo storico: "23/25 kg" (verticali/orizzontali),
+// con fallback sulla vecchia tensione unica salvata nelle voci storiche
+function formatTensionPair(strings) {
+  const legacy  = strings.tension ?? null
+  const mains   = strings.tensionMains   ?? legacy
+  const crosses = strings.tensionCrosses ?? legacy
+  if (mains == null && crosses == null) return '—'
+  if (mains === crosses) return `${mains} kg`
+  return `${mains ?? '—'}/${crosses ?? '—'} kg`
 }
 
 function formatDate(dateStr) {

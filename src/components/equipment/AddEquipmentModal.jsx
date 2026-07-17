@@ -177,9 +177,10 @@ export default function AddEquipmentModal({ onClose, onSave, initialType = null 
                       <Input label="Modello corda" value={form.stringModel || ''} onChange={v => set('stringModel', v)} />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Input label="Tensione (kg)" type="number" value={form.stringTension || ''} onChange={v => set('stringTension', Number(v))} />
-                      <Input label="Data montaggio" type="date" value={form.stringDate || ''} onChange={v => set('stringDate', v)} />
+                      <Input label="Tensione verticali (kg)"   type="number" value={form.stringTensionMains   || ''} onChange={v => set('stringTensionMains', Number(v))} />
+                      <Input label="Tensione orizzontali (kg)" type="number" value={form.stringTensionCrosses || ''} onChange={v => set('stringTensionCrosses', Number(v))} />
                     </div>
+                    <Input label="Data montaggio" type="date" value={form.stringDate || ''} onChange={v => set('stringDate', v)} />
                   </div>
                 </div>
               </>}

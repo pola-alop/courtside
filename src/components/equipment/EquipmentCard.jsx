@@ -94,8 +94,8 @@ export default function EquipmentCard({ item, matchCount = 0, onClick }) {
 
 function getSubtitle(item) {
   if (item.type === 'racchetta') {
-    if (item.strings?.brand) return `${item.strings.brand} ${item.strings.model || ''} ${item.strings.tension ? `· ${item.strings.tension}kg` : ''}`.trim()
-    if (item.stringBrand)    return `${item.stringBrand} ${item.stringModel || ''} ${item.stringTension ? `· ${item.stringTension}kg` : ''}`.trim()
+    if (item.strings?.brand) return `${item.strings.brand} ${item.strings.model || ''} ${formatTensionSuffix(item)}`.trim()
+    if (item.stringBrand)    return `${item.stringBrand} ${item.stringModel || ''} ${formatTensionSuffix(item)}`.trim()
   }
   if (item.type === 'scarpa' && item.surface) {
     return Array.isArray(item.surface) ? item.surface.join(' · ') : item.surface
@@ -104,6 +104,17 @@ function getSubtitle(item) {
     return item.maglietta || null
   }
   return null
+}
+
+// Tensione verticali/orizzontali con fallback sulla vecchia tensione unica
+// (strings.tension / stringTension) per i documenti non ancora migrati
+function formatTensionSuffix(item) {
+  const legacy   = item.strings?.tension           ?? item.stringTension           ?? null
+  const mains    = item.strings?.tensionMains       ?? item.stringTensionMains      ?? legacy
+  const crosses  = item.strings?.tensionCrosses     ?? item.stringTensionCrosses    ?? legacy
+  if (mains == null && crosses == null) return ''
+  if (mains === crosses) return `· ${mains}kg`
+  return `· ${mains ?? '—'}/${crosses ?? '—'}kg`
 }
 
 function getWearInfo(item, matchCount) {

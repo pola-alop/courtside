@@ -23,6 +23,14 @@
   --color-secondary: #76c3c2;
   --color-slate: #6B7280;
 
+  /* Esito match — verde vittoria, rosso sconfitta, blu pareggio */
+  --color-win: #45b877;
+  --color-win-bg: rgba(69,184,119,0.16);
+  --color-loss: #e05a5a;
+  --color-loss-bg: rgba(224,90,90,0.15);
+  --color-draw: #5b9bd5;
+  --color-draw-bg: rgba(91,155,213,0.16);
+
   /* Font */
   --font-display: 'DM Sans', sans-serif;
   --font-body: 'Inter', sans-serif;

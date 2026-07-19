@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { useOpponents } from '../hooks/useOpponents'
+import { useMatches } from '../hooks/useMatches'
+import { useEquipment } from '../hooks/useEquipment'
 import OpponentCard from '../components/matches/OpponentCard'
 import AddOpponentModal from '../components/matches/AddOpponentModal'
 import OpponentDetailModal from '../components/matches/OpponentDetailModal'
+import MatchRow from '../components/matches/MatchRow'
+import AddMatchModal from '../components/matches/AddMatchModal'
+import MatchDetailModal from '../components/matches/MatchDetailModal'
+import { MATCH_TYPES, RESULT_META } from '../lib/tennis'
 
 const TABS = [
   { id: 'panoramica',  label: 'Panoramica',  icon: '🗂' },
@@ -11,35 +17,70 @@ const TABS = [
   { id: 'allenamenti', label: 'Allenamenti', icon: '🎯' },
 ]
 
-// Le partite non esistono ancora come dominio. Quando la sezione "Partite" sarà
-// pronta questo array arriverà da un hook `useMatches`, e il record H2H di ogni
-// avversario si popolerà da solo — è il punto di chiusura del cerchio.
-const MATCHES = []
+const RESULT_FILTERS = [
+  { id: 'all',  label: 'Tutte' },
+  { id: 'win',  label: 'Vinte' },
+  { id: 'loss', label: 'Perse' },
+  { id: 'draw', label: 'Pari'  },
+]
 
 export default function Matches() {
-  const { opponents, loading, add, update, remove } = useOpponents()
-  const [activeTab, setActiveTab]   = useState('avversari')
-  const [showAdd, setShowAdd]       = useState(false)
-  const [selectedId, setSelectedId] = useState(null)
-  const [search, setSearch]         = useState('')
-  const [deleteToast, setDeleteToast] = useState(false)
+  const { opponents, loading: oppLoading, add: addOpponent, update: updateOpponent, remove: removeOpponent } = useOpponents()
+  const { matches,   loading: matchLoading, add: addMatch, update: updateMatch, remove: removeMatch } = useMatches()
+  const { equipment } = useEquipment()
 
-  // Item selezionato derivato (non copiato) così il dettaglio resta in sync
-  const selectedOpponent = selectedId ? opponents.find(o => o.id === selectedId) || null : null
+  const [activeTab, setActiveTab] = useState('partite')
 
+  // Avversari
+  const [showAddOpponent, setShowAddOpponent] = useState(false)
+  const [selectedOpponentId, setSelectedOpponentId] = useState(null)
+  const [oppSearch, setOppSearch] = useState('')
+  const [oppDeleteToast, setOppDeleteToast] = useState(false)
+
+  // Partite
+  const [showAddMatch, setShowAddMatch] = useState(false)
+  const [editingMatch, setEditingMatch] = useState(null)
+  const [selectedMatchId, setSelectedMatchId] = useState(null)
+  const [matchDeleteToast, setMatchDeleteToast] = useState(false)
+  const [fType, setFType]     = useState('all')
+  const [fEvent, setFEvent]   = useState('')
+  const [fMonth, setFMonth]   = useState('all')
+  const [fResult, setFResult] = useState('all')
+
+  // Item selezionati derivati (pattern "selected item derivato")
+  const selectedOpponent = selectedOpponentId ? opponents.find(o => o.id === selectedOpponentId) || null : null
+  const selectedMatch    = selectedMatchId ? matches.find(m => m.id === selectedMatchId) || null : null
+
+  // Record H2H reale (chiusura del cerchio con la sezione Partite)
   const recordFor = (opponentId) => {
-    const played = MATCHES.filter(m => m.opponentId === opponentId && m.result)
+    const played = matches.filter(m => m.opponentId === opponentId)
     return {
       wins:   played.filter(m => m.result === 'win').length,
       losses: played.filter(m => m.result === 'loss').length,
     }
   }
-  const matchesVs = (opponentId) => MATCHES.filter(m => m.opponentId === opponentId)
+  const matchesVs = (opponentId) => matches.filter(m => m.opponentId === opponentId)
 
-  const q = search.trim().toLowerCase()
-  const visibleOpponents = q
-    ? opponents.filter(o => o.name.toLowerCase().includes(q))
-    : opponents
+  // ── Filtri partite ──
+  const eventOptions = (fType === 'campionato' || fType === 'torneo')
+    ? [...new Set(matches.filter(m => m.type === fType && m.eventName).map(m => m.eventName))]
+    : []
+  const monthOptions = [...new Set(matches.map(m => monthKey(m.date)))].sort().reverse()
+
+  const filteredMatches = matches.filter(m => {
+    if (fType !== 'all' && m.type !== fType) return false
+    if (fEvent && m.eventName !== fEvent) return false
+    if (fMonth !== 'all' && monthKey(m.date) !== fMonth) return false
+    if (fResult !== 'all' && m.result !== fResult) return false
+    return true
+  })
+  const monthGroups = groupByMonth(filteredMatches)
+
+  const oppQuery = oppSearch.trim().toLowerCase()
+  const visibleOpponents = oppQuery ? opponents.filter(o => o.name.toLowerCase().includes(oppQuery)) : opponents
+
+  const showAddButton = activeTab === 'avversari' || activeTab === 'partite'
+  const onAdd = () => activeTab === 'avversari' ? setShowAddOpponent(true) : setShowAddMatch(true)
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
@@ -51,14 +92,12 @@ export default function Matches() {
              style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
             Il tuo tennis
           </p>
-          <h1 className="text-2xl font-bold"
-              style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
             Matches
           </h1>
         </div>
-        {activeTab === 'avversari' && (
-          <button
-            onClick={() => setShowAdd(true)}
+        {showAddButton && (
+          <button onClick={onAdd}
             className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl font-bold transition-all active:scale-95"
             style={{ background: 'var(--color-amber)', color: 'var(--color-bg)' }}>
             +
@@ -88,98 +127,211 @@ export default function Matches() {
 
       {/* Contenuto */}
       <div className="px-6 pb-32">
-        {activeTab === 'avversari' ? (
-          loading ? (
-            <div className="flex justify-center pt-20">
-              <div className="w-6 h-6 rounded-full border-2 animate-spin"
-                   style={{ borderColor: 'var(--color-teal-dark)', borderTopColor: 'transparent' }} />
-            </div>
-          ) : opponents.length === 0 ? (
-            <EmptyState onAdd={() => setShowAdd(true)} />
+
+        {/* ── PARTITE ── */}
+        {activeTab === 'partite' && (
+          matchLoading ? (
+            <Spinner />
+          ) : matches.length === 0 ? (
+            <EmptyState icon="🎾" title="Nessuna partita." sub="Registra il tuo primo match per iniziare lo storico." onAdd={() => setShowAddMatch(true)} />
           ) : (
-            <div className="space-y-3">
-              {/* Ricerca */}
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Cerca avversario..."
-                className="w-full p-3 rounded-xl text-sm outline-none"
-                style={{
-                  background: 'var(--color-surface)',
-                  color: 'var(--color-white)',
-                  border: '1px solid var(--color-surface-2)',
-                  fontFamily: 'var(--font-body)'
-                }}
+            <div className="space-y-4">
+              <MatchFilters
+                type={fType} setType={t => { setFType(t); setFEvent('') }}
+                event={fEvent} setEvent={setFEvent} eventOptions={eventOptions}
+                month={fMonth} setMonth={setFMonth} monthOptions={monthOptions}
+                result={fResult} setResult={setFResult}
               />
 
-              {visibleOpponents.length === 0 ? (
+              {filteredMatches.length === 0 ? (
                 <p className="text-sm text-center pt-8" style={{ color: 'var(--color-slate)' }}>
-                  Nessun avversario trovato.
+                  Nessuna partita con questi filtri.
                 </p>
               ) : (
-                <div className="space-y-2">
-                  {visibleOpponents.map(o => (
-                    <OpponentCard
-                      key={o.id}
-                      opponent={o}
-                      record={recordFor(o.id)}
-                      onClick={() => setSelectedId(o.id)}
-                    />
+                <div className="space-y-6">
+                  {monthGroups.map(group => (
+                    <div key={group.key}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider"
+                           style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
+                          {group.label}
+                        </p>
+                        <div className="flex-1 h-px" style={{ background: 'var(--color-surface-2)' }} />
+                        <span className="text-xs" style={{ color: 'var(--color-slate)' }}>{group.items.length}</span>
+                      </div>
+                      <div className="space-y-2">
+                        {group.items.map(m => (
+                          <MatchRow key={m.id} match={m} onClick={() => setSelectedMatchId(m.id)} />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
           )
-        ) : (
-          <ComingSoon tab={activeTab} />
         )}
+
+        {/* ── AVVERSARI ── */}
+        {activeTab === 'avversari' && (
+          oppLoading ? (
+            <Spinner />
+          ) : opponents.length === 0 ? (
+            <EmptyState icon="👥" title="Nessun avversario." sub="Aggiungi chi affronti in campo per tenere traccia dei testa-a-testa." onAdd={() => setShowAddOpponent(true)} />
+          ) : (
+            <div className="space-y-3">
+              <input
+                value={oppSearch}
+                onChange={e => setOppSearch(e.target.value)}
+                placeholder="Cerca avversario..."
+                className="w-full p-3 rounded-xl text-sm outline-none"
+                style={{ background: 'var(--color-surface)', color: 'var(--color-white)', border: '1px solid var(--color-surface-2)', fontFamily: 'var(--font-body)' }}
+              />
+              {visibleOpponents.length === 0 ? (
+                <p className="text-sm text-center pt-8" style={{ color: 'var(--color-slate)' }}>Nessun avversario trovato.</p>
+              ) : (
+                <div className="space-y-2">
+                  {visibleOpponents.map(o => (
+                    <OpponentCard key={o.id} opponent={o} record={recordFor(o.id)} onClick={() => setSelectedOpponentId(o.id)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        )}
+
+        {/* ── PANORAMICA / ALLENAMENTI ── */}
+        {(activeTab === 'panoramica' || activeTab === 'allenamenti') && <ComingSoon tab={activeTab} />}
       </div>
 
-      {/* Modal aggiunta avversario */}
-      {showAdd && (
-        <AddOpponentModal
-          onClose={() => setShowAdd(false)}
-          onSave={async (data) => { await add(data) }}
-        />
+      {/* ── Modali Avversari ── */}
+      {showAddOpponent && (
+        <AddOpponentModal onClose={() => setShowAddOpponent(false)} onSave={async (data) => { await addOpponent(data) }} />
       )}
-
-      {/* Modal dettaglio avversario */}
       {selectedOpponent && (
         <OpponentDetailModal
           opponent={selectedOpponent}
           record={recordFor(selectedOpponent.id)}
           matches={matchesVs(selectedOpponent.id)}
-          onClose={() => setSelectedId(null)}
-          onUpdate={async (id, data) => { await update(id, data) }}
-          onDelete={async (id) => {
-            await remove(id)
-            setSelectedId(null)
-            setDeleteToast(true)
-          }}
+          onClose={() => setSelectedOpponentId(null)}
+          onUpdate={async (id, data) => { await updateOpponent(id, data) }}
+          onDelete={async (id) => { await removeOpponent(id); setSelectedOpponentId(null); setOppDeleteToast(true) }}
         />
       )}
 
-      {/* Toast conferma eliminazione */}
-      {deleteToast && <DeleteToast onClose={() => setDeleteToast(false)} />}
+      {/* ── Modali Partite ── */}
+      {(showAddMatch || editingMatch) && (
+        <AddMatchModal
+          initial={editingMatch}
+          opponents={opponents}
+          equipment={equipment}
+          onClose={() => { setShowAddMatch(false); setEditingMatch(null) }}
+          onSave={async (data) => {
+            if (editingMatch) await updateMatch(editingMatch.id, data)
+            else await addMatch(data)
+          }}
+        />
+      )}
+      {selectedMatch && (
+        <MatchDetailModal
+          match={selectedMatch}
+          equipment={equipment}
+          onClose={() => setSelectedMatchId(null)}
+          onEdit={() => { setEditingMatch(selectedMatch); setSelectedMatchId(null) }}
+          onUpdate={async (id, data) => { await updateMatch(id, data) }}
+          onDelete={async (id) => { await removeMatch(id); setSelectedMatchId(null); setMatchDeleteToast(true) }}
+        />
+      )}
+
+      {/* Toast eliminazione */}
+      {oppDeleteToast && <Toast title="Avversario eliminato" sub="È stato rimosso dalla tua anagrafica." onClose={() => setOppDeleteToast(false)} />}
+      {matchDeleteToast && <Toast title="Partita eliminata" sub="È stata rimossa dallo storico." onClose={() => setMatchDeleteToast(false)} />}
     </div>
   )
 }
 
-// ── Componenti interni ─────────────────────────────────────
+// ── Filtri partite ─────────────────────────────────────────
 
-function EmptyState({ onAdd }) {
+function MatchFilters({ type, setType, event, setEvent, eventOptions, month, setMonth, monthOptions, result, setResult }) {
+  return (
+    <div className="space-y-2">
+      {/* Tipo */}
+      <div className="flex gap-2 overflow-x-auto" style={{ minWidth: 'max-content' }}>
+        {[{ id: 'all', label: 'Tutti' }, ...MATCH_TYPES.map(t => ({ id: t.id, label: t.label }))].map(t => (
+          <Chip key={t.id} active={type === t.id} onClick={() => setType(t.id)}>{t.label}</Chip>
+        ))}
+      </div>
+
+      {/* Evento (solo campionato/torneo) + Mese */}
+      <div className="flex gap-2">
+        {eventOptions.length > 0 && (
+          <Select value={event} onChange={setEvent}>
+            <option value="">Tutti gli eventi</option>
+            {eventOptions.map(ev => <option key={ev} value={ev}>{ev}</option>)}
+          </Select>
+        )}
+        <Select value={month} onChange={setMonth}>
+          <option value="all">Tutti i mesi</option>
+          {monthOptions.map(mk => <option key={mk} value={mk}>{monthLabelFromKey(mk)}</option>)}
+        </Select>
+      </div>
+
+      {/* Esito */}
+      <div className="flex gap-2">
+        {RESULT_FILTERS.map(r => (
+          <Chip key={r.id} active={result === r.id} onClick={() => setResult(r.id)}
+            dot={r.id !== 'all' ? RESULT_META[r.id]?.color : null}>
+            {r.label}
+          </Chip>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function Chip({ active, onClick, children, dot }) {
+  return (
+    <button onClick={onClick}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all"
+      style={{
+        background: active ? 'var(--color-teal-dark)' : 'var(--color-surface)',
+        color: active ? 'var(--color-white)' : 'var(--color-slate)',
+        border: active ? 'none' : '1px solid var(--color-surface-2)',
+        fontFamily: 'var(--font-display)'
+      }}>
+      {dot && <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot }} />}
+      {children}
+    </button>
+  )
+}
+
+function Select({ value, onChange, children }) {
+  return (
+    <select value={value} onChange={e => onChange(e.target.value)}
+      className="flex-1 min-w-0 p-2.5 rounded-xl text-xs outline-none"
+      style={{ background: 'var(--color-surface)', color: 'var(--color-white)', border: '1px solid var(--color-surface-2)', fontFamily: 'var(--font-display)' }}>
+      {children}
+    </select>
+  )
+}
+
+// ── Comuni ─────────────────────────────────────────────────
+
+function Spinner() {
+  return (
+    <div className="flex justify-center pt-20">
+      <div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--color-teal-dark)', borderTopColor: 'transparent' }} />
+    </div>
+  )
+}
+
+function EmptyState({ icon, title, sub, onAdd }) {
   return (
     <div className="flex flex-col items-center justify-center pt-20 text-center">
-      <span className="text-5xl mb-4">👥</span>
-      <p className="text-base font-semibold mb-1"
-         style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-        Nessun avversario.
-      </p>
-      <p className="text-sm mb-6" style={{ color: 'var(--color-slate)' }}>
-        Aggiungi chi affronti in campo per tenere traccia dei testa-a-testa.
-      </p>
-      <button
-        onClick={onAdd}
+      <span className="text-5xl mb-4">{icon}</span>
+      <p className="text-base font-semibold mb-1" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{title}</p>
+      <p className="text-sm mb-6" style={{ color: 'var(--color-slate)' }}>{sub}</p>
+      <button onClick={onAdd}
         className="px-6 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
         style={{ background: 'var(--color-amber)', color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}>
         + Aggiungi
@@ -191,41 +343,29 @@ function EmptyState({ onAdd }) {
 function ComingSoon({ tab }) {
   const messages = {
     panoramica:  { icon: '🗂', text: 'Panoramica in arrivo.',  sub: 'Prossima partita, forma recente e scorciatoie rapide.' },
-    partite:     { icon: '🎾', text: 'Partite in arrivo.',      sub: 'Registra i match con punteggio, superficie ed esito.' },
     allenamenti: { icon: '🎯', text: 'Allenamenti in arrivo.',  sub: 'Traccia le sessioni tecniche e i colpi allenati.' },
   }
   const m = messages[tab] || messages.panoramica
   return (
     <div className="flex flex-col items-center justify-center pt-20 text-center">
       <span className="text-5xl mb-4 opacity-60">{m.icon}</span>
-      <p className="text-base font-semibold mb-1"
-         style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-        {m.text}
-      </p>
+      <p className="text-base font-semibold mb-1" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{m.text}</p>
       <p className="text-sm" style={{ color: 'var(--color-slate)' }}>{m.sub}</p>
     </div>
   )
 }
 
-function DeleteToast({ onClose }) {
+function Toast({ title, sub, onClose }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-6"
-      style={{ background: 'rgba(2,13,25,0.7)', backdropFilter: 'blur(4px)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6"
+         style={{ background: 'rgba(2,13,25,0.7)', backdropFilter: 'blur(4px)' }}
+         onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="w-full max-w-xs rounded-3xl p-6 text-center"
            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
         <span className="text-4xl mb-3 block">✅</span>
-        <p className="text-base font-semibold mb-1"
-           style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-          Avversario eliminato
-        </p>
-        <p className="text-sm mb-5" style={{ color: 'var(--color-slate)' }}>
-          È stato rimosso dalla tua anagrafica.
-        </p>
-        <button
-          onClick={onClose}
+        <p className="text-base font-semibold mb-1" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{title}</p>
+        <p className="text-sm mb-5" style={{ color: 'var(--color-slate)' }}>{sub}</p>
+        <button onClick={onClose}
           className="w-full py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
           style={{ background: 'var(--color-amber)', color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}>
           Ok
@@ -233,4 +373,34 @@ function DeleteToast({ onClose }) {
       </div>
     </div>
   )
+}
+
+// ── Helpers data ───────────────────────────────────────────
+
+const MONTH_NAMES = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+
+function monthKey(dateStr) {
+  const d = new Date(dateStr)
+  if (isNaN(d)) return 'unknown'
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function monthLabelFromKey(key) {
+  const [y, m] = key.split('-')
+  return `${MONTH_NAMES[Number(m) - 1]} ${y}`
+}
+
+// Raggruppa le partite (già ordinate per data desc) per mese, preservando l'ordine
+function groupByMonth(matches) {
+  const groups = []
+  const index = {}
+  matches.forEach(m => {
+    const key = monthKey(m.date)
+    if (index[key] == null) {
+      index[key] = groups.length
+      groups.push({ key, label: monthLabelFromKey(key), items: [] })
+    }
+    groups[index[key]].items.push(m)
+  })
+  return groups
 }

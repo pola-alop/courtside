@@ -201,6 +201,10 @@ function StepDate({ value, onChange }) {
 // ── Step 2 — Avversario ────────────────────────────────────
 
 function StepOpponent({ opponents, value, onChange }) {
+  const [search, setSearch] = useState('')
+  const query = search.trim().toLowerCase()
+  const visibleOpponents = query ? opponents.filter(o => o.name.toLowerCase().includes(query)) : opponents
+
   return (
     <div className="space-y-3">
       <StepTitle title="Contro chi?" />
@@ -211,8 +215,19 @@ function StepOpponent({ opponents, value, onChange }) {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {opponents.map(o => {
+        <div className="space-y-3">
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Cerca avversario..."
+            className="w-full p-3 rounded-xl text-sm outline-none"
+            style={{ background: 'var(--color-surface-2)', color: 'var(--color-white)', border: '1px solid transparent', fontFamily: 'var(--font-body)' }}
+          />
+          {visibleOpponents.length === 0 ? (
+            <p className="text-sm text-center pt-4" style={{ color: 'var(--color-slate)' }}>Nessun avversario trovato.</p>
+          ) : (
+            <div className="space-y-2">
+            {visibleOpponents.map(o => {
             const active = value === o.id
             return (
               <button key={o.id}
@@ -240,7 +255,9 @@ function StepOpponent({ opponents, value, onChange }) {
                 </div>
               </button>
             )
-          })}
+            })}
+            </div>
+          )}
         </div>
       )}
     </div>

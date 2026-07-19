@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   MATCH_TYPES, FORMAT_LIST, MATCH_FORMATS, SURFACES,
   emptySet, setKind, countSets, computeOutcome, hasScore,
-  isTiebreakSet, RESULT_META, surfaceIcon,
+  isTiebreakSet, isTiebreakValid, RESULT_META, surfaceIcon,
 } from '../../lib/tennis'
 
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura']
@@ -46,6 +46,10 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
       case 5: {
         const anyScore = form.sets.some(hasScore) || Boolean(form.retired)
         if (!anyScore) return false
+        // I tie-break inseriti devono avere un punteggio valido (scarto ≥2) e
+        // un vincitore coerente con quello del set
+        const fmt = MATCH_FORMATS[form.format]
+        if (!form.sets.every((s, i) => isTiebreakValid(s, setKind(fmt, i), fmt, form.retired))) return false
         // Campionato/torneo devono concludersi con un vincitore
         if (!typeMeta?.allowsDraw && !outcome.completed) return false
         return true
@@ -364,6 +368,7 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
 
   const meta = RESULT_META[outcome.result]
   const drawBlocked = !allowsDraw && !outcome.completed && (form.sets.some(hasScore) || form.retired)
+  const tbBlocked = shown.some((s, i) => !isTiebreakValid(s, setKind(fmt, i), fmt, form.retired))
 
   return (
     <div className="space-y-4">
@@ -390,9 +395,14 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
 
       {/* Set */}
       <div className="space-y-3">
-        {shown.map((s, i) => (
-          <SetInput key={i} index={i} set={s} kind={setKind(fmt, i)} fmt={fmt} onChange={patch => updateSet(i, patch)} />
-        ))}
+        {shown.map((s, i) => {
+          const kind = setKind(fmt, i)
+          return (
+            <SetInput key={i} index={i} set={s} kind={kind} fmt={fmt}
+              invalid={!isTiebreakValid(s, kind, fmt, form.retired)}
+              onChange={patch => updateSet(i, patch)} />
+          )
+        })}
       </div>
 
       {/* Ritiro */}
@@ -436,6 +446,12 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
         </div>
       )}
 
+      {tbBlocked && (
+        <p className="text-xs" style={{ color: 'var(--color-loss)' }}>
+          ⚠ Il punteggio del tie-break deve avere uno scarto di almeno 2 punti e il vincitore deve coincidere con chi ha vinto il set.
+        </p>
+      )}
+
       {drawBlocked && (
         <p className="text-xs" style={{ color: 'var(--color-loss)' }}>
           ⚠ In campionato/torneo deve esserci un vincitore: completa il match o segna un ritiro.
@@ -445,13 +461,13 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
   )
 }
 
-function SetInput({ index, set, kind, fmt, onChange }) {
+function SetInput({ index, set, kind, fmt, invalid, onChange }) {
   const isSuper = kind === 'superTb'
   const maxGames = isSuper ? 99 : 7
   const showTb = !isSuper && isTiebreakSet(set)
 
   return (
-    <div className="rounded-2xl p-3" style={{ background: 'var(--color-surface-2)' }}>
+    <div className="rounded-2xl p-3" style={{ background: 'var(--color-surface-2)', border: invalid ? '1px solid var(--color-loss)' : '1px solid transparent' }}>
       <p className="text-xs font-semibold mb-2" style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
         {isSuper ? `Super tie-break (a ${fmt.superTbTarget})` : `Set ${index + 1}`}
       </p>
@@ -459,9 +475,16 @@ function SetInput({ index, set, kind, fmt, onChange }) {
         <ScoreStepper label="Tu"          value={set.me}  onChange={v => onChange({ me: v })}  max={maxGames} />
         <ScoreStepper label="Avversario"  value={set.opp} onChange={v => onChange({ opp: v })} max={maxGames} />
       </div>
+      {isSuper && invalid && (
+        <p className="text-[11px] mt-2" style={{ color: 'var(--color-loss)' }}>
+          ⚠ Il super tie-break si vince solo con uno scarto di almeno 2 punti (es. 10-8, 11-9...).
+        </p>
+      )}
       {showTb && (
         <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <p className="text-[11px] mb-2" style={{ color: 'var(--color-slate)' }}>Punti tie-break</p>
+          <p className="text-[11px] mb-2" style={{ color: invalid ? 'var(--color-loss)' : 'var(--color-slate)' }}>
+            Punti tie-break {invalid && '— scarto minimo 2 punti, il vincitore deve coincidere con il set'}
+          </p>
           <div className="space-y-2">
             <ScoreStepper label="Tu"         value={set.tbMe  ?? 0} onChange={v => onChange({ tbMe: v })}  max={99} small />
             <ScoreStepper label="Avversario" value={set.tbOpp ?? 0} onChange={v => onChange({ tbOpp: v })} max={99} small />

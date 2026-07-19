@@ -68,6 +68,37 @@ export function isTiebreakSet(set) {
   return (set.me === 7 && set.opp === 6) || (set.me === 6 && set.opp === 7)
 }
 
+// Un punteggio di tie-break è valido solo se il vincitore raggiunge il target
+// (7, 10...) con uno scarto di almeno 2 punti (regola del "vantaggio")
+export function isValidTiebreakScore(tbMe, tbOpp, target) {
+  const me = tbMe ?? 0
+  const opp = tbOpp ?? 0
+  const max = Math.max(me, opp)
+  const min = Math.min(me, opp)
+  return max >= target && max - min >= 2
+}
+
+// Verifica che il tie-break di un set sia coerente con lo scarto minimo di 2
+// punti e, per i set normali arrivati a 7-6/6-7, che il suo vincitore
+// coincida con chi ha vinto il set. Nel super tie-break (Amatoriale) il
+// punteggio del "set" stesso è già il tie-break, quindi la regola dello
+// scarto si applica direttamente a `me`/`opp`. `retired` sospende il
+// controllo sul super tie-break, dato che un ritiro può interromperlo a
+// punteggio parziale (non ancora concluso).
+export function isTiebreakValid(set, kind, fmt, retired = null) {
+  if (kind === 'superTb') {
+    if (retired || !hasScore(set)) return true
+    return isValidTiebreakScore(set.me, set.opp, tbTargetForKind(fmt, kind))
+  }
+  if (!isTiebreakSet(set)) return true
+  const { tbMe, tbOpp } = set
+  if (tbMe == null || tbOpp == null) return false
+  if (!isValidTiebreakScore(tbMe, tbOpp, tbTargetForKind(fmt, kind))) return false
+  const setWinnerSide = set.me === 7 ? 'me' : 'opp'
+  const tbWinnerSide = tbMe > tbOpp ? 'me' : 'opp'
+  return tbWinnerSide === setWinnerSide
+}
+
 // Vincitore di un singolo set: 'me' | 'opp' | null (set non ancora concluso)
 export function setWinner(set, kind, fmt) {
   const { me, opp } = set

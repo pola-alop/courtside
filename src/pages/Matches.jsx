@@ -57,6 +57,7 @@ export default function Matches() {
     return {
       wins:   played.filter(m => m.result === 'win').length,
       losses: played.filter(m => m.result === 'loss').length,
+      draws:  played.filter(m => m.result === 'draw').length,
     }
   }
   const matchesVs = (opponentId) => matches.filter(m => m.opponentId === opponentId)

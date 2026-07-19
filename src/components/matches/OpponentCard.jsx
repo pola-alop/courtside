@@ -49,15 +49,16 @@ function getSubtitle(opponent) {
     .join(' · ') || null
 }
 
-// Record H2H: teal se in vantaggio, rosso se sotto, ambra se pari, neutro se
-// mai giocato. `record` è null finché il dominio "Partite" non esisterà.
+// Record H2H (Vittorie-Pareggi-Sconfitte): teal se in vantaggio, rosso se
+// sotto, ambra se pari, neutro se mai giocato.
 function getH2HInfo(record) {
   const wins   = record?.wins   ?? 0
   const losses = record?.losses ?? 0
-  if (wins + losses === 0) {
+  const draws  = record?.draws  ?? 0
+  if (wins + losses + draws === 0) {
     return { label: 'Mai giocato', bg: 'var(--color-surface-2)', color: 'var(--color-slate)' }
   }
-  const label = `${wins}–${losses}`
+  const label = `${wins}–${draws}–${losses}`
   if (wins > losses) return { label, bg: 'rgba(72,179,176,0.18)', color: 'var(--color-teal-light)' }
   if (losses > wins) return { label, bg: 'rgba(220,80,80,0.15)',  color: '#ff7070' }
   return { label, bg: 'rgba(244,163,0,0.15)', color: 'var(--color-amber-light)' }

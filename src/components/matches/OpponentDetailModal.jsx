@@ -22,6 +22,7 @@ export default function OpponentDetailModal({
 
   const wins   = record?.wins   ?? 0
   const losses = record?.losses ?? 0
+  const draws  = record?.draws  ?? 0
 
   const notes = opponent.notes || []
   const sortedNotes = [...notes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -150,10 +151,11 @@ export default function OpponentDetailModal({
           {mode === 'view' && <>
 
             {/* Blocco testa-a-testa */}
-            <div className="grid grid-cols-3 gap-2 mb-5">
-              <StatTile label="Vittorie" value={wins}          color="var(--color-teal-light)" />
-              <StatTile label="Sconfitte" value={losses}        color="#ff7070" />
-              <StatTile label="Scontri"  value={wins + losses}  color="var(--color-white)" />
+            <div className="grid grid-cols-4 gap-2 mb-5">
+              <StatTile label="Vittorie"  value={wins}                  color="var(--color-teal-light)" />
+              <StatTile label="Pareggi"   value={draws}                 color="var(--color-draw)" />
+              <StatTile label="Sconfitte" value={losses}                color="#ff7070" />
+              <StatTile label="Scontri"   value={wins + losses + draws} color="var(--color-white)" />
             </div>
 
             {/* Bottone modifica */}

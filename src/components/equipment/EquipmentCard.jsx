@@ -1,5 +1,7 @@
-export default function EquipmentCard({ item, matchCount = 0, onClick }) {
-  const wearInfo = getWearInfo(item, matchCount)
+import { computeWear, wearLevelMeta } from '../../lib/wear'
+
+export default function EquipmentCard({ item, matches = [], onClick }) {
+  const wearInfo = computeWear(item, matches)
   const subtitle = getSubtitle(item)
   const modelName = item.model || item.name || '—'
   const isArchived = item.active === false
@@ -56,11 +58,11 @@ export default function EquipmentCard({ item, matchCount = 0, onClick }) {
             {wearInfo && (
               <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                     style={{
-                      background: wearBg(wearInfo.level),
-                      color: wearColor(wearInfo.level),
+                      background: wearLevelMeta(wearInfo.level).badgeBg,
+                      color: wearLevelMeta(wearInfo.level).color,
                       fontFamily: 'var(--font-display)'
                     }}>
-                {wearIcon(wearInfo.level)} {wearInfo.shortLabel}
+                {wearLevelMeta(wearInfo.level).icon} {wearInfo.shortLabel}
               </span>
             )}
           </div>
@@ -117,21 +119,4 @@ function formatTensionSuffix(item) {
   return `· ${mains ?? '—'}/${crosses ?? '—'}kg`
 }
 
-function getWearInfo(item, matchCount) {
-  if (item.type === 'racchetta') {
-    const dateStr = item.strings?.mountedAt || item.stringDate
-    if (!dateStr) return null
-    const days = Math.floor((Date.now() - new Date(dateStr)) / 86400000)
-    if (days > 90) return { level: 'high',   shortLabel: `${days}gg`, label: `Corde: ${days} giorni — considera il cambio` }
-    if (days > 45) return { level: 'medium', shortLabel: `${days}gg`, label: `Corde montate ${days} giorni fa` }
-    return { level: 'ok', shortLabel: `${days}gg`, label: `Corde ok — ${days} giorni fa` }
-  }
-  if (item.type === 'outfit' && matchCount > 50)
-    return { level: 'medium', shortLabel: `${matchCount} match`, label: `${matchCount} partite giocate` }
-  return null
-}
-
 const typeIcon    = t  => ({ racchetta: '🎾', scarpa: '👟', outfit: '👕', borsone: '🎒' }[t] || '📦')
-const wearBg      = l  => ({ ok: 'rgba(72,179,176,0.2)', medium: 'rgba(244,163,0,0.2)', high: 'rgba(220,80,80,0.2)' }[l])
-const wearColor   = l  => ({ ok: 'var(--color-teal-light)', medium: 'var(--color-amber-light)', high: '#ff7070' }[l])
-const wearIcon    = l  => ({ ok: '✓', medium: '⚠', high: '●' }[l])

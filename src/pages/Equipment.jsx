@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useEquipment } from '../hooks/useEquipment'
+import { useMatches } from '../hooks/useMatches'
 import EquipmentCard from '../components/equipment/EquipmentCard'
 import AddEquipmentModal from '../components/equipment/AddEquipmentModal'
 import EquipmentDetailModal from '../components/equipment/EquipmentDetailModal'
@@ -21,6 +22,9 @@ const CLUSTER_ORDER = [
 
 export default function Equipment() {
   const { equipment, loading, add, update, archive, unarchive, remove, addStrings, deleteStringsHistory } = useEquipment()
+  // Match dell'utente: chiudono il cerchio con l'attrezzatura (usura corde/suola
+  // calcolata dai game giocati con ogni capo). Vedi src/lib/wear.js.
+  const { matches } = useMatches()
   const [activeTab, setActiveTab]     = useState('all')
   const [showAdd, setShowAdd]         = useState(false)
   const [selectedId, setSelectedId]   = useState(null)
@@ -125,6 +129,7 @@ export default function Equipment() {
                       <EquipmentCard
                         key={item.id}
                         item={item}
+                        matches={matches}
                         onClick={() => setSelectedId(item.id)}
                       />
                     ))}
@@ -143,6 +148,7 @@ export default function Equipment() {
                   <EquipmentCard
                     key={item.id}
                     item={item}
+                    matches={matches}
                     onClick={() => setSelectedId(item.id)}
                   />
                 ))}
@@ -165,6 +171,7 @@ export default function Equipment() {
                     <EquipmentCard
                       key={item.id}
                       item={item}
+                      matches={matches}
                       onClick={() => setSelectedId(item.id)}
                     />
                   ))}
@@ -188,6 +195,7 @@ export default function Equipment() {
       {selectedItem && (
         <EquipmentDetailModal
           item={selectedItem}
+          matches={matches}
           onClose={() => setSelectedId(null)}
           onArchive={async (id) => {
             await archive(id)

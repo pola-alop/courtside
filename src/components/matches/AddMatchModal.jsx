@@ -549,18 +549,22 @@ function StepEquipment({ equipment, value, onChange }) {
               <div className="flex flex-wrap gap-2">
                 {items.map(e => {
                   const selected = value[t.id] === e.id
-                  const name = e.nickname || e.model || e.name || '—'
+                  const model = e.model || e.name || '—'
                   return (
                     <button key={e.id}
                       onClick={() => pick(t.id, e.id)}
-                      className="px-3 py-2 rounded-xl text-xs font-medium transition-all"
+                      className="px-3 py-2 rounded-xl text-xs font-medium transition-all text-left"
                       style={{
                         background: selected ? 'var(--color-teal-dark)' : 'var(--color-surface-2)',
-                        color:      selected ? 'var(--color-white)' : 'var(--color-slate)',
                         border:     selected ? '1px solid var(--color-teal)' : '1px solid transparent',
                         fontFamily: 'var(--font-display)'
                       }}>
-                      {name}
+                      <span style={{ color: 'var(--color-white)' }}>{model}</span>
+                      {e.nickname && (
+                        <span className="block text-[11px] mt-0.5" style={{ color: 'var(--color-white)', opacity: 0.6 }}>
+                          {e.nickname}
+                        </span>
+                      )}
                     </button>
                   )
                 })}

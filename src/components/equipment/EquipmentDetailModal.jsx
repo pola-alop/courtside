@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { computeWear, wearLevelMeta } from '../../lib/wear'
 
 export default function EquipmentDetailModal({
-  item, onClose, onArchive, onUnarchive, onDelete, onUpdate, onAddStrings, onDeleteStringsHistory
+  item, matches = [], onClose, onArchive, onUnarchive, onDelete, onUpdate, onAddStrings, onDeleteStringsHistory
 }) {
   const [mode, setMode]             = useState('view')  // view | edit | addStrings | confirmArchive | confirmUnarchive | confirmDelete
   const [editForm, setEditForm]     = useState(null)
@@ -86,7 +87,7 @@ export default function EquipmentDetailModal({
     setHistoryDeleteDone(true)
   }
 
-  const wearInfo = getDetailedWearInfo(item)
+  const wearInfo = computeWear(item, matches)
   const hasImage = Boolean(item.imageUrl)
   const isArchived = item.active === false
 
@@ -178,22 +179,41 @@ export default function EquipmentDetailModal({
             </div>
           )}
 
-          {/* Badge usura */}
+          {/* Badge usura — livello, dettaglio e barra di consumo (0→100%) */}
           {wearInfo && mode === 'view' && (
-            <div className="mb-4 p-3 rounded-2xl flex items-center gap-3"
-                 style={{ background: wearBg(wearInfo.level) }}>
-              <span className="text-xl">
-                {wearInfo.level === 'high' ? '🔴' : wearInfo.level === 'medium' ? '⚠️' : '✅'}
-              </span>
-              <div>
-                <p className="text-sm font-semibold"
-                   style={{ color: wearColor(wearInfo.level), fontFamily: 'var(--font-display)' }}>
-                  {wearInfo.label}
-                </p>
-                {wearInfo.sub && (
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-slate)' }}>{wearInfo.sub}</p>
-                )}
+            <div className="mb-4 p-3 rounded-2xl"
+                 style={{ background: wearLevelMeta(wearInfo.level).boxBg }}>
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{wearLevelMeta(wearInfo.level).emoji}</span>
+                <div className="flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-sm font-semibold"
+                       style={{ color: wearLevelMeta(wearInfo.level).color, fontFamily: 'var(--font-display)' }}>
+                      {wearInfo.label}
+                    </p>
+                    {wearInfo.percent != null && (
+                      <span className="text-sm font-bold"
+                            style={{ color: wearLevelMeta(wearInfo.level).color, fontFamily: 'var(--font-mono)' }}>
+                        {wearInfo.percent}%
+                      </span>
+                    )}
+                  </div>
+                  {wearInfo.sub && (
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--color-slate)' }}>{wearInfo.sub}</p>
+                  )}
+                </div>
               </div>
+              {/* Barra: percentuale di vita consumata (limitata al 100% in larghezza) */}
+              {wearInfo.percent != null && (
+                <div className="mt-3 h-1.5 rounded-full overflow-hidden"
+                     style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <div className="h-full rounded-full"
+                       style={{
+                         width: `${Math.min(wearInfo.percent, 100)}%`,
+                         background: wearLevelMeta(wearInfo.level).bar,
+                       }} />
+                </div>
+              )}
             </div>
           )}
 
@@ -708,18 +728,4 @@ function formatDate(dateStr) {
   } catch { return dateStr }
 }
 
-function getDetailedWearInfo(item) {
-  if (item.type === 'racchetta') {
-    const dateStr = item.strings?.mountedAt || item.stringDate
-    if (!dateStr) return null
-    const days = Math.floor((Date.now() - new Date(dateStr)) / 86400000)
-    if (days > 90) return { level: 'high',   label: 'Considera il cambio corde', sub: `Montate ${days} giorni fa` }
-    if (days > 45) return { level: 'medium', label: 'Corde usate',               sub: `Montate ${days} giorni fa` }
-    return { level: 'ok', label: 'Corde in buone condizioni', sub: `Montate ${days} giorni fa` }
-  }
-  return null
-}
-
 const typeIcon  = t => ({ racchetta: '🎾', scarpa: '👟', outfit: '👕', borsone: '🎒' }[t] || '📦')
-const wearBg    = l => ({ ok: 'rgba(72,179,176,0.12)', medium: 'rgba(244,163,0,0.12)', high: 'rgba(220,80,80,0.12)' }[l])
-const wearColor = l => ({ ok: 'var(--color-teal-light)', medium: 'var(--color-amber-light)', high: '#ff7070' }[l])

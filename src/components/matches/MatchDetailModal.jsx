@@ -59,7 +59,8 @@ export default function MatchDetailModal({
       const id = match.equipment?.[t.id]
       if (!id) return null
       const item = equipment.find(e => e.id === id)
-      return { ...t, name: item ? (item.nickname || item.model || item.name || '—') : 'Non più disponibile' }
+      if (!item) return { ...t, name: 'Non più disponibile', nickname: null }
+      return { ...t, name: item.model || item.name || '—', nickname: item.nickname || null }
     })
     .filter(Boolean)
 
@@ -127,7 +128,7 @@ export default function MatchDetailModal({
             {equipRows.length > 0 && (
               <Section title="Attrezzatura usata">
                 {equipRows.map(e => (
-                  <Row key={e.id} label={`${e.icon} ${e.label}`} value={e.name} />
+                  <Row key={e.id} label={`${e.icon} ${e.label}`} value={e.name} subValue={e.nickname} />
                 ))}
               </Section>
             )}
@@ -197,11 +198,16 @@ function Section({ title, children }) {
   )
 }
 
-function Row({ label, value }) {
+function Row({ label, value, subValue }) {
   return (
     <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
       <span className="text-xs" style={{ color: 'var(--color-slate)' }}>{label}</span>
-      <span className="text-xs font-medium text-right" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>{value}</span>
+      <span className="text-right">
+        <span className="block text-xs font-medium" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>{value}</span>
+        {subValue && (
+          <span className="block text-[11px] mt-0.5" style={{ color: 'var(--color-white)', opacity: 0.6, fontFamily: 'var(--font-mono)' }}>{subValue}</span>
+        )}
+      </span>
     </div>
   )
 }

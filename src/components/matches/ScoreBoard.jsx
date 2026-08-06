@@ -3,6 +3,9 @@ import { MATCH_FORMATS, setKind, setWinner, isTiebreakSet, hasScore } from '../.
 // Punteggio stile tennis: due righe (io / avversario), un valore per set.
 // Il vincitore di ogni set ha il numero più acceso; i punti del tie-break
 // compaiono ad apice. `size`: 'sm' (riga lista) | 'md' (dettaglio).
+// In entrambe le taglie il nome avversario è compattato in "Cognome N."
+// (colonna nome stretta e allineata al punteggio in stile tennis anche
+// con cognomi lunghi); il nome per esteso resta disponibile via `title`.
 export default function ScoreBoard({ sets, format, retired, opponentName, size = 'sm' }) {
   const fmt = MATCH_FORMATS[format]
   if (!fmt) return null
@@ -16,7 +19,9 @@ export default function ScoreBoard({ sets, format, retired, opponentName, size =
 
   const nameCls = size === 'md' ? 'text-sm' : 'text-xs'
   const scoreCls = size === 'md' ? 'text-lg' : 'text-sm'
-  const nameW = size === 'md' ? '5.5rem' : '3.75rem'
+  const nameW = size === 'md' ? '6rem' : '4.5rem'
+  const fullOpponentName = opponentName || 'Avversario'
+  const opponentDisplay = compactName(fullOpponentName)
 
   return (
     <div className="flex flex-col gap-1">
@@ -28,7 +33,8 @@ export default function ScoreBoard({ sets, format, retired, opponentName, size =
         nameCls={nameCls} scoreCls={scoreCls} nameW={nameW}
       />
       <PlayerRow
-        name={opponentName || 'Avversario'}
+        name={opponentDisplay}
+        title={opponentDisplay !== fullOpponentName ? fullOpponentName : undefined}
         cells={cells}
         who="opp"
         retired={retired === 'opp'}
@@ -38,10 +44,11 @@ export default function ScoreBoard({ sets, format, retired, opponentName, size =
   )
 }
 
-function PlayerRow({ name, cells, who, retired, nameCls, scoreCls, nameW }) {
+function PlayerRow({ name, title, cells, who, retired, nameCls, scoreCls, nameW }) {
   return (
     <div className="flex items-center gap-3">
       <span className={`${nameCls} font-semibold truncate`}
+            title={title}
             style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)', width: nameW }}>
         {name}
       </span>
@@ -80,4 +87,14 @@ function tbSuperscript(cell, who) {
   if (!isTiebreakSet(cell.set)) return null
   const tb = who === 'me' ? cell.set.tbMe : cell.set.tbOpp
   return tb == null ? null : tb
+}
+
+// "Nome Cognome" → "Cognome N." (stesso ordine nome/cognome atteso da
+// getInitials in OpponentCard.jsx). Nomi di una sola parola restano invariati.
+function compactName(name) {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return name || 'Avversario'
+  const surname = parts[parts.length - 1]
+  const firstInitial = parts[0][0].toUpperCase()
+  return `${surname} ${firstInitial}.`
 }

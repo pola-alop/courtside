@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useEquipment } from '../hooks/useEquipment'
 import { useMatches } from '../hooks/useMatches'
+import { linkedMatchesCount } from '../lib/wear'
 import EquipmentCard from '../components/equipment/EquipmentCard'
 import AddEquipmentModal from '../components/equipment/AddEquipmentModal'
 import EquipmentDetailModal from '../components/equipment/EquipmentDetailModal'
@@ -206,6 +207,10 @@ export default function Equipment() {
             setSelectedId(null)
           }}
           onDelete={async (id) => {
+            // Guard difensiva: il bottone di eliminazione è già nascosto nel
+            // modale quando ci sono match collegati, ma non fidarsi solo della UI.
+            const item = equipment.find(e => e.id === id)
+            if (item && linkedMatchesCount(item, matches) > 0) return
             await remove(id)
             setSelectedId(null)
             setDeleteToast(true)

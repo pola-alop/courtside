@@ -193,3 +193,13 @@ export function computeWear(item, matches) {
   if (item.type === 'outfit')    return outfitWear(item, matches)
   return null
 }
+
+// ── Match collegati (guard per l'eliminazione) ──────────────
+// Conta i match che citano questo capo (qualunque tipo, incluso il borsone,
+// che non ha una funzione di usura dedicata). Un'attrezzatura con match
+// collegati non può essere eliminata — solo archiviata — perché servirà
+// alle statistiche future.
+export function linkedMatchesCount(item, matches) {
+  if (!item) return 0
+  return (matches || []).filter(m => m.equipment?.[item.type] === item.id).length
+}

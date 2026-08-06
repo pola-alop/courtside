@@ -216,7 +216,14 @@ export default function Matches() {
           matches={matchesVs(selectedOpponent.id)}
           onClose={() => setSelectedOpponentId(null)}
           onUpdate={async (id, data) => { await updateOpponent(id, data) }}
-          onDelete={async (id) => { await removeOpponent(id); setSelectedOpponentId(null); setOppDeleteToast(true) }}
+          onDelete={async (id) => {
+            // Guard difensiva: il bottone di eliminazione è già nascosto nel
+            // modale quando ci sono match collegati, ma non fidarsi solo della UI.
+            if (matchesVs(id).length > 0) return
+            await removeOpponent(id)
+            setSelectedOpponentId(null)
+            setOppDeleteToast(true)
+          }}
         />
       )}
 

@@ -25,9 +25,10 @@ export async function updateOpponent(userId, opponentId, data) {
   return await updateDoc(ref, { ...data, updatedAt: serverTimestamp() })
 }
 
-// NB: eliminando un avversario le partite che lo referenziano (dominio ancora
-// da sviluppare) resterebbero orfane del riferimento. Quando la sezione
-// "Partite" esisterà, valutare un guard qui o una gestione lato match.
+// Nessun guard qui: il controllo "avversario con match collegati non
+// eliminabile" vive lato UI (OpponentDetailModal.jsx + Matches.jsx), dove
+// useOpponents e useMatches sono già entrambi disponibili — coerente con
+// l'equivalente guard per l'attrezzatura (linkedMatchesCount in wear.js).
 export async function deleteOpponent(userId, opponentId) {
   const ref = doc(db, 'users', userId, 'opponents', opponentId)
   return await deleteDoc(ref)

@@ -27,6 +27,10 @@ export default function OpponentDetailModal({
   const notes = opponent.notes || []
   const sortedNotes = [...notes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
+  // Un avversario con almeno una partita all'attivo non può essere eliminato
+  // (serve alle statistiche future): l'anagrafica resta, si può solo modificare.
+  const hasMatches = matches.length > 0
+
   const setField = (k, v) => setEditForm(f => ({ ...f, [k]: v }))
 
   // Il form va ricalcolato da `opponent` all'apertura, non una volta al mount,
@@ -181,19 +185,29 @@ export default function OpponentDetailModal({
 
             <MatchHistorySection matches={matches} />
 
-            {/* Elimina */}
+            {/* Elimina — bloccata se l'avversario ha match collegati: quei dati
+                servono alle statistiche future, quindi l'anagrafica resta. */}
             <div className="mt-6 pb-2">
-              <button
-                onClick={() => setMode('confirmDelete')}
-                className="w-full py-3 rounded-2xl text-sm font-semibold transition-all"
-                style={{
-                  background: 'var(--color-surface-2)',
-                  color: '#e05555',
-                  fontFamily: 'var(--font-display)',
-                  border: '1px solid rgba(220,80,80,0.2)'
-                }}>
-                🗑️ Elimina avversario
-              </button>
+              {hasMatches ? (
+                <div className="p-3 rounded-2xl text-center"
+                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-surface-2)' }}>
+                  <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
+                    🔒 Non eliminabile: ha {matches.length} {matches.length === 1 ? 'partita' : 'partite'} all'attivo.
+                  </p>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setMode('confirmDelete')}
+                  className="w-full py-3 rounded-2xl text-sm font-semibold transition-all"
+                  style={{
+                    background: 'var(--color-surface-2)',
+                    color: '#e05555',
+                    fontFamily: 'var(--font-display)',
+                    border: '1px solid rgba(220,80,80,0.2)'
+                  }}>
+                  🗑️ Elimina avversario
+                </button>
+              )}
             </div>
           </>}
 

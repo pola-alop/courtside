@@ -239,6 +239,7 @@ export default function Matches() {
           record={recordFor(selectedOpponent.id)}
           matches={matchesVs(selectedOpponent.id)}
           onClose={() => setSelectedOpponentId(null)}
+          onSelectMatch={(matchId) => setSelectedMatchId(matchId)}
           onUpdate={async (id, data) => { await updateOpponent(id, data) }}
           onDelete={async (id) => {
             // Guard difensiva: il bottone di eliminazione è già nascosto nel

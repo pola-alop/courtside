@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import MatchRow from './MatchRow'
 
 const HANDS = [
   { id: 'destro',   label: 'Destro'  },
@@ -8,7 +9,7 @@ const HANDS = [
 const MAX_NOTE_LENGTH = 150
 
 export default function OpponentDetailModal({
-  opponent, record = null, matches = [], onClose, onUpdate, onDelete
+  opponent, record = null, matches = [], onClose, onUpdate, onDelete, onSelectMatch
 }) {
   // view | edit | confirmDelete | addNote | editNote | confirmDeleteNote
   const [mode, setMode]         = useState('view')
@@ -183,7 +184,7 @@ export default function OpponentDetailModal({
 
             <NotesSection notes={sortedNotes} onAdd={openAddNote} onEditNote={openEditNote} />
 
-            <MatchHistorySection matches={matches} />
+            <MatchHistorySection matches={matches} onSelectMatch={onSelectMatch} />
 
             {/* Elimina — bloccata se l'avversario ha match collegati: quei dati
                 servono alle statistiche future, quindi l'anagrafica resta. */}
@@ -485,26 +486,33 @@ function NoteTextArea({ value, onChange }) {
   )
 }
 
-// Storico scontri: vuoto finché il dominio "Partite" non esiste. È il punto in
-// cui si chiuderà il cerchio — qui comparirà la lista dei match vs l'avversario.
-function MatchHistorySection({ matches }) {
+// Storico scontri: solo le ultime 3 partite, giusto per un colpo d'occhio
+// sull'andamento recente — lo storico completo è già consultabile dal tab
+// Partite filtrando per questo avversario, niente bisogno di duplicarlo qui.
+const MATCH_HISTORY_LIMIT = 3
+
+function MatchHistorySection({ matches, onSelectMatch }) {
+  const recent = matches.slice(0, MATCH_HISTORY_LIMIT)
+
   return (
     <div className="mb-4">
       <p className="text-xs font-semibold uppercase tracking-wider mb-2"
          style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-        Storico scontri
+        Ultimi scontri
       </p>
-      <div className="rounded-2xl px-4 py-4 text-center" style={{ background: 'var(--color-surface-2)' }}>
-        {matches.length === 0 ? (
+      {recent.length === 0 ? (
+        <div className="rounded-2xl px-4 py-4 text-center" style={{ background: 'var(--color-surface-2)' }}>
           <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
             Nessuna partita registrata contro questo avversario.
           </p>
-        ) : (
-          <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
-            {matches.length} partite — dettaglio in arrivo con la sezione Partite.
-          </p>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {recent.map(m => (
+            <MatchRow key={m.id} match={m} onClick={() => onSelectMatch?.(m.id)} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -8,7 +8,7 @@ import OpponentDetailModal from '../components/matches/OpponentDetailModal'
 import MatchRow from '../components/matches/MatchRow'
 import AddMatchModal from '../components/matches/AddMatchModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
-import { MATCH_TYPES, RESULT_META } from '../lib/tennis'
+import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 
 const TABS = [
   { id: 'panoramica',  label: 'Panoramica',  icon: '🗂' },
@@ -42,10 +42,13 @@ export default function Matches() {
   const [editingMatch, setEditingMatch] = useState(null)
   const [selectedMatchId, setSelectedMatchId] = useState(null)
   const [matchDeleteToast, setMatchDeleteToast] = useState(false)
-  const [fType, setFType]     = useState('all')
-  const [fEvent, setFEvent]   = useState('')
-  const [fMonth, setFMonth]   = useState('all')
-  const [fResult, setFResult] = useState('all')
+  const [fType, setFType]         = useState('all')
+  const [fEvent, setFEvent]       = useState('')
+  const [fOpponent, setFOpponent] = useState('all')
+  const [fSurface, setFSurface]   = useState('all')
+  const [fDateFrom, setFDateFrom] = useState('')
+  const [fDateTo, setFDateTo]     = useState('')
+  const [fResult, setFResult]     = useState('all')
 
   // Item selezionati derivati (pattern "selected item derivato")
   const selectedOpponent = selectedOpponentId ? opponents.find(o => o.id === selectedOpponentId) || null : null
@@ -66,16 +69,32 @@ export default function Matches() {
   const eventOptions = (fType === 'campionato' || fType === 'torneo')
     ? [...new Set(matches.filter(m => m.type === fType && m.eventName).map(m => m.eventName))]
     : []
-  const monthOptions = [...new Set(matches.map(m => monthKey(m.date)))].sort().reverse()
+  const opponentOptions = [...new Map(matches.map(m => [m.opponentId, m.opponentName])).entries()]
+    .sort((a, b) => a[1].localeCompare(b[1]))
 
   const filteredMatches = matches.filter(m => {
     if (fType !== 'all' && m.type !== fType) return false
     if (fEvent && m.eventName !== fEvent) return false
-    if (fMonth !== 'all' && monthKey(m.date) !== fMonth) return false
+    if (fOpponent !== 'all' && m.opponentId !== fOpponent) return false
+    if (fSurface !== 'all' && m.surface !== fSurface) return false
+    if (fDateFrom && m.date.slice(0, 10) < fDateFrom) return false
+    if (fDateTo && m.date.slice(0, 10) > fDateTo) return false
     if (fResult !== 'all' && m.result !== fResult) return false
     return true
   })
   const monthGroups = groupByMonth(filteredMatches)
+
+  const hasActiveFilters = fType !== 'all' || fEvent !== '' || fOpponent !== 'all'
+    || fSurface !== 'all' || fDateFrom !== '' || fDateTo !== '' || fResult !== 'all'
+  const resetFilters = () => {
+    setFType('all')
+    setFEvent('')
+    setFOpponent('all')
+    setFSurface('all')
+    setFDateFrom('')
+    setFDateTo('')
+    setFResult('all')
+  }
 
   const oppQuery = oppSearch.trim().toLowerCase()
   const visibleOpponents = oppQuery ? opponents.filter(o => o.name.toLowerCase().includes(oppQuery)) : opponents
@@ -140,8 +159,13 @@ export default function Matches() {
               <MatchFilters
                 type={fType} setType={t => { setFType(t); setFEvent('') }}
                 event={fEvent} setEvent={setFEvent} eventOptions={eventOptions}
-                month={fMonth} setMonth={setFMonth} monthOptions={monthOptions}
+                opponent={fOpponent} setOpponent={setFOpponent} opponentOptions={opponentOptions}
+                surface={fSurface} setSurface={setFSurface}
+                dateFrom={fDateFrom} setDateFrom={setFDateFrom}
+                dateTo={fDateTo} setDateTo={setFDateTo}
                 result={fResult} setResult={setFResult}
+                hasActiveFilters={hasActiveFilters}
+                onReset={resetFilters}
               />
 
               {filteredMatches.length === 0 ? (
@@ -260,9 +284,28 @@ export default function Matches() {
 
 // ── Filtri partite ─────────────────────────────────────────
 
-function MatchFilters({ type, setType, event, setEvent, eventOptions, month, setMonth, monthOptions, result, setResult }) {
+function MatchFilters({
+  type, setType, event, setEvent, eventOptions,
+  opponent, setOpponent, opponentOptions,
+  surface, setSurface,
+  dateFrom, setDateFrom, dateTo, setDateTo,
+  result, setResult,
+  hasActiveFilters, onReset
+}) {
   return (
     <div className="space-y-2">
+      {/* Reset filtri */}
+      {hasActiveFilters && (
+        <div className="flex justify-end">
+          <button onClick={onReset}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all active:scale-95"
+            style={{ background: 'var(--color-surface)', color: 'var(--color-amber)', border: '1px solid var(--color-surface-2)', fontFamily: 'var(--font-display)' }}>
+            <span>✕</span>
+            <span>Cancella filtri</span>
+          </button>
+        </div>
+      )}
+
       {/* Tipo */}
       <div className="flex gap-2 overflow-x-auto" style={{ minWidth: 'max-content' }}>
         {[{ id: 'all', label: 'Tutti' }, ...MATCH_TYPES.map(t => ({ id: t.id, label: t.label }))].map(t => (
@@ -270,7 +313,13 @@ function MatchFilters({ type, setType, event, setEvent, eventOptions, month, set
         ))}
       </div>
 
-      {/* Evento (solo campionato/torneo) + Mese */}
+      {/* Range di date */}
+      <div className="flex gap-2">
+        <DateInput value={dateFrom} onChange={setDateFrom} placeholder="Da" />
+        <DateInput value={dateTo} onChange={setDateTo} placeholder="A" />
+      </div>
+
+      {/* Evento (solo campionato/torneo) + Avversario */}
       <div className="flex gap-2">
         {eventOptions.length > 0 && (
           <Select value={event} onChange={setEvent}>
@@ -278,10 +327,20 @@ function MatchFilters({ type, setType, event, setEvent, eventOptions, month, set
             {eventOptions.map(ev => <option key={ev} value={ev}>{ev}</option>)}
           </Select>
         )}
-        <Select value={month} onChange={setMonth}>
-          <option value="all">Tutti i mesi</option>
-          {monthOptions.map(mk => <option key={mk} value={mk}>{monthLabelFromKey(mk)}</option>)}
+        <Select value={opponent} onChange={setOpponent}>
+          <option value="all">Tutti gli avversari</option>
+          {opponentOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
         </Select>
+      </div>
+
+      {/* Superficie */}
+      <div className="flex gap-2 overflow-x-auto" style={{ minWidth: 'max-content' }}>
+        <Chip active={surface === 'all'} onClick={() => setSurface('all')}>Tutte</Chip>
+        {SURFACES.map(s => (
+          <Chip key={s} active={surface === s} onClick={() => setSurface(s)} icon={surfaceIcon(s)}>
+            <span className="capitalize">{s}</span>
+          </Chip>
+        ))}
       </div>
 
       {/* Esito */}
@@ -297,7 +356,7 @@ function MatchFilters({ type, setType, event, setEvent, eventOptions, month, set
   )
 }
 
-function Chip({ active, onClick, children, dot }) {
+function Chip({ active, onClick, children, dot, icon }) {
   return (
     <button onClick={onClick}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all"
@@ -308,8 +367,25 @@ function Chip({ active, onClick, children, dot }) {
         fontFamily: 'var(--font-display)'
       }}>
       {dot && <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot }} />}
+      {icon && <span>{icon}</span>}
       {children}
     </button>
+  )
+}
+
+function DateInput({ value, onChange, placeholder }) {
+  return (
+    <div className="flex-1 min-w-0 flex items-center gap-1.5 p-2.5 rounded-xl"
+      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
+      <span className="text-xs shrink-0" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>{placeholder}</span>
+      <input
+        type="date"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="flex-1 min-w-0 text-xs outline-none"
+        style={{ background: 'transparent', color: 'var(--color-white)', fontFamily: 'var(--font-display)', colorScheme: 'dark' }}
+      />
+    </div>
   )
 }
 

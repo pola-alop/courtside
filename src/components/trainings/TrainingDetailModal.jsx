@@ -1,7 +1,12 @@
 import { useState } from 'react'
-import ScoreBoard from './ScoreBoard'
-import { RESULT_META, MATCH_FORMATS, MATCH_TYPES, surfaceIcon } from '../../lib/tennis'
+import { surfaceIcon } from '../../lib/tennis'
+import {
+  MAX_RATING, totalMinutes, formatMinutes, focusLabel, intensityMeta,
+  trainingKindMeta, FOCUS_BY_ID,
+} from '../../lib/training'
+import { trainingGameEquivalents } from '../../lib/wear'
 import AthleticsSection from '../athletics/AthleticsSection'
+import TrainingAthleticsEditor from './TrainingAthleticsEditor'
 
 const MAX_NOTE_LENGTH = 150
 
@@ -12,20 +17,22 @@ const EQUIP_TYPES = [
   { id: 'borsone',   label: 'Borsone',   icon: '🎒' },
 ]
 
-export default function MatchDetailModal({
-  match, equipment = [], onClose, onEdit, onUpdate, onDelete
+export default function TrainingDetailModal({
+  training, equipment = [], onClose, onEdit, onUpdate, onDelete
 }) {
-  // view | confirmDelete | addNote | editNote | confirmDeleteNote
+  // view | confirmDelete | editAthletics | addNote | editNote | confirmDeleteNote
   const [mode, setMode]     = useState('view')
   const [saving, setSaving] = useState(false)
   const [noteDraft, setNoteDraft]   = useState('')
   const [noteTarget, setNoteTarget] = useState(null)
 
-  const meta = RESULT_META[match.result] || RESULT_META.draw
-  const fmt  = MATCH_FORMATS[match.format]
-  const typeLabel = MATCH_TYPES.find(t => t.id === match.type)?.label || match.type
+  const intensity = intensityMeta(training.intensity)
+  const minutes   = totalMinutes(training.blocks)
+  const focus     = training.focus || []
+  const ratings   = training.ratings || {}
+  const wear      = trainingGameEquivalents(training)
 
-  const notes = match.notes || []
+  const notes = training.notes || []
   const sortedNotes = [...notes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   const openAddNote  = () => { setNoteDraft(''); setMode('addNote') }
@@ -36,7 +43,7 @@ export default function MatchDetailModal({
   const handleSaveNewNote = async () => {
     if (!canSaveNote || saving) return
     setSaving(true)
-    await onUpdate(match.id, { notes: [...notes, { text: noteDraft.trim(), createdAt: new Date().toISOString() }] })
+    await onUpdate(training.id, { notes: [...notes, { text: noteDraft.trim(), createdAt: new Date().toISOString() }] })
     setSaving(false); setNoteDraft(''); setMode('view')
   }
 
@@ -44,20 +51,41 @@ export default function MatchDetailModal({
     if (!canSaveNote || saving || !noteTarget) return
     setSaving(true)
     const updated = notes.map(n => n.createdAt === noteTarget.createdAt ? { ...n, text: noteDraft.trim() } : n)
-    await onUpdate(match.id, { notes: updated })
+    await onUpdate(training.id, { notes: updated })
     setSaving(false); setNoteDraft(''); setNoteTarget(null); setMode('view')
   }
 
   const handleDeleteNote = async () => {
     if (!noteTarget || saving) return
     setSaving(true)
-    await onUpdate(match.id, { notes: notes.filter(n => n.createdAt !== noteTarget.createdAt) })
+    await onUpdate(training.id, { notes: notes.filter(n => n.createdAt !== noteTarget.createdAt) })
     setSaving(false); setNoteDraft(''); setNoteTarget(null); setMode('view')
+  }
+
+  const handleSaveAthletics = async (athletics) => {
+    if (saving) return
+    setSaving(true)
+    await onUpdate(training.id, { athletics })
+    setSaving(false); setMode('view')
+  }
+
+  // Le valutazioni si danno direttamente in vista, senza entrare in una
+  // sotto-modalità: è un gesto da un tap su un dato a bassa posta in gioco, e
+  // un form dedicato lo renderebbe abbastanza scomodo da non farlo mai.
+  // Ri-toccare la stella già attiva azzera il voto.
+  const handleRate = async (focusId, value) => {
+    if (saving) return
+    setSaving(true)
+    const next = { ...ratings }
+    if (next[focusId] === value) delete next[focusId]
+    else next[focusId] = value
+    await onUpdate(training.id, { ratings: next })
+    setSaving(false)
   }
 
   const equipRows = EQUIP_TYPES
     .map(t => {
-      const id = match.equipment?.[t.id]
+      const id = training.equipment?.[t.id]
       if (!id) return null
       const item = equipment.find(e => e.id === id)
       if (!item) return { ...t, name: 'Non più disponibile', nickname: null }
@@ -79,13 +107,15 @@ export default function MatchDetailModal({
           <div className="flex items-start justify-between mb-3">
             <div>
               <p className="text-xs" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
-                {formatDate(match.date)}
+                {formatDate(training.date)}
               </p>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full mt-1"
-                    style={{ background: meta.bg, color: meta.color, fontFamily: 'var(--font-display)' }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
-                {meta.label}{!match.completed && match.result !== 'draw' ? ' · interrotta' : ''}
-              </span>
+              {intensity && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full mt-1"
+                      style={{ background: 'var(--color-surface-2)', color: intensity.color, fontFamily: 'var(--font-display)' }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: intensity.color }} />
+                  Intensità {intensity.label.toLowerCase()}
+                </span>
+              )}
             </div>
             {mode === 'view' && (
               <button onClick={onClose}
@@ -96,15 +126,32 @@ export default function MatchDetailModal({
             )}
           </div>
 
-          {/* Scoreboard grande */}
+          {/* Blocchi della sessione */}
           <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--color-surface-2)' }}>
-            <ScoreBoard
-              sets={match.sets}
-              format={match.format}
-              retired={match.retired}
-              opponentName={match.opponentName}
-              size="md"
-            />
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--color-slate)' }}>
+                Sessione
+              </span>
+              <span className="text-lg font-bold" style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
+                {formatMinutes(minutes)}
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {(training.blocks || []).map((b, i) => {
+                const meta = trainingKindMeta(b.kind)
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="text-xs shrink-0">{meta?.icon || '🎾'}</span>
+                    <span className="text-xs flex-1 truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                      {meta?.label || b.kind}
+                    </span>
+                    <span className="text-xs shrink-0" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+                      {formatMinutes(b.minutes)}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </div>
 
@@ -116,17 +163,46 @@ export default function MatchDetailModal({
               onClick={onEdit}
               className="w-full mb-4 py-2.5 rounded-2xl text-xs font-semibold transition-all"
               style={{ background: 'var(--color-surface-2)', color: 'var(--color-teal)', fontFamily: 'var(--font-display)', border: '1px solid var(--color-teal-dark)' }}>
-              ✏️ Modifica partita
+              ✏️ Modifica allenamento
             </button>
 
+            {training.brokeStrings && (
+              <div className="mb-4 rounded-2xl px-4 py-3 flex items-start gap-3"
+                   style={{ background: 'var(--color-loss-bg)', border: '1px solid var(--color-loss)' }}>
+                <span className="text-lg shrink-0">💥</span>
+                <p className="text-xs" style={{ color: 'var(--color-white)' }}>
+                  Corde rotte in questa sessione. Registra la nuova incordatura dalla
+                  racchetta in <strong>Equipment</strong> per azzerarne il consumo.
+                </p>
+              </div>
+            )}
+
             <Section title="Dettagli">
-              <Row label="Avversario" value={match.opponentName || '—'} />
-              <Row label="Tipo" value={match.eventName ? `${typeLabel} · ${match.eventName}` : typeLabel} />
-              <Row label="Superficie" value={`${surfaceIcon(match.surface)} ${cap(match.surface)}`} />
-              <Row label="Formato" value={fmt?.label || match.format} />
+              <Row label="Superficie" value={`${surfaceIcon(training.surface)} ${cap(training.surface)}`} />
+              {training.withWhom?.label && <Row label="Con chi" value={training.withWhom.label} />}
             </Section>
 
-            <AthleticsSection athletics={match.athletics} />
+            <FocusSection focus={focus} ratings={ratings} onRate={handleRate} />
+
+            {/* Usura prodotta: rende visibile il legame allenamento → attrezzatura
+                nel punto in cui si guarda la sessione, non solo settimane dopo
+                dentro Equipment */}
+            {(wear.strings > 0 || wear.shoes > 0) && (
+              <Section title="Consumo attrezzatura">
+                <Row label="🎾 Corde" value={`${Math.round(wear.strings)} game-eq`} />
+                <Row label="👟 Suola" value={`${Math.round(wear.shoes)} game-eq`}
+                     subValue={`prima della pesatura per ${training.surface || 'superficie'}`} />
+              </Section>
+            )}
+
+            <AthleticsSection athletics={training.athletics} />
+
+            <button
+              onClick={() => setMode('editAthletics')}
+              className="w-full mb-4 py-2.5 rounded-2xl text-xs font-semibold transition-all"
+              style={{ background: 'var(--color-surface-2)', color: 'var(--color-teal)', fontFamily: 'var(--font-display)', border: '1px solid var(--color-teal-dark)' }}>
+              {training.athletics ? '⌚ Modifica dati atletici' : '⌚ Aggiungi dati atletici'}
+            </button>
 
             {equipRows.length > 0 && (
               <Section title="Attrezzatura usata">
@@ -143,18 +219,28 @@ export default function MatchDetailModal({
                 onClick={() => setMode('confirmDelete')}
                 className="w-full py-3 rounded-2xl text-sm font-semibold transition-all"
                 style={{ background: 'var(--color-surface-2)', color: 'var(--color-loss)', fontFamily: 'var(--font-display)', border: '1px solid var(--color-loss-bg)' }}>
-                🗑️ Elimina partita
+                🗑️ Elimina allenamento
               </button>
             </div>
           </>}
 
+          {mode === 'editAthletics' && (
+            <TrainingAthleticsEditor
+              athletics={training.athletics}
+              sessionMinutes={minutes}
+              saving={saving}
+              onCancel={() => setMode('view')}
+              onSave={handleSaveAthletics}
+            />
+          )}
+
           {mode === 'confirmDelete' && (
             <div className="pt-2">
               <ConfirmBox
-                message="Eliminare questa partita? L'azione non può essere annullata."
+                message="Eliminare questo allenamento? L'azione non può essere annullata."
                 confirmLabel="Elimina"
                 onCancel={() => setMode('view')}
-                onConfirm={() => { onDelete(match.id); onClose() }}
+                onConfirm={() => { onDelete(training.id); onClose() }}
               />
             </div>
           )}
@@ -188,6 +274,57 @@ export default function MatchDetailModal({
 
 // ── Componenti interni ─────────────────────────────────────
 
+// Colpi lavorati + auto-valutazione. Le stelline sono il motore del blocco
+// "Progressi per colpo": senza un voto una sessione dice quanto hai allenato,
+// non come stai andando.
+function FocusSection({ focus, ratings, onRate }) {
+  if (focus.length === 0) return null
+
+  return (
+    <div className="mb-4">
+      <p className="text-xs font-semibold uppercase tracking-wider mb-2"
+         style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
+        Colpi e schemi lavorati
+      </p>
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
+        {focus.map(id => (
+          <div key={id} className="px-4 py-3 flex items-center justify-between gap-3"
+               style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            <div className="min-w-0">
+              <p className="text-xs font-medium truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                {focusLabel(id)}
+              </p>
+              {FOCUS_BY_ID[id]?.categoryLabel && (
+                <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>
+                  {FOCUS_BY_ID[id].categoryLabel}
+                </p>
+              )}
+            </div>
+            <RatingStars value={ratings[id] || 0} onChange={v => onRate(id, v)} />
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-slate)' }}>
+        Tocca le stelle per valutarti da 1 a 5 — è così che si costruisce il trend nel tempo.
+      </p>
+    </div>
+  )
+}
+
+function RatingStars({ value, onChange }) {
+  return (
+    <div className="flex items-center gap-0.5 shrink-0">
+      {Array.from({ length: MAX_RATING }, (_, i) => i + 1).map(n => (
+        <button key={n} onClick={() => onChange(n)} aria-label={`Valuta ${n}`}
+          className="w-6 h-6 flex items-center justify-center text-sm transition-all active:scale-90"
+          style={{ color: n <= value ? 'var(--color-amber)' : 'var(--color-slate)', opacity: n <= value ? 1 : 0.4 }}>
+          ★
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function Section({ title, children }) {
   return (
     <div className="mb-4">
@@ -220,7 +357,7 @@ function NotesSection({ notes, onAdd, onEditNote }) {
     <div className="mb-4">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
-          Note sulla partita
+          Note sull'allenamento
         </p>
         <button onClick={onAdd} className="text-xs font-semibold" style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-display)' }}>
           + Aggiungi
@@ -228,7 +365,7 @@ function NotesSection({ notes, onAdd, onEditNote }) {
       </div>
       {notes.length === 0 ? (
         <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--color-surface-2)' }}>
-          <p className="text-sm" style={{ color: 'var(--color-slate)' }}>Nessuna nota su questa partita.</p>
+          <p className="text-sm" style={{ color: 'var(--color-slate)' }}>Nessuna nota su questa sessione.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -258,7 +395,7 @@ function NoteEditor({ title, value, onChange, canSave, saving, onCancel, onSave,
           onChange={e => onChange(e.target.value)}
           maxLength={MAX_NOTE_LENGTH}
           rows={3}
-          placeholder="Come è andata, sensazioni, cosa ha funzionato..."
+          placeholder="Sensazioni, cosa ha funzionato, su cosa tornare..."
           className="w-full p-3 rounded-xl text-sm outline-none resize-none"
           style={{ background: 'var(--color-surface-2)', color: 'var(--color-white)', border: '1px solid var(--color-teal-dark)', fontFamily: 'var(--font-body)' }}
         />

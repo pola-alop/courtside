@@ -28,7 +28,7 @@ export async function updateOpponent(userId, opponentId, data) {
 // Nessun guard qui: il controllo "avversario con match collegati non
 // eliminabile" vive lato UI (OpponentDetailModal.jsx + Matches.jsx), dove
 // useOpponents e useMatches sono già entrambi disponibili — coerente con
-// l'equivalente guard per l'attrezzatura (linkedMatchesCount in wear.js).
+// l'equivalente guard per l'attrezzatura (linkedSessionsCount in wear.js).
 export async function deleteOpponent(userId, opponentId) {
   const ref = doc(db, 'users', userId, 'opponents', opponentId)
   return await deleteDoc(ref)

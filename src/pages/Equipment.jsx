@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useEquipment } from '../hooks/useEquipment'
 import { useMatches } from '../hooks/useMatches'
-import { linkedMatchesCount } from '../lib/wear'
+import { useTrainings } from '../hooks/useTrainings'
+import { linkedSessionsCount } from '../lib/wear'
 import EquipmentCard from '../components/equipment/EquipmentCard'
 import AddEquipmentModal from '../components/equipment/AddEquipmentModal'
 import EquipmentDetailModal from '../components/equipment/EquipmentDetailModal'
@@ -23,9 +24,11 @@ const CLUSTER_ORDER = [
 
 export default function Equipment() {
   const { equipment, loading, add, update, archive, unarchive, remove, addStrings, deleteStringsHistory } = useEquipment()
-  // Match dell'utente: chiudono il cerchio con l'attrezzatura (usura corde/suola
-  // calcolata dai game giocati con ogni capo). Vedi src/lib/wear.js.
+  // Partite E allenamenti dell'utente: insieme chiudono il cerchio con
+  // l'attrezzatura (usura corde/suola calcolata dal gioco reale fatto con ogni
+  // capo, su due assi separati). Vedi src/lib/wear.js.
   const { matches } = useMatches()
+  const { trainings } = useTrainings()
   const [activeTab, setActiveTab]     = useState('all')
   const [showAdd, setShowAdd]         = useState(false)
   const [selectedId, setSelectedId]   = useState(null)
@@ -131,6 +134,7 @@ export default function Equipment() {
                         key={item.id}
                         item={item}
                         matches={matches}
+                        trainings={trainings}
                         onClick={() => setSelectedId(item.id)}
                       />
                     ))}
@@ -150,6 +154,7 @@ export default function Equipment() {
                     key={item.id}
                     item={item}
                     matches={matches}
+                    trainings={trainings}
                     onClick={() => setSelectedId(item.id)}
                   />
                 ))}
@@ -173,6 +178,7 @@ export default function Equipment() {
                       key={item.id}
                       item={item}
                       matches={matches}
+                      trainings={trainings}
                       onClick={() => setSelectedId(item.id)}
                     />
                   ))}
@@ -197,6 +203,7 @@ export default function Equipment() {
         <EquipmentDetailModal
           item={selectedItem}
           matches={matches}
+          trainings={trainings}
           onClose={() => setSelectedId(null)}
           onArchive={async (id) => {
             await archive(id)
@@ -208,9 +215,9 @@ export default function Equipment() {
           }}
           onDelete={async (id) => {
             // Guard difensiva: il bottone di eliminazione è già nascosto nel
-            // modale quando ci sono match collegati, ma non fidarsi solo della UI.
+            // modale quando ci sono sessioni collegate, ma non fidarsi solo della UI.
             const item = equipment.find(e => e.id === id)
-            if (item && linkedMatchesCount(item, matches) > 0) return
+            if (item && linkedSessionsCount(item, matches, trainings) > 0) return
             await remove(id)
             setSelectedId(null)
             setDeleteToast(true)

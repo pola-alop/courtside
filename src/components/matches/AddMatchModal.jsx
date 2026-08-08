@@ -9,7 +9,7 @@ import {
   athleticsIssues, hasAthletics, splitDuration, joinDuration, zonesTotalSec,
   trainingEffectLabel, formatDuration,
 } from '../../lib/athletics'
-import TrainingEffectInfoButton from './TrainingEffectInfo'
+import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura', 'Atletica']
 

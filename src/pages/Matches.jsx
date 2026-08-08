@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useOpponents } from '../hooks/useOpponents'
 import { useMatches } from '../hooks/useMatches'
+import { useTrainings } from '../hooks/useTrainings'
 import { useEquipment } from '../hooks/useEquipment'
 import OpponentCard from '../components/matches/OpponentCard'
 import AddOpponentModal from '../components/matches/AddOpponentModal'
@@ -8,7 +9,16 @@ import OpponentDetailModal from '../components/matches/OpponentDetailModal'
 import MatchRow from '../components/matches/MatchRow'
 import AddMatchModal from '../components/matches/AddMatchModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
+import ActivityCalendar from '../components/matches/ActivityCalendar'
+import TrainingRow from '../components/trainings/TrainingRow'
+import AddTrainingModal from '../components/trainings/AddTrainingModal'
+import TrainingDetailModal from '../components/trainings/TrainingDetailModal'
+import FocusProgress from '../components/trainings/FocusProgress'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
+import {
+  TRAINING_KINDS, INTENSITIES, FOCUS_CATEGORIES, FOCUS_BY_ID,
+  totalMinutes, formatHours, focusLabel,
+} from '../lib/training'
 
 const TABS = [
   { id: 'panoramica',  label: 'Panoramica',  icon: '🗂' },
@@ -27,6 +37,7 @@ const RESULT_FILTERS = [
 export default function Matches() {
   const { opponents, loading: oppLoading, add: addOpponent, update: updateOpponent, remove: removeOpponent } = useOpponents()
   const { matches,   loading: matchLoading, add: addMatch, update: updateMatch, remove: removeMatch } = useMatches()
+  const { trainings, loading: trainLoading, add: addTraining, update: updateTraining, remove: removeTraining } = useTrainings()
   const { equipment } = useEquipment()
 
   const [activeTab, setActiveTab] = useState('partite')
@@ -50,9 +61,21 @@ export default function Matches() {
   const [fDateTo, setFDateTo]     = useState('')
   const [fResult, setFResult]     = useState('all')
 
+  // Allenamenti
+  const [showAddTraining, setShowAddTraining] = useState(false)
+  const [editingTraining, setEditingTraining] = useState(null)
+  const [selectedTrainingId, setSelectedTrainingId] = useState(null)
+  const [trainingDeleteToast, setTrainingDeleteToast] = useState(false)
+  const [fKind, setFKind]           = useState('all')
+  const [fFocus, setFFocus]         = useState('all')
+  const [fIntensity, setFIntensity] = useState('all')
+  const [fTrDateFrom, setFTrDateFrom] = useState('')
+  const [fTrDateTo, setFTrDateTo]     = useState('')
+
   // Item selezionati derivati (pattern "selected item derivato")
   const selectedOpponent = selectedOpponentId ? opponents.find(o => o.id === selectedOpponentId) || null : null
   const selectedMatch    = selectedMatchId ? matches.find(m => m.id === selectedMatchId) || null : null
+  const selectedTraining = selectedTrainingId ? trainings.find(t => t.id === selectedTrainingId) || null : null
 
   // Record H2H reale (chiusura del cerchio con la sezione Partite)
   const recordFor = (opponentId) => {
@@ -96,11 +119,40 @@ export default function Matches() {
     setFResult('all')
   }
 
+  // ── Filtri allenamenti ──
+  // Il filtro per colpo elenca solo i focus davvero usati: la tassonomia
+  // completa (~45 voci) in una select sarebbe illeggibile.
+  const usedFocusIds = [...new Set(trainings.flatMap(t => t.focus || []))].filter(id => FOCUS_BY_ID[id])
+
+  const filteredTrainings = trainings.filter(t => {
+    if (fKind !== 'all' && !(t.blocks || []).some(b => b.kind === fKind)) return false
+    if (fFocus !== 'all' && !(t.focus || []).includes(fFocus)) return false
+    if (fIntensity !== 'all' && t.intensity !== fIntensity) return false
+    if (fTrDateFrom && t.date.slice(0, 10) < fTrDateFrom) return false
+    if (fTrDateTo && t.date.slice(0, 10) > fTrDateTo) return false
+    return true
+  })
+  const trainingMonthGroups = groupByMonth(filteredTrainings)
+
+  const hasActiveTrainingFilters = fKind !== 'all' || fFocus !== 'all' || fIntensity !== 'all'
+    || fTrDateFrom !== '' || fTrDateTo !== ''
+  const resetTrainingFilters = () => {
+    setFKind('all')
+    setFFocus('all')
+    setFIntensity('all')
+    setFTrDateFrom('')
+    setFTrDateTo('')
+  }
+
   const oppQuery = oppSearch.trim().toLowerCase()
   const visibleOpponents = oppQuery ? opponents.filter(o => o.name.toLowerCase().includes(oppQuery)) : opponents
 
-  const showAddButton = activeTab === 'avversari' || activeTab === 'partite'
-  const onAdd = () => activeTab === 'avversari' ? setShowAddOpponent(true) : setShowAddMatch(true)
+  const showAddButton = activeTab === 'avversari' || activeTab === 'partite' || activeTab === 'allenamenti'
+  const onAdd = () => {
+    if (activeTab === 'avversari') setShowAddOpponent(true)
+    else if (activeTab === 'allenamenti') setShowAddTraining(true)
+    else setShowAddMatch(true)
+  }
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
@@ -225,8 +277,61 @@ export default function Matches() {
           )
         )}
 
-        {/* ── PANORAMICA / ALLENAMENTI ── */}
-        {(activeTab === 'panoramica' || activeTab === 'allenamenti') && <ComingSoon tab={activeTab} />}
+        {/* ── ALLENAMENTI ── */}
+        {activeTab === 'allenamenti' && (
+          trainLoading ? (
+            <Spinner />
+          ) : trainings.length === 0 ? (
+            <EmptyState icon="🎯" title="Nessun allenamento." sub="Registra le sessioni tecniche per vedere su cosa stai lavorando davvero." onAdd={() => setShowAddTraining(true)} />
+          ) : (
+            <div className="space-y-4">
+              <FocusProgress trainings={trainings} />
+
+              <TrainingFilters
+                kind={fKind} setKind={setFKind}
+                focus={fFocus} setFocus={setFFocus} focusOptions={usedFocusIds}
+                intensity={fIntensity} setIntensity={setFIntensity}
+                dateFrom={fTrDateFrom} setDateFrom={setFTrDateFrom}
+                dateTo={fTrDateTo} setDateTo={setFTrDateTo}
+                hasActiveFilters={hasActiveTrainingFilters}
+                onReset={resetTrainingFilters}
+              />
+
+              {filteredTrainings.length === 0 ? (
+                <p className="text-sm text-center pt-8" style={{ color: 'var(--color-slate)' }}>
+                  Nessun allenamento con questi filtri.
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {trainingMonthGroups.map(group => (
+                    <div key={group.key}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider"
+                           style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
+                          {group.label}
+                        </p>
+                        <div className="flex-1 h-px" style={{ background: 'var(--color-surface-2)' }} />
+                        <span className="text-xs" style={{ color: 'var(--color-slate)' }}>
+                          {formatHours(group.items.reduce((sum, t) => sum + totalMinutes(t.blocks), 0))} h
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {group.items.map(t => (
+                          <TrainingRow key={t.id} training={t} onClick={() => setSelectedTrainingId(t.id)} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        )}
+
+        {/* ── PANORAMICA ── */}
+        {activeTab === 'panoramica' && (
+          (matchLoading || trainLoading) ? <Spinner /> : <Overview matches={matches} trainings={trainings} />
+        )}
       </div>
 
       {/* ── Modali Avversari ── */}
@@ -276,9 +381,35 @@ export default function Matches() {
         />
       )}
 
+      {/* ── Modali Allenamenti ── */}
+      {(showAddTraining || editingTraining) && (
+        <AddTrainingModal
+          initial={editingTraining}
+          opponents={opponents}
+          equipment={equipment}
+          trainings={trainings}
+          onClose={() => { setShowAddTraining(false); setEditingTraining(null) }}
+          onSave={async (data) => {
+            if (editingTraining) await updateTraining(editingTraining.id, data)
+            else await addTraining(data)
+          }}
+        />
+      )}
+      {selectedTraining && (
+        <TrainingDetailModal
+          training={selectedTraining}
+          equipment={equipment}
+          onClose={() => setSelectedTrainingId(null)}
+          onEdit={() => { setEditingTraining(selectedTraining); setSelectedTrainingId(null) }}
+          onUpdate={async (id, data) => { await updateTraining(id, data) }}
+          onDelete={async (id) => { await removeTraining(id); setSelectedTrainingId(null); setTrainingDeleteToast(true) }}
+        />
+      )}
+
       {/* Toast eliminazione */}
       {oppDeleteToast && <Toast title="Avversario eliminato" sub="È stato rimosso dalla tua anagrafica." onClose={() => setOppDeleteToast(false)} />}
       {matchDeleteToast && <Toast title="Partita eliminata" sub="È stata rimossa dallo storico." onClose={() => setMatchDeleteToast(false)} />}
+      {trainingDeleteToast && <Toast title="Allenamento eliminato" sub="È stato rimosso dallo storico." onClose={() => setTrainingDeleteToast(false)} />}
     </div>
   )
 }
@@ -357,6 +488,164 @@ function MatchFilters({
   )
 }
 
+// ── Filtri allenamenti ─────────────────────────────────────
+
+function TrainingFilters({
+  kind, setKind,
+  focus, setFocus, focusOptions,
+  intensity, setIntensity,
+  dateFrom, setDateFrom, dateTo, setDateTo,
+  hasActiveFilters, onReset
+}) {
+  // Le opzioni del filtro colpo sono raggruppate per categoria, così la select
+  // resta navigabile anche con molte voci in uso.
+  const groupedFocus = FOCUS_CATEGORIES
+    .map(cat => ({ ...cat, items: cat.items.filter(i => focusOptions.includes(i.id)) }))
+    .filter(cat => cat.items.length > 0)
+
+  return (
+    <div className="space-y-2">
+      {hasActiveFilters && (
+        <div className="flex justify-end">
+          <button onClick={onReset}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all active:scale-95"
+            style={{ background: 'var(--color-surface)', color: 'var(--color-amber)', border: '1px solid var(--color-surface-2)', fontFamily: 'var(--font-display)' }}>
+            <span>✕</span>
+            <span>Cancella filtri</span>
+          </button>
+        </div>
+      )}
+
+      {/* Tipo di blocco */}
+      <div className="flex gap-2 overflow-x-auto" style={{ minWidth: 'max-content' }}>
+        <Chip active={kind === 'all'} onClick={() => setKind('all')}>Tutti</Chip>
+        {TRAINING_KINDS.map(k => (
+          <Chip key={k.id} active={kind === k.id} onClick={() => setKind(k.id)} icon={k.icon}>{k.label}</Chip>
+        ))}
+      </div>
+
+      {/* Range di date */}
+      <div className="flex gap-2">
+        <DateInput value={dateFrom} onChange={setDateFrom} placeholder="Da" />
+        <DateInput value={dateTo} onChange={setDateTo} placeholder="A" />
+      </div>
+
+      {/* Colpo lavorato */}
+      {groupedFocus.length > 0 && (
+        <Select value={focus} onChange={setFocus}>
+          <option value="all">Tutti i colpi e schemi</option>
+          {groupedFocus.map(cat => (
+            <optgroup key={cat.id} label={cat.label}>
+              {cat.items.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}
+            </optgroup>
+          ))}
+        </Select>
+      )}
+
+      {/* Intensità */}
+      <div className="flex gap-2">
+        <Chip active={intensity === 'all'} onClick={() => setIntensity('all')}>Tutte</Chip>
+        {INTENSITIES.map(i => (
+          <Chip key={i.id} active={intensity === i.id} onClick={() => setIntensity(i.id)} dot={i.color}>
+            {i.label}
+          </Chip>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Panoramica ─────────────────────────────────────────────
+
+// Landing di sintesi dell'area: risponde a "come sto andando" prima ancora di
+// entrare nel dettaglio di partite o allenamenti. Le tile guardano al mese
+// corrente (l'unità con cui si ragiona quando ci si allena), il calendario agli
+// ultimi 6 mesi per dare il senso della continuità.
+function Overview({ matches, trainings }) {
+  const now = new Date()
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const inMonth = (d) => monthKey(d) === thisMonth
+
+  const monthMatches   = matches.filter(m => inMonth(m.date))
+  const monthTrainings = trainings.filter(t => inMonth(t.date))
+  const monthMinutes   = monthTrainings.reduce((sum, t) => sum + totalMinutes(t.blocks), 0)
+
+  // Un giorno conta una volta sola anche se ci sono più sessioni
+  const activeDays = new Set([
+    ...monthMatches.map(m => m.date.slice(0, 10)),
+    ...monthTrainings.map(t => t.date.slice(0, 10)),
+  ]).size
+
+  // I colpi più lavorati negli ultimi 30 giorni: l'analisi completa vivrà in
+  // Stats (heatmap del focus), qui basta il vertice della classifica.
+  const since = new Date(now)
+  since.setDate(now.getDate() - 30)
+  const focusCounts = {}
+  trainings
+    .filter(t => new Date(t.date) >= since)
+    .forEach(t => (t.focus || []).forEach(id => { focusCounts[id] = (focusCounts[id] || 0) + 1 }))
+  const topFocus = Object.entries(focusCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
+
+  if (matches.length === 0 && trainings.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center pt-20 text-center">
+        <span className="text-5xl mb-4 opacity-60">🗂</span>
+        <p className="text-base font-semibold mb-1" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+          Ancora niente da riassumere.
+        </p>
+        <p className="text-sm" style={{ color: 'var(--color-slate)' }}>
+          Registra una partita o un allenamento per popolare la panoramica.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2">
+        <StatTile label="Partite del mese"     value={String(monthMatches.length)}   color="var(--color-amber)" />
+        <StatTile label="Allenamenti del mese" value={String(monthTrainings.length)} color="var(--color-teal)" />
+        <StatTile label="Ore allenate"         value={formatHours(monthMinutes)}     color="var(--color-white)" />
+        <StatTile label="Giorni in campo"      value={String(activeDays)}            color="var(--color-win)" />
+      </div>
+
+      <ActivityCalendar matches={matches} trainings={trainings} />
+
+      {topFocus.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-3"
+             style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
+            Più lavorati (30 giorni)
+          </p>
+          <div className="space-y-2">
+            {topFocus.map(([id, count]) => (
+              <div key={id} className="flex items-center gap-3">
+                <span className="text-xs flex-1 truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                  {focusLabel(id)}
+                </span>
+                <div className="h-1.5 rounded-full shrink-0"
+                     style={{ width: `${(count / topFocus[0][1]) * 40}%`, minWidth: 8, background: 'var(--color-teal-dark)' }} />
+                <span className="text-xs w-6 text-right shrink-0" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+                  {count}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StatTile({ label, value, color }) {
+  return (
+    <div className="rounded-2xl px-2 py-3 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
+      <p className="text-xl font-bold" style={{ color, fontFamily: 'var(--font-display)' }}>{value}</p>
+      <p className="text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--color-slate)' }}>{label}</p>
+    </div>
+  )
+}
+
 function Chip({ active, onClick, children, dot, icon }) {
   return (
     <button onClick={onClick}
@@ -421,21 +710,6 @@ function EmptyState({ icon, title, sub, onAdd }) {
         style={{ background: 'var(--color-amber)', color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}>
         + Aggiungi
       </button>
-    </div>
-  )
-}
-
-function ComingSoon({ tab }) {
-  const messages = {
-    panoramica:  { icon: '🗂', text: 'Panoramica in arrivo.',  sub: 'Prossima partita, forma recente e scorciatoie rapide.' },
-    allenamenti: { icon: '🎯', text: 'Allenamenti in arrivo.',  sub: 'Traccia le sessioni tecniche e i colpi allenati.' },
-  }
-  const m = messages[tab] || messages.panoramica
-  return (
-    <div className="flex flex-col items-center justify-center pt-20 text-center">
-      <span className="text-5xl mb-4 opacity-60">{m.icon}</span>
-      <p className="text-base font-semibold mb-1" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{m.text}</p>
-      <p className="text-sm" style={{ color: 'var(--color-slate)' }}>{m.sub}</p>
     </div>
   )
 }

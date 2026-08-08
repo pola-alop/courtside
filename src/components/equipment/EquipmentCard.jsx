@@ -1,7 +1,7 @@
 import { computeWear, wearLevelMeta } from '../../lib/wear'
 
-export default function EquipmentCard({ item, matches = [], onClick }) {
-  const wearInfo = computeWear(item, matches)
+export default function EquipmentCard({ item, matches = [], trainings = [], onClick }) {
+  const wearInfo = computeWear(item, matches, trainings)
   const subtitle = getSubtitle(item)
   const modelName = item.model || item.name || '—'
   const isArchived = item.active === false

@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { computeWear, wearLevelMeta, linkedMatchesCount } from '../../lib/wear'
+import { computeWear, wearLevelMeta, linkedSessionsCount } from '../../lib/wear'
 
 export default function EquipmentDetailModal({
-  item, matches = [], onClose, onArchive, onUnarchive, onDelete, onUpdate, onAddStrings, onDeleteStringsHistory
+  item, matches = [], trainings = [], onClose, onArchive, onUnarchive, onDelete, onUpdate, onAddStrings, onDeleteStringsHistory
 }) {
   const [mode, setMode]             = useState('view')  // view | edit | addStrings | confirmArchive | confirmUnarchive | confirmDelete
   const [editForm, setEditForm]     = useState(null)
@@ -87,14 +87,15 @@ export default function EquipmentDetailModal({
     setHistoryDeleteDone(true)
   }
 
-  const wearInfo = computeWear(item, matches)
+  const wearInfo = computeWear(item, matches, trainings)
   const hasImage = Boolean(item.imageUrl)
   const isArchived = item.active === false
 
-  // Un'attrezzatura citata da uno storico match non può essere eliminata
-  // (serve alle statistiche future): l'unica azione disponibile resta l'archiviazione.
-  const matchCount = linkedMatchesCount(item, matches)
-  const hasMatches = matchCount > 0
+  // Un'attrezzatura citata da una sessione storica — partita O allenamento —
+  // non può essere eliminata (serve alle statistiche future): l'unica azione
+  // disponibile resta l'archiviazione.
+  const sessionCount = linkedSessionsCount(item, matches, trainings)
+  const hasSessions = sessionCount > 0
 
   return (
     <>
@@ -441,14 +442,15 @@ export default function EquipmentDetailModal({
                 )
               )}
 
-              {/* Elimina — bloccata se l'attrezzatura ha match collegati: quei dati
-                  servono alle statistiche future, quindi resta solo l'archiviazione */}
+              {/* Elimina — bloccata se l'attrezzatura ha sessioni collegate (partite
+                  o allenamenti): quei dati servono alle statistiche future, quindi
+                  resta solo l'archiviazione */}
               {mode === 'view' && (
-                hasMatches ? (
+                hasSessions ? (
                   <div className="p-3 rounded-2xl text-center"
                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-surface-2)' }}>
                     <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
-                      🔒 Non eliminabile: collegata a {matchCount} {matchCount === 1 ? 'partita' : 'partite'}. Puoi solo archiviarla.
+                      🔒 Non eliminabile: collegata a {sessionCount} {sessionCount === 1 ? 'sessione' : 'sessioni'} tra partite e allenamenti. Puoi solo archiviarla.
                     </p>
                   </div>
                 ) : (

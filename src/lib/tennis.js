@@ -166,6 +166,52 @@ export function hasScore(set) {
   return (set.me || 0) > 0 || (set.opp || 0) > 0
 }
 
+// ── Game giocati e durata ───────────────────────────────────
+
+// Un super tie-break (set decisivo Amatoriale) non ha game: lo contiamo come un
+// equivalente fisso di ~2 game (durata di un mini-set a 10 punti).
+export const SUPER_TB_GAME_EQUIV = 2
+
+// Game giocati in un match, sommando i game di ogni set. Per il super tie-break
+// (riconosciuto dal formato) si usa l'equivalente fisso. Se il match è legacy e
+// non ha `format`, si sommano i punteggi grezzi (approssimazione accettabile).
+// Vive qui e non in wear.js perché "quanti game sono stati giocati" è un fatto
+// di scoring: l'usura ne è solo il primo consumatore, la durata il secondo.
+export function gamesInMatch(match) {
+  const fmt = MATCH_FORMATS[match?.format]
+  const sets = match?.sets || []
+  let games = 0
+  sets.forEach((s, i) => {
+    if (fmt && setKind(fmt, i) === 'superTb') {
+      games += SUPER_TB_GAME_EQUIV
+      return
+    }
+    games += (s?.me || 0) + (s?.opp || 0)
+  })
+  return games
+}
+
+// Minuti "in campo" di un game, usati solo per la STIMA (vedi `matchMinutes`).
+// ~5 minuti è la taratura amatoriale: un 6-4 6-3 (19 game) esce a ~1h35, un
+// 6-0 6-0 (12 game) a un'ora scarsa.
+export const MINUTES_PER_GAME = 5
+
+// Il match NON ha un campo durata: l'unico dato misurato è
+// `athletics.durationSec`, che è facoltativo (lo si compila solo trascrivendo i
+// dati dall'orologio). Un totale di "ore in campo" che contasse 0 le partite
+// senza dati atletici mentirebbe verso il basso proprio nei mesi in cui si è
+// giocato di più, quindi quando il dato reale manca la durata viene stimata dai
+// game. Chi consuma questa funzione DEVE segnalare la stima all'utente
+// (prefisso "~") invece di spacciarla per una misura — vedi `hasRealDuration`.
+export function matchMinutes(match) {
+  if (hasRealDuration(match)) return match.athletics.durationSec / 60
+  return gamesInMatch(match) * MINUTES_PER_GAME
+}
+
+export function hasRealDuration(match) {
+  return Number(match?.athletics?.durationSec) > 0
+}
+
 // Meta per la UI dell'esito (bollino + etichetta)
 export const RESULT_META = {
   win:  { label: 'Vittoria',  color: 'var(--color-win)',  bg: 'var(--color-win-bg)'  },

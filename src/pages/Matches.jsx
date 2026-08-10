@@ -9,7 +9,7 @@ import OpponentDetailModal from '../components/matches/OpponentDetailModal'
 import MatchRow from '../components/matches/MatchRow'
 import AddMatchModal from '../components/matches/AddMatchModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
-import ActivityCalendar from '../components/matches/ActivityCalendar'
+import Overview from '../components/matches/Overview'
 import TrainingRow from '../components/trainings/TrainingRow'
 import AddTrainingModal from '../components/trainings/AddTrainingModal'
 import TrainingDetailModal from '../components/trainings/TrainingDetailModal'
@@ -17,7 +17,7 @@ import FocusProgress from '../components/trainings/FocusProgress'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import {
   TRAINING_KINDS, INTENSITIES, FOCUS_CATEGORIES, FOCUS_BY_ID,
-  totalMinutes, formatHours, focusLabel,
+  totalMinutes, formatHours,
 } from '../lib/training'
 
 const TABS = [
@@ -40,7 +40,7 @@ export default function Matches() {
   const { trainings, loading: trainLoading, add: addTraining, update: updateTraining, remove: removeTraining } = useTrainings()
   const { equipment } = useEquipment()
 
-  const [activeTab, setActiveTab] = useState('partite')
+  const [activeTab, setActiveTab] = useState('panoramica')
 
   // Avversari
   const [showAddOpponent, setShowAddOpponent] = useState(false)
@@ -330,7 +330,17 @@ export default function Matches() {
 
         {/* ── PANORAMICA ── */}
         {activeTab === 'panoramica' && (
-          (matchLoading || trainLoading) ? <Spinner /> : <Overview matches={matches} trainings={trainings} />
+          (matchLoading || trainLoading) ? <Spinner /> : (
+            <Overview
+              matches={matches}
+              trainings={trainings}
+              equipment={equipment}
+              onSelectMatch={setSelectedMatchId}
+              onSelectTraining={setSelectedTrainingId}
+              onAddMatch={() => setShowAddMatch(true)}
+              onAddTraining={() => setShowAddTraining(true)}
+            />
+          )
         )}
       </div>
 
@@ -551,97 +561,6 @@ function TrainingFilters({
           </Chip>
         ))}
       </div>
-    </div>
-  )
-}
-
-// ── Panoramica ─────────────────────────────────────────────
-
-// Landing di sintesi dell'area: risponde a "come sto andando" prima ancora di
-// entrare nel dettaglio di partite o allenamenti. Le tile guardano al mese
-// corrente (l'unità con cui si ragiona quando ci si allena), il calendario agli
-// ultimi 6 mesi per dare il senso della continuità.
-function Overview({ matches, trainings }) {
-  const now = new Date()
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const inMonth = (d) => monthKey(d) === thisMonth
-
-  const monthMatches   = matches.filter(m => inMonth(m.date))
-  const monthTrainings = trainings.filter(t => inMonth(t.date))
-  const monthMinutes   = monthTrainings.reduce((sum, t) => sum + totalMinutes(t.blocks), 0)
-
-  // Un giorno conta una volta sola anche se ci sono più sessioni
-  const activeDays = new Set([
-    ...monthMatches.map(m => m.date.slice(0, 10)),
-    ...monthTrainings.map(t => t.date.slice(0, 10)),
-  ]).size
-
-  // I colpi più lavorati negli ultimi 30 giorni: l'analisi completa vivrà in
-  // Stats (heatmap del focus), qui basta il vertice della classifica.
-  const since = new Date(now)
-  since.setDate(now.getDate() - 30)
-  const focusCounts = {}
-  trainings
-    .filter(t => new Date(t.date) >= since)
-    .forEach(t => (t.focus || []).forEach(id => { focusCounts[id] = (focusCounts[id] || 0) + 1 }))
-  const topFocus = Object.entries(focusCounts).sort((a, b) => b[1] - a[1]).slice(0, 5)
-
-  if (matches.length === 0 && trainings.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center pt-20 text-center">
-        <span className="text-5xl mb-4 opacity-60">🗂</span>
-        <p className="text-base font-semibold mb-1" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-          Ancora niente da riassumere.
-        </p>
-        <p className="text-sm" style={{ color: 'var(--color-slate)' }}>
-          Registra una partita o un allenamento per popolare la panoramica.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2">
-        <StatTile label="Partite del mese"     value={String(monthMatches.length)}   color="var(--color-amber)" />
-        <StatTile label="Allenamenti del mese" value={String(monthTrainings.length)} color="var(--color-teal)" />
-        <StatTile label="Ore allenate"         value={formatHours(monthMinutes)}     color="var(--color-white)" />
-        <StatTile label="Giorni in campo"      value={String(activeDays)}            color="var(--color-win)" />
-      </div>
-
-      <ActivityCalendar matches={matches} trainings={trainings} />
-
-      {topFocus.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
-          <p className="text-xs font-semibold uppercase tracking-wider mb-3"
-             style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
-            Più lavorati (30 giorni)
-          </p>
-          <div className="space-y-2">
-            {topFocus.map(([id, count]) => (
-              <div key={id} className="flex items-center gap-3">
-                <span className="text-xs flex-1 truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-                  {focusLabel(id)}
-                </span>
-                <div className="h-1.5 rounded-full shrink-0"
-                     style={{ width: `${(count / topFocus[0][1]) * 40}%`, minWidth: 8, background: 'var(--color-teal-dark)' }} />
-                <span className="text-xs w-6 text-right shrink-0" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
-                  {count}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function StatTile({ label, value, color }) {
-  return (
-    <div className="rounded-2xl px-2 py-3 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
-      <p className="text-xl font-bold" style={{ color, fontFamily: 'var(--font-display)' }}>{value}</p>
-      <p className="text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--color-slate)' }}>{label}</p>
     </div>
   )
 }

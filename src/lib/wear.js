@@ -31,7 +31,10 @@
 // per cui in allenamento le corde muoiono molto più in fretta che in partita, a
 // parità di ore. Le tariffe qui sotto traducono questa densità in game/ora.
 
-import { MATCH_FORMATS, setKind } from './tennis'
+// `gamesInMatch` (e il suo equivalente per il super tie-break) vivono in
+// tennis.js: contare i game è scoring, non usura. Qui restano solo i budget e
+// le tariffe, che sono la parte davvero "di dominio usura".
+import { gamesInMatch } from './tennis'
 
 // ── Budget di vita (costanti tarabili) ──────────────────────
 // Corde: due assi indipendenti, vince il più consumato.
@@ -56,10 +59,6 @@ export const SURFACE_WEAR = {
   erba:    0.8,  // grass: la più dolce
   indoor:  1.0,  // riferimento neutro
 }
-
-// Un super tie-break (set decisivo Amatoriale) non ha game: lo contiamo come un
-// equivalente fisso di ~2 game (durata di un mini-set a 10 punti).
-export const SUPER_TB_GAME_EQUIV = 2
 
 // ── Tariffe di usura degli allenamenti ──────────────────────
 // Game-equivalenti prodotti da UN'ORA di ciascun tipo di blocco, per asse.
@@ -106,23 +105,6 @@ const HIGH_AT   = 1.0
 export const OUTFIT_MATCH_LIMIT = 50
 
 // ── Helpers puri ────────────────────────────────────────────
-
-// Game giocati in un match, sommando i game di ogni set. Per il super tie-break
-// (riconosciuto dal formato) si usa l'equivalente fisso. Se il match è legacy e
-// non ha `format`, si sommano i punteggi grezzi (approssimazione accettabile).
-export function gamesInMatch(match) {
-  const fmt = MATCH_FORMATS[match?.format]
-  const sets = match?.sets || []
-  let games = 0
-  sets.forEach((s, i) => {
-    if (fmt && setKind(fmt, i) === 'superTb') {
-      games += SUPER_TB_GAME_EQUIV
-      return
-    }
-    games += (s?.me || 0) + (s?.opp || 0)
-  })
-  return games
-}
 
 // Game-equivalenti prodotti da una sessione di allenamento, per asse.
 // I game "suola" NON sono ancora pesati per superficie: lo fa `shoeWear`, così

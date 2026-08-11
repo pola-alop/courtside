@@ -112,12 +112,17 @@ export default function MatchDetailModal({
         <div className="overflow-y-auto flex-1 px-6 py-4">
 
           {mode === 'view' && <>
-            <button
-              onClick={onEdit}
-              className="w-full mb-4 py-2.5 rounded-2xl text-xs font-semibold transition-all"
-              style={{ background: 'var(--color-surface-2)', color: 'var(--color-teal)', fontFamily: 'var(--font-display)', border: '1px solid var(--color-teal-dark)' }}>
-              ✏️ Modifica partita
-            </button>
+            {/* Modifica ed eliminazione compaiono solo se il chiamante le
+                fornisce: da Stats il dettaglio si apre in sola lettura (con le
+                note ancora modificabili), perché il wizard vive in Matches. */}
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="w-full mb-4 py-2.5 rounded-2xl text-xs font-semibold transition-all"
+                style={{ background: 'var(--color-surface-2)', color: 'var(--color-teal)', fontFamily: 'var(--font-display)', border: '1px solid var(--color-teal-dark)' }}>
+                ✏️ Modifica partita
+              </button>
+            )}
 
             <Section title="Dettagli">
               <Row label="Avversario" value={match.opponentName || '—'} />
@@ -138,14 +143,16 @@ export default function MatchDetailModal({
 
             <NotesSection notes={sortedNotes} onAdd={openAddNote} onEditNote={openEditNote} />
 
-            <div className="mt-6 pb-2">
-              <button
-                onClick={() => setMode('confirmDelete')}
-                className="w-full py-3 rounded-2xl text-sm font-semibold transition-all"
-                style={{ background: 'var(--color-surface-2)', color: 'var(--color-loss)', fontFamily: 'var(--font-display)', border: '1px solid var(--color-loss-bg)' }}>
-                🗑️ Elimina partita
-              </button>
-            </div>
+            {onDelete && (
+              <div className="mt-6 pb-2">
+                <button
+                  onClick={() => setMode('confirmDelete')}
+                  className="w-full py-3 rounded-2xl text-sm font-semibold transition-all"
+                  style={{ background: 'var(--color-surface-2)', color: 'var(--color-loss)', fontFamily: 'var(--font-display)', border: '1px solid var(--color-loss-bg)' }}>
+                  🗑️ Elimina partita
+                </button>
+              </div>
+            )}
           </>}
 
           {mode === 'confirmDelete' && (

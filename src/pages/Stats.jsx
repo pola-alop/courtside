@@ -1,7 +1,250 @@
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useMatches } from '../hooks/useMatches'
+import { useTrainings } from '../hooks/useTrainings'
+import { useOpponents } from '../hooks/useOpponents'
+import { useEquipment } from '../hooks/useEquipment'
+import Rendimento from '../components/stats/Rendimento'
+import InsightList from '../components/stats/InsightList'
+import MatchListModal from '../components/stats/MatchListModal'
+import MatchDetailModal from '../components/matches/MatchDetailModal'
+import {
+  PERIODS, DEFAULT_PERIOD, MIN_CORE, buildRendimento, coreStats, filterPeriod, periodRange,
+} from '../lib/stats'
+
+// Pagina Stats — organizzata per DOMANDE, non per dataset.
+//
+// Cinque sezioni intitolate a ciò a cui rispondono: raggruppare per dominio
+// (matches / trainings / athletics) rispecchierebbe il database e non la testa
+// di chi guarda. Oggi è implementata solo "Rendimento": le altre dichiarano la
+// domanda a cui risponderanno invece di comparire vuote.
+//
+// ── Perché l'orizzonte è lungo ──
+// La finestra mobile di 30 giorni è già della Panoramica: è il presente e serve
+// ad agire. Stats possiede il tempo lungo (90 giorni / 12 mesi / sempre) e il
+// confronto con il periodo precedente. Se mostrasse anche i 30 giorni avremmo
+// due pagine che dicono la stessa cosa con due layout diversi.
+//
+// ── Perché gli insight stanno sopra i tab ──
+// Sono il livello che rende la pagina parlante e valgono per l'intera pagina,
+// non per una sezione: ogni frase sa a quale tab e a quale blocco appartiene,
+// quindi il tap porta al punto giusto. Quando arriveranno le altre quattro
+// sezioni basterà concatenare le loro regole a questa lista.
+
+const TABS = [
+  { id: 'rendimento', label: 'Rendimento', icon: '🎾', question: 'Quanto sono forte, e come vinco o perdo?' },
+  { id: 'attivita',   label: 'Attività',   icon: '📅', question: 'Quanto gioco, e con quanta costanza?' },
+  { id: 'tecnica',    label: 'Tecnica',    icon: '🎯', question: 'Su cosa sto lavorando, e sta funzionando?' },
+  { id: 'fisico',     label: 'Fisico',     icon: '❤️', question: 'Come sto fisicamente, e sto migliorando?' },
+  { id: 'setup',      label: 'Setup',      icon: '🎽', question: 'Il materiale cambia qualcosa in campo?' },
+]
+
 export default function Stats() {
+  const { matches, loading: matchLoading, update: updateMatch } = useMatches()
+  const { trainings, loading: trainLoading } = useTrainings()
+  const { opponents } = useOpponents()
+  const { equipment } = useEquipment()
+
+  const [activeTab, setActiveTab] = useState('rendimento')
+  const [period, setPeriod] = useState(DEFAULT_PERIOD)
+  const [drill, setDrill] = useState(null)              // { title, sub, matches }
+  const [selectedMatchId, setSelectedMatchId] = useState(null)
+
+  const range = useMemo(() => periodRange(period), [period])
+
+  const scoped = useMemo(() => ({
+    matches:   filterPeriod(matches, range),
+    trainings: filterPeriod(trainings, range),
+  }), [matches, trainings, range])
+
+  const report = useMemo(
+    () => buildRendimento({ matches: scoped.matches, trainings: scoped.trainings, opponents }),
+    [scoped, opponents]
+  )
+
+  // Confronto con la finestra precedente della stessa ampiezza. Su "Sempre" non
+  // esiste un prima, e se il periodo precedente ha pochi dati il confronto
+  // sarebbe rumore: in entrambi i casi il delta semplicemente non compare.
+  const comparison = useMemo(() => {
+    const prevRange = periodRange(period, 1)
+    if (!prevRange) return null
+    const prev = filterPeriod(matches, prevRange)
+    if (prev.length < MIN_CORE) return null
+    const rate = coreStats(prev).gameWinRate
+    return rate == null ? null : { rate, label: 'periodo precedente' }
+  }, [matches, period])
+
+  // Pattern "selected item derivato": la modale legge sempre il match aggiornato.
+  const selectedMatch = selectedMatchId ? matches.find(m => m.id === selectedMatchId) || null : null
+
+  const openDrill = (title, list, sub) => setDrill({ title, sub, matches: list || [] })
+
+  const goToInsight = (insight) => {
+    setActiveTab(insight.tab || 'rendimento')
+    // Due frame: il primo monta il tab, il secondo trova il blocco nel DOM.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.getElementById(insight.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }))
+  }
+
+  const loading = matchLoading || trainLoading
+
   return (
-    <div className="px-6 pt-8">
-      <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>Stats</h1>
+    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+
+      {/* Header */}
+      <div className="px-6 pt-12 pb-4">
+        <p className="text-xs font-semibold uppercase tracking-widest mb-1"
+           style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
+          I tuoi numeri
+        </p>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+          Stats
+        </h1>
+      </div>
+
+      {loading ? (
+        <Spinner />
+      ) : matches.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <>
+          {/* Periodo — governa tutte le sezioni */}
+          <div className="px-6 pb-3">
+            <div className="flex gap-2">
+              {PERIODS.map(p => (
+                <button key={p.id} onClick={() => setPeriod(p.id)}
+                  className="flex-1 py-1.5 rounded-full text-[11px] font-medium transition-all"
+                  style={{
+                    background: period === p.id ? 'var(--color-teal-dark)' : 'var(--color-surface)',
+                    color: period === p.id ? 'var(--color-white)' : 'var(--color-slate)',
+                    border: period === p.id ? 'none' : '1px solid var(--color-surface-2)',
+                    fontFamily: 'var(--font-display)',
+                  }}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+              {range ? `${shortDate(range.start)} – ${shortDate(range.end)}` : 'Tutto lo storico'}
+              {' · '}{scoped.matches.length} {scoped.matches.length === 1 ? 'partita' : 'partite'}
+            </p>
+          </div>
+
+          {/* Insight */}
+          {report.insights.length > 0 && (
+            <div className="px-6 pb-4">
+              <InsightList insights={report.insights} onNavigate={goToInsight} />
+            </div>
+          )}
+
+          {/* Tab bar */}
+          <div className="px-6 pb-4 overflow-x-auto">
+            <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
+              {TABS.map(tab => (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap"
+                  style={{
+                    background: activeTab === tab.id ? 'var(--color-teal-dark)' : 'var(--color-surface)',
+                    color: activeTab === tab.id ? 'var(--color-white)' : 'var(--color-slate)',
+                    fontFamily: 'var(--font-display)',
+                    border: activeTab === tab.id ? 'none' : '1px solid var(--color-surface-2)',
+                  }}>
+                  <span>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Contenuto */}
+          <div className="px-6 pb-32">
+            {activeTab === 'rendimento'
+              ? <Rendimento report={report} comparison={comparison} onDrill={openDrill} />
+              : <ComingSoon tab={TABS.find(t => t.id === activeTab)} />}
+          </div>
+        </>
+      )}
+
+      {/* Drill-down: le partite dietro un numero */}
+      {drill && (
+        <MatchListModal
+          title={drill.title}
+          sub={drill.sub}
+          matches={drill.matches}
+          onClose={() => setDrill(null)}
+          onSelectMatch={setSelectedMatchId}
+        />
+      )}
+
+      {/* Dettaglio in sola lettura: modificare o eliminare una partita resta
+          un'azione dell'area Matches, dove vive il wizard. */}
+      {selectedMatch && (
+        <MatchDetailModal
+          match={selectedMatch}
+          equipment={equipment}
+          onClose={() => setSelectedMatchId(null)}
+          onUpdate={async (id, data) => { await updateMatch(id, data) }}
+        />
+      )}
     </div>
   )
+}
+
+// ── Componenti interni ─────────────────────────────────────
+
+function ComingSoon({ tab }) {
+  if (!tab) return null
+  return (
+    <div className="rounded-2xl p-6 text-center"
+         style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
+      <span className="text-3xl block mb-3 opacity-60">{tab.icon}</span>
+      <p className="text-sm font-semibold mb-1"
+         style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        {tab.label}
+      </p>
+      <p className="text-xs leading-relaxed" style={{ color: 'var(--color-slate)' }}>
+        {tab.question}
+      </p>
+      <p className="text-[10px] mt-3" style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-display)' }}>
+        In arrivo
+      </p>
+    </div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center pt-20 px-6 text-center">
+      <span className="text-5xl mb-4 opacity-60">📊</span>
+      <p className="text-base font-semibold mb-1"
+         style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        Ancora niente da analizzare.
+      </p>
+      <p className="text-sm mb-6" style={{ color: 'var(--color-slate)' }}>
+        Le statistiche si costruiscono dalle partite registrate: servono almeno {MIN_CORE} match
+        perché un numero significhi qualcosa.
+      </p>
+      <Link to="/matches"
+        className="px-6 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+        style={{ background: 'var(--color-amber)', color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}>
+        Vai alle partite
+      </Link>
+    </div>
+  )
+}
+
+function Spinner() {
+  return (
+    <div className="flex justify-center pt-20">
+      <div className="w-6 h-6 rounded-full border-2 animate-spin"
+           style={{ borderColor: 'var(--color-teal-dark)', borderTopColor: 'transparent' }} />
+    </div>
+  )
+}
+
+// ── Helpers ────────────────────────────────────────────────
+
+function shortDate(date) {
+  return date.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' })
 }

@@ -325,7 +325,11 @@ export function consistency(sessions, range, allSessions = sessions) {
 // oggi: sono lo stato attuale, non una proprietà del periodo scelto. Filtrarli
 // sul periodo darebbe "striscia di 3 settimane" guardando i 90 giorni e "di 11"
 // guardando i 12 mesi, per lo stesso identico fatto.
-function currentRhythm(allSessions) {
+//
+// È esportata perché la Home ha bisogno esattamente di questo — e di nient'altro
+// di `consistency`, che richiederebbe un periodo che la Home non ha: lì il ritmo
+// attuale è il dato di apertura, non un sotto-blocco dell'analisi di un periodo.
+export function currentRhythm(allSessions) {
   const today = todayTime()
   if (!allSessions.length) return { streakWeeks: 0, sinceLast: null, lastDay: null }
 

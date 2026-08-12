@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useEquipment } from '../hooks/useEquipment'
 import { useMatches } from '../hooks/useMatches'
 import { useTrainings } from '../hooks/useTrainings'
@@ -29,9 +30,15 @@ export default function Equipment() {
   // capo, su due assi separati). Vedi src/lib/wear.js.
   const { matches } = useMatches()
   const { trainings } = useTrainings()
+  // L'avviso di usura della Home punta al capo, non alla pagina: `?item=<id>`
+  // apre direttamente il suo dettaglio, che è dove si cambia le corde. È lo
+  // stato iniziale della selezione, non un effect di sincronizzazione. Nessun
+  // cambio di tab: la modale è derivata dall'id e si apre sopra qualunque vista.
+  const [searchParams] = useSearchParams()
+
   const [activeTab, setActiveTab]     = useState('all')
   const [showAdd, setShowAdd]         = useState(false)
-  const [selectedId, setSelectedId]   = useState(null)
+  const [selectedId, setSelectedId]   = useState(() => searchParams.get('item'))
   const [deleteToast, setDeleteToast] = useState(false)
 
   // Derivato da equipment (non copiato in uno state a parte) così la modale

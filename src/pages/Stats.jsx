@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, useState, useEffect, useRef } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useMatches } from '../hooks/useMatches'
 import { useTrainings } from '../hooks/useTrainings'
 import { useOpponents } from '../hooks/useOpponents'
@@ -63,7 +63,15 @@ export default function Stats() {
   const { opponents } = useOpponents()
   const { equipment, loading: equipLoading } = useEquipment()
 
-  const [activeTab, setActiveTab] = useState('rendimento')
+  // ── Intenzioni che arrivano dalla Home ──
+  // Gli avvisi della Home ("picco di carico", "da 47 giorni non lo tocchi")
+  // nascono qui dentro e devono poterci riportare: `?tab=` sceglie la sezione e
+  // `?focus=` il blocco, cioè lo stesso `id` su cui atterrano gli insight — un
+  // solo modo di indirizzare un blocco di questa pagina, non due.
+  const [searchParams] = useSearchParams()
+  const focusTarget = searchParams.get('focus')
+
+  const [activeTab, setActiveTab] = useState(() => initialTab(searchParams))
   const [period, setPeriod] = useState(DEFAULT_PERIOD)
   const [drill, setDrill] = useState(null)              // { title, sub, matches }
   const [selectedMatchId, setSelectedMatchId] = useState(null)
@@ -160,16 +168,24 @@ export default function Stats() {
 
   const goToInsight = (insight) => {
     setActiveTab(insight.tab || 'rendimento')
-    // Due frame: il primo monta il tab, il secondo trova il blocco nel DOM.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      document.getElementById(insight.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }))
+    scrollToBlock(insight.target)
   }
 
   // L'attrezzatura entra nel gate di caricamento perché la sezione Setup è
   // costruita su di essa: senza, il tab mostrerebbe per un istante "nessun dato"
   // prima di popolarsi, che è il modo più veloce di far credere che sia rotto.
   const loading = matchLoading || trainLoading || equipLoading
+
+  // Lo scroll al blocco aspetta la fine del caricamento: arrivando da un link
+  // esterno i dati non ci sono ancora, il blocco non è nel DOM e uno scroll
+  // immediato fallirebbe in silenzio. Il ref lo rende un gesto solo: senza,
+  // ogni cambio di `loading` riporterebbe la pagina lassù.
+  const focusDone = useRef(false)
+  useEffect(() => {
+    if (!focusTarget || loading || focusDone.current) return
+    focusDone.current = true
+    scrollToBlock(focusTarget)
+  }, [focusTarget, loading])
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
@@ -315,6 +331,20 @@ function Spinner() {
 }
 
 // ── Helpers ────────────────────────────────────────────────
+
+// Tab di partenza: `?tab=` se è una sezione che esiste, altrimenti Rendimento.
+function initialTab(searchParams) {
+  const tab = searchParams.get('tab')
+  return TABS.some(t => t.id === tab) ? tab : 'rendimento'
+}
+
+// Due frame: il primo monta il tab, il secondo trova il blocco nel DOM.
+function scrollToBlock(id) {
+  if (!id) return
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }))
+}
 
 function shortDate(date) {
   return date.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' })

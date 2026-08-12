@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useOpponents } from '../hooks/useOpponents'
 import { useMatches } from '../hooks/useMatches'
 import { useTrainings } from '../hooks/useTrainings'
@@ -40,18 +41,35 @@ export default function Matches() {
   const { trainings, loading: trainLoading, add: addTraining, update: updateTraining, remove: removeTraining } = useTrainings()
   const { equipment } = useEquipment()
 
-  const [activeTab, setActiveTab] = useState('panoramica')
+  // ── Intenzioni che arrivano dalla Home ──
+  // La Home non tiene i wizard né i detail modal: sono di questa pagina, e
+  // duplicarli là avrebbe voluto dire duplicare anche il loro cablaggio
+  // (avversari, attrezzatura, catena "aggiungi avversario" dentro il wizard).
+  // Arriva invece l'intenzione nell'URL — `?add=match`, `?match=<id>` — e la
+  // pagina ci apre sopra lo stato iniziale.
+  //
+  // Sono initializer di `useState`, non un effect che sincronizza: il parametro
+  // è già lo stato di partenza, e la rotta rimonta la pagina a ogni ingresso,
+  // quindi non c'è niente da tenere in sincrono dopo il primo render.
+  //
+  // Degli id si tiene l'id e non l'oggetto (come per ogni selezione qui): se i
+  // dati non sono ancora arrivati, la modale si apre da sola appena la `find`
+  // derivata trova la sessione.
+  const [searchParams] = useSearchParams()
+  const intent = searchParams.get('add')
+
+  const [activeTab, setActiveTab] = useState(() => initialTab(searchParams))
 
   // Avversari
-  const [showAddOpponent, setShowAddOpponent] = useState(false)
+  const [showAddOpponent, setShowAddOpponent] = useState(intent === 'opponent')
   const [selectedOpponentId, setSelectedOpponentId] = useState(null)
   const [oppSearch, setOppSearch] = useState('')
   const [oppDeleteToast, setOppDeleteToast] = useState(false)
 
   // Partite
-  const [showAddMatch, setShowAddMatch] = useState(false)
+  const [showAddMatch, setShowAddMatch] = useState(intent === 'match')
   const [editingMatch, setEditingMatch] = useState(null)
-  const [selectedMatchId, setSelectedMatchId] = useState(null)
+  const [selectedMatchId, setSelectedMatchId] = useState(() => searchParams.get('match'))
   const [matchDeleteToast, setMatchDeleteToast] = useState(false)
   const [fType, setFType]         = useState('all')
   const [fEvent, setFEvent]       = useState('')
@@ -62,9 +80,9 @@ export default function Matches() {
   const [fResult, setFResult]     = useState('all')
 
   // Allenamenti
-  const [showAddTraining, setShowAddTraining] = useState(false)
+  const [showAddTraining, setShowAddTraining] = useState(intent === 'training')
   const [editingTraining, setEditingTraining] = useState(null)
-  const [selectedTrainingId, setSelectedTrainingId] = useState(null)
+  const [selectedTrainingId, setSelectedTrainingId] = useState(() => searchParams.get('training'))
   const [trainingDeleteToast, setTrainingDeleteToast] = useState(false)
   const [fKind, setFKind]           = useState('all')
   const [fFocus, setFFocus]         = useState('all')
@@ -655,7 +673,19 @@ function Toast({ title, sub, onClose }) {
 
 // ── Helpers data ───────────────────────────────────────────
 
-const MONTH_NAMES = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+// Tab di partenza dedotto dall'intenzione nell'URL: si atterra dove la cosa
+// chiesta vive, così chiudere la modale lascia nel contesto giusto invece che
+// sulla Panoramica. Senza parametri (ingresso dalla bottom nav) resta la
+// Panoramica, che è la landing dell'area.
+function initialTab(searchParams) {
+  const add = searchParams.get('add')
+  if (add === 'match'    || searchParams.get('match'))    return 'partite'
+  if (add === 'training' || searchParams.get('training')) return 'allenamenti'
+  if (add === 'opponent') return 'avversari'
+  return 'panoramica'
+}
+
+const MONTH_NAMES =['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 
 function monthKey(dateStr) {
   const d = new Date(dateStr)

@@ -43,6 +43,13 @@ import { gamesInMatch } from './tennis'
 //     (~40 game/sett) sono ~5 settimane → coerente con "reincorda ~1 volta al
 //     mese se giochi un paio di volte a settimana".
 //   - TEMPO: ~90 giorni, perché le corde perdono tensione anche ferme nel telaio.
+//
+// NON tarare questi due numeri a intuito: il blocco "Vita delle corde" di
+// Stats › Setup (src/lib/setup.js) misura la mediana dei game davvero giocati
+// prima di ogni cambio corde e la confronta con la costante qui sotto,
+// suggerendo il valore giusto per questo utente. La modifica resta manuale —
+// riscriverla in automatico sposterebbe all'indietro tutte le percentuali di
+// usura già mostrate in Equipment — ma il numero da cui partire è quello.
 export const STRING_LIFE_GAMES = 200
 export const STRING_LIFE_DAYS  = 90
 

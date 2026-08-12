@@ -8,6 +8,7 @@ import Rendimento from '../components/stats/Rendimento'
 import Attivita from '../components/stats/Attivita'
 import Tecnica from '../components/stats/Tecnica'
 import Fisico from '../components/stats/Fisico'
+import Setup from '../components/stats/Setup'
 import InsightList from '../components/stats/InsightList'
 import MatchListModal from '../components/stats/MatchListModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
@@ -17,22 +18,29 @@ import {
 import { buildActivity } from '../lib/activity'
 import { buildTechnique } from '../lib/technique'
 import { buildPhysical } from '../lib/physical'
+import { buildSetup } from '../lib/setup'
 
 // Pagina Stats — organizzata per DOMANDE, non per dataset.
 //
 // Cinque sezioni intitolate a ciò a cui rispondono: raggruppare per dominio
 // (matches / trainings / athletics) rispecchierebbe il database e non la testa
-// di chi guarda. Oggi sono implementate "Rendimento" (il game come unità),
-// "Attività" (il minuto), "Tecnica" (la sessione — il focus è della sessione e
-// non del blocco, quindi il minuto qui non è disponibile) e "Fisico" (il
-// battito): l'ultima dichiara la domanda a cui risponderà invece di comparire
-// vuota.
+// di chi guarda. Ognuna ha la propria unità di misura e non si sovrappone alle
+// altre: "Rendimento" il game, "Attività" il minuto, "Tecnica" la sessione (il
+// focus è della sessione e non del blocco, quindi il minuto qui non è
+// disponibile), "Fisico" il battito, "Setup" il game giocato con un materiale.
 //
 // ── Perché l'orizzonte è lungo ──
 // La finestra mobile di 30 giorni è già della Panoramica: è il presente e serve
 // ad agire. Stats possiede il tempo lungo (90 giorni / 12 mesi / sempre) e il
 // confronto con il periodo precedente. Se mostrasse anche i 30 giorni avremmo
 // due pagine che dicono la stessa cosa con due layout diversi.
+//
+// ── L'eccezione: Setup ignora il periodo ──
+// Un setup dura mesi e l'usura è un fatto del presente. Ritagliare su una
+// finestra lascerebbe fuori proprio il materiale precedente, cioè il termine di
+// paragone, e la vita delle corde è per costruzione una domanda su tutte le
+// incordature già cambiate. La sezione lavora su tutto lo storico e lo dichiara
+// in testa, così il selettore di periodo non sembra rotto.
 //
 // ── Perché gli insight stanno sopra i tab ──
 // Sono il livello che rende la pagina parlante e valgono per l'intera pagina,
@@ -53,7 +61,7 @@ export default function Stats() {
   const { matches, loading: matchLoading, update: updateMatch } = useMatches()
   const { trainings, loading: trainLoading } = useTrainings()
   const { opponents } = useOpponents()
-  const { equipment } = useEquipment()
+  const { equipment, loading: equipLoading } = useEquipment()
 
   const [activeTab, setActiveTab] = useState('rendimento')
   const [period, setPeriod] = useState(DEFAULT_PERIOD)
@@ -116,6 +124,17 @@ export default function Stats() {
     [scoped]
   )
 
+  // Setup riceve lo storico INTERO e ignora il periodo, unica delle cinque
+  // sezioni. Un setup dura mesi: ritagliare su 90 giorni lascerebbe fuori
+  // proprio il materiale con cui confrontarlo, e la vita delle corde è per
+  // definizione una domanda su tutte le incordature che hai già cambiato.
+  // L'usura, poi, è un fatto del presente — stessa logica per cui gli alert di
+  // usura in Panoramica compaiono solo a offset 0. La sezione lo dichiara in testa.
+  const setup = useMemo(
+    () => buildSetup({ matches, trainings, equipment }),
+    [matches, trainings, equipment]
+  )
+
   // Su "Sempre" non esiste un prima, e se il periodo precedente ha pochi dati il
   // confronto sarebbe rumore: in entrambi i casi il delta non compare.
   const comparison = useMemo(() => {
@@ -129,9 +148,9 @@ export default function Stats() {
   // stare sopra una sul rendimento se è più forte. Ogni frase sa già a quale tab
   // e a quale blocco appartiene, quindi il tap continua a portare al punto giusto.
   const insights = useMemo(
-    () => [...report.insights, ...activity.insights, ...technique.insights, ...physical.insights]
+    () => [...report.insights, ...activity.insights, ...technique.insights, ...physical.insights, ...setup.insights]
       .sort((a, b) => b.weight - a.weight),
-    [report, activity, technique, physical]
+    [report, activity, technique, physical, setup]
   )
 
   // Pattern "selected item derivato": la modale legge sempre il match aggiornato.
@@ -147,7 +166,10 @@ export default function Stats() {
     }))
   }
 
-  const loading = matchLoading || trainLoading
+  // L'attrezzatura entra nel gate di caricamento perché la sezione Setup è
+  // costruita su di essa: senza, il tab mostrerebbe per un istante "nessun dato"
+  // prima di popolarsi, che è il modo più veloce di far credere che sia rotto.
+  const loading = matchLoading || trainLoading || equipLoading
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
@@ -229,7 +251,7 @@ export default function Stats() {
             ) : activeTab === 'fisico' ? (
               <Fisico report={physical} periodLabel={PERIODS.find(p => p.id === period)?.label} />
             ) : (
-              <ComingSoon tab={TABS.find(t => t.id === activeTab)} />
+              <Setup report={setup} onDrill={openDrill} />
             )}
           </div>
         </>
@@ -261,26 +283,6 @@ export default function Stats() {
 }
 
 // ── Componenti interni ─────────────────────────────────────
-
-function ComingSoon({ tab }) {
-  if (!tab) return null
-  return (
-    <div className="rounded-2xl p-6 text-center"
-         style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
-      <span className="text-3xl block mb-3 opacity-60">{tab.icon}</span>
-      <p className="text-sm font-semibold mb-1"
-         style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-        {tab.label}
-      </p>
-      <p className="text-xs leading-relaxed" style={{ color: 'var(--color-slate)' }}>
-        {tab.question}
-      </p>
-      <p className="text-[10px] mt-3" style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-display)' }}>
-        In arrivo
-      </p>
-    </div>
-  )
-}
 
 function EmptyState() {
   return (

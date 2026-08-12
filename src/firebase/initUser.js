@@ -16,6 +16,7 @@ export async function initUserData(user) {
         level: null,
         dominantHand: null,
         playingSince: null,
+        birthYear: null,
       }
     })
   }

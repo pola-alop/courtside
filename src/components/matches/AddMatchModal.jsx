@@ -9,6 +9,11 @@ import {
   athleticsIssues, hasAthletics, splitDuration, joinDuration, zonesTotalSec,
   trainingEffectLabel, formatDuration,
 } from '../../lib/athletics'
+// La tassonomia dell'intensità percepita vive in training.js perché è nata lì
+// (ed è lì che wear.js va a leggere i suoi fattori), ma non è specifica degli
+// allenamenti: descrive lo sforzo di una SESSIONE, e una partita è una sessione.
+// Riusarla è meglio che duplicare tre etichette e tre colori.
+import { INTENSITIES } from '../../lib/training'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura', 'Atletica']
@@ -34,6 +39,13 @@ function initialForm(initial) {
     // I match registrati prima di questa feature non hanno `athletics`: il
     // draft parte comunque vuoto e resta tale se l'utente non compila nulla.
     athletics:  { ...emptyAthletics(), ...(initial?.athletics || {}) },
+    // Intensità percepita. A differenza del wizard allenamento — che preseleziona
+    // "media" — qui il default è null, e la differenza è deliberata: il carico di
+    // una partita non dichiarata usa un valore di riferimento più alto di
+    // "media" (una partita si gioca a punti veri), quindi preselezionare
+    // significherebbe far dichiarare all'utente uno sforzo che non ha scelto e
+    // abbassargli il carico senza che se ne accorga.
+    intensity:  initial?.intensity || null,
   }
 }
 
@@ -100,6 +112,7 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
       setsMe:       out.setsMe,
       setsOpp:      out.setsOpp,
       equipment:    form.equipment,
+      intensity:    form.intensity || null,
       athletics:    normalizeAthletics(form.athletics),
       notes:        initial?.notes || [],
     })
@@ -151,7 +164,10 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
             />
           )}
           {step === 6 && <StepEquipment equipment={equipment} value={form.equipment} onChange={v => set('equipment', v)} />}
-          {step === 7 && <StepAthletics value={form.athletics} onChange={v => set('athletics', v)} issues={athIssues} />}
+          {step === 7 && (
+            <StepAthletics value={form.athletics} onChange={v => set('athletics', v)} issues={athIssues}
+                           intensity={form.intensity} onIntensityChange={v => set('intensity', v)} />
+          )}
         </div>
 
         {/* Footer */}
@@ -595,7 +611,7 @@ function StepEquipment({ equipment, value, onChange }) {
 
 // ── Step 7 — Atletica ──────────────────────────────────────
 
-function StepAthletics({ value, onChange, issues }) {
+function StepAthletics({ value, onChange, issues, intensity, onIntensityChange }) {
   // Le zone partono aperte solo se ci sono già dati: sono 5 righe, e sul
   // mobile appesantiscono lo step per chi non le usa.
   const [showZones, setShowZones] = useState(() => zonesTotalSec(value.zones) > 0)
@@ -622,10 +638,41 @@ function StepAthletics({ value, onChange, issues }) {
     <div className="space-y-4">
       <StepTitle
         title="Come è andata a livello fisico?"
-        sub="Facoltativo — trascrivi i dati dal tuo orologio o dall'app"
+        sub="Tutto facoltativo — l'intensità è a sensazione, il resto si trascrive dall'orologio"
       />
 
-      <FieldGroup label="Sforzo">
+      {/* L'unico campo di questo step che NON viene dall'orologio: è la
+          sensazione, ed è l'unico modo per sapere quanto è costata davvero una
+          partita. Un tap sulla scelta attiva la azzera — stesso gesto delle
+          stelline di valutazione nel dettaglio allenamento. */}
+      <FieldGroup label="Quanto è stata dura">
+        <div className="grid grid-cols-3 gap-2">
+          {INTENSITIES.map(i => {
+            const active = intensity === i.id
+            return (
+              <button key={i.id} type="button"
+                onClick={() => onIntensityChange(active ? null : i.id)}
+                className="py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                style={{
+                  background: active ? 'var(--color-surface-2)' : 'transparent',
+                  border: `1px solid ${active ? i.color : 'var(--color-surface-2)'}`,
+                  color: active ? i.color : 'var(--color-slate)',
+                  fontFamily: 'var(--font-display)',
+                }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: active ? i.color : 'var(--color-slate)' }} />
+                {i.label}
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-xs mt-1" style={{ color: 'var(--color-slate)' }}>
+          {intensity
+            ? 'Alimenta il carico di allenamento in Stats › Attività. Tocca di nuovo per togliere.'
+            : 'Se non la indichi, in Stats la partita viene contata come sforzo alto — che è quello che una partita è di solito.'}
+        </p>
+      </FieldGroup>
+
+      <FieldGroup label="Dati dall'orologio">
         <div className="grid grid-cols-2 gap-2">
           <NumberField label="Distanza" suffix="km" placeholder="0,0"
             value={value.distanceKm} onChange={v => patch({ distanceKm: v })}

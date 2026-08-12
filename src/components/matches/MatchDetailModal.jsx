@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import ScoreBoard from './ScoreBoard'
 import { RESULT_META, MATCH_FORMATS, MATCH_TYPES, surfaceIcon } from '../../lib/tennis'
+import { intensityMeta } from '../../lib/training'
 import AthleticsSection from '../athletics/AthleticsSection'
 
 const MAX_NOTE_LENGTH = 150
@@ -24,6 +25,7 @@ export default function MatchDetailModal({
   const meta = RESULT_META[match.result] || RESULT_META.draw
   const fmt  = MATCH_FORMATS[match.format]
   const typeLabel = MATCH_TYPES.find(t => t.id === match.type)?.label || match.type
+  const intensity = intensityMeta(match.intensity)
 
   const notes = match.notes || []
   const sortedNotes = [...notes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -129,6 +131,16 @@ export default function MatchDetailModal({
               <Row label="Tipo" value={match.eventName ? `${typeLabel} · ${match.eventName}` : typeLabel} />
               <Row label="Superficie" value={`${surfaceIcon(match.surface)} ${cap(match.surface)}`} />
               <Row label="Formato" value={fmt?.label || match.format} />
+              {/* Facoltativa, e assente su tutte le partite registrate prima
+                  che il campo esistesse: la riga semplicemente non compare. */}
+              {intensity && (
+                <Row label="Intensità" value={
+                  <span className="flex items-center justify-end gap-1.5" style={{ color: intensity.color }}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: intensity.color }} />
+                    {intensity.label}
+                  </span>
+                } />
+              )}
             </Section>
 
             <AthleticsSection athletics={match.athletics} />

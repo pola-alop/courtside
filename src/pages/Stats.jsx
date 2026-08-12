@@ -5,19 +5,22 @@ import { useTrainings } from '../hooks/useTrainings'
 import { useOpponents } from '../hooks/useOpponents'
 import { useEquipment } from '../hooks/useEquipment'
 import Rendimento from '../components/stats/Rendimento'
+import Attivita from '../components/stats/Attivita'
 import InsightList from '../components/stats/InsightList'
 import MatchListModal from '../components/stats/MatchListModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
 import {
   PERIODS, DEFAULT_PERIOD, MIN_CORE, buildRendimento, coreStats, filterPeriod, periodRange,
 } from '../lib/stats'
+import { buildActivity } from '../lib/activity'
 
 // Pagina Stats — organizzata per DOMANDE, non per dataset.
 //
 // Cinque sezioni intitolate a ciò a cui rispondono: raggruppare per dominio
 // (matches / trainings / athletics) rispecchierebbe il database e non la testa
-// di chi guarda. Oggi è implementata solo "Rendimento": le altre dichiarano la
-// domanda a cui risponderanno invece di comparire vuote.
+// di chi guarda. Oggi sono implementate "Rendimento" (il game come unità) e
+// "Attività" (il minuto): le altre tre dichiarano la domanda a cui risponderanno
+// invece di comparire vuote.
 //
 // ── Perché l'orizzonte è lungo ──
 // La finestra mobile di 30 giorni è già della Panoramica: è il presente e serve
@@ -28,8 +31,9 @@ import {
 // ── Perché gli insight stanno sopra i tab ──
 // Sono il livello che rende la pagina parlante e valgono per l'intera pagina,
 // non per una sezione: ogni frase sa a quale tab e a quale blocco appartiene,
-// quindi il tap porta al punto giusto. Quando arriveranno le altre quattro
-// sezioni basterà concatenare le loro regole a questa lista.
+// quindi il tap porta al punto giusto. Le liste delle sezioni implementate si
+// concatenano e si riordinano per peso — un picco di carico può stare sopra un
+// dato di rendimento — e le prossime sezioni si agganceranno allo stesso modo.
 
 const TABS = [
   { id: 'rendimento', label: 'Rendimento', icon: '🎾', question: 'Quanto sono forte, e come vinco o perdo?' },
@@ -57,22 +61,53 @@ export default function Stats() {
     trainings: filterPeriod(trainings, range),
   }), [matches, trainings, range])
 
+  // Finestra precedente della stessa ampiezza: la usano sia il delta del GW% in
+  // Rendimento sia il delta delle ore in Attività, quindi si ritaglia una volta
+  // sola qui invece che dentro ognuno dei due report.
+  const previous = useMemo(() => {
+    const prevRange = periodRange(period, 1)
+    if (!prevRange) return null
+    return {
+      matches:   filterPeriod(matches, prevRange),
+      trainings: filterPeriod(trainings, prevRange),
+    }
+  }, [matches, trainings, period])
+
   const report = useMemo(
     () => buildRendimento({ matches: scoped.matches, trainings: scoped.trainings, opponents }),
     [scoped, opponents]
   )
 
-  // Confronto con la finestra precedente della stessa ampiezza. Su "Sempre" non
-  // esiste un prima, e se il periodo precedente ha pochi dati il confronto
-  // sarebbe rumore: in entrambi i casi il delta semplicemente non compare.
+  // Attività riceve anche i dati NON filtrati: ACWR, striscia attiva e giorni
+  // dall'ultima sessione sono fatti del presente e vanno calcolati su tutto lo
+  // storico rispetto a oggi, non sulla finestra scelta — lo stesso motivo per
+  // cui gli alert di usura in Panoramica compaiono solo a offset 0.
+  const activity = useMemo(
+    () => buildActivity({
+      matches: scoped.matches, trainings: scoped.trainings,
+      allMatches: matches, allTrainings: trainings,
+      previousMatches: previous?.matches || [], previousTrainings: previous?.trainings || [],
+      range,
+    }),
+    [scoped, matches, trainings, previous, range]
+  )
+
+  // Su "Sempre" non esiste un prima, e se il periodo precedente ha pochi dati il
+  // confronto sarebbe rumore: in entrambi i casi il delta non compare.
   const comparison = useMemo(() => {
-    const prevRange = periodRange(period, 1)
-    if (!prevRange) return null
-    const prev = filterPeriod(matches, prevRange)
-    if (prev.length < MIN_CORE) return null
-    const rate = coreStats(prev).gameWinRate
+    if (!previous || previous.matches.length < MIN_CORE) return null
+    const rate = coreStats(previous.matches).gameWinRate
     return rate == null ? null : { rate, label: 'periodo precedente' }
-  }, [matches, period])
+  }, [previous])
+
+  // Gli insight sono di PAGINA, non di sezione: si concatenano le liste delle
+  // sezioni implementate e si riordina per peso, così una frase sul carico può
+  // stare sopra una sul rendimento se è più forte. Ogni frase sa già a quale tab
+  // e a quale blocco appartiene, quindi il tap continua a portare al punto giusto.
+  const insights = useMemo(
+    () => [...report.insights, ...activity.insights].sort((a, b) => b.weight - a.weight),
+    [report, activity]
+  )
 
   // Pattern "selected item derivato": la modale legge sempre il match aggiornato.
   const selectedMatch = selectedMatchId ? matches.find(m => m.id === selectedMatchId) || null : null
@@ -105,7 +140,7 @@ export default function Stats() {
 
       {loading ? (
         <Spinner />
-      ) : matches.length === 0 ? (
+      ) : matches.length === 0 && trainings.length === 0 ? (
         <EmptyState />
       ) : (
         <>
@@ -128,13 +163,14 @@ export default function Stats() {
             <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
               {range ? `${shortDate(range.start)} – ${shortDate(range.end)}` : 'Tutto lo storico'}
               {' · '}{scoped.matches.length} {scoped.matches.length === 1 ? 'partita' : 'partite'}
+              {' · '}{scoped.trainings.length} {scoped.trainings.length === 1 ? 'allenamento' : 'allenamenti'}
             </p>
           </div>
 
           {/* Insight */}
-          {report.insights.length > 0 && (
+          {insights.length > 0 && (
             <div className="px-6 pb-4">
-              <InsightList insights={report.insights} onNavigate={goToInsight} />
+              <InsightList insights={insights} onNavigate={goToInsight} />
             </div>
           )}
 
@@ -159,9 +195,13 @@ export default function Stats() {
 
           {/* Contenuto */}
           <div className="px-6 pb-32">
-            {activeTab === 'rendimento'
-              ? <Rendimento report={report} comparison={comparison} onDrill={openDrill} />
-              : <ComingSoon tab={TABS.find(t => t.id === activeTab)} />}
+            {activeTab === 'rendimento' ? (
+              <Rendimento report={report} comparison={comparison} onDrill={openDrill} />
+            ) : activeTab === 'attivita' ? (
+              <Attivita report={activity} periodLabel={PERIODS.find(p => p.id === period)?.label} />
+            ) : (
+              <ComingSoon tab={TABS.find(t => t.id === activeTab)} />
+            )}
           </div>
         </>
       )}

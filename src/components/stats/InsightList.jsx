@@ -3,11 +3,11 @@ import { useState } from 'react'
 // Lo strato che rende la pagina "parlante". Un 54% non dice niente; "vinci il
 // 61% dei game ma solo il 48% delle partite" dice tutto.
 //
-// Vive a livello di PAGINA e non dentro una sezione, anche se oggi le regole
-// che lo alimentano sono solo quelle di Rendimento: quando arriveranno Attività,
-// Tecnica, Fisico e Setup basterà concatenare le loro liste, e ogni frase sa già
-// a quale tab e a quale blocco appartiene (`tab` + `target`), quindi il tap
-// continuerà a portare al punto giusto senza cambiare questo componente.
+// Vive a livello di PAGINA e non dentro una sezione: oggi riceve le frasi di
+// Rendimento e di Attività già concatenate e riordinate per peso, quindi un picco
+// di carico può stare sopra un dato di rendimento. Ogni frase sa a quale tab e a
+// quale blocco appartiene (`tab` + `target`), quindi Tecnica, Fisico e Setup si
+// aggancieranno aggiungendo la loro lista, senza toccare questo componente.
 
 const VISIBLE = 4
 

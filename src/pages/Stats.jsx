@@ -7,6 +7,7 @@ import { useEquipment } from '../hooks/useEquipment'
 import Rendimento from '../components/stats/Rendimento'
 import Attivita from '../components/stats/Attivita'
 import Tecnica from '../components/stats/Tecnica'
+import Fisico from '../components/stats/Fisico'
 import InsightList from '../components/stats/InsightList'
 import MatchListModal from '../components/stats/MatchListModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
@@ -15,15 +16,17 @@ import {
 } from '../lib/stats'
 import { buildActivity } from '../lib/activity'
 import { buildTechnique } from '../lib/technique'
+import { buildPhysical } from '../lib/physical'
 
 // Pagina Stats — organizzata per DOMANDE, non per dataset.
 //
 // Cinque sezioni intitolate a ciò a cui rispondono: raggruppare per dominio
 // (matches / trainings / athletics) rispecchierebbe il database e non la testa
 // di chi guarda. Oggi sono implementate "Rendimento" (il game come unità),
-// "Attività" (il minuto) e "Tecnica" (la sessione — il focus è della sessione e
-// non del blocco, quindi il minuto qui non è disponibile): le altre due
-// dichiarano la domanda a cui risponderanno invece di comparire vuote.
+// "Attività" (il minuto), "Tecnica" (la sessione — il focus è della sessione e
+// non del blocco, quindi il minuto qui non è disponibile) e "Fisico" (il
+// battito): l'ultima dichiara la domanda a cui risponderà invece di comparire
+// vuota.
 //
 // ── Perché l'orizzonte è lungo ──
 // La finestra mobile di 30 giorni è già della Panoramica: è il presente e serve
@@ -103,6 +106,16 @@ export default function Stats() {
     [scoped, trainings, range]
   )
 
+  // Fisico riceve i SOLI dati del periodo: qui non c'è niente che sia un fatto
+  // del presente. Tutto è una proprietà della finestra scelta (com'era il tuo
+  // cuore in quei mesi), e l'unica cosa che assomiglia a un trend — l'economia
+  // cardiaca — è per costruzione un confronto interno al periodo, che su una
+  // finestra diversa DEVE dare una risposta diversa.
+  const physical = useMemo(
+    () => buildPhysical({ matches: scoped.matches, trainings: scoped.trainings }),
+    [scoped]
+  )
+
   // Su "Sempre" non esiste un prima, e se il periodo precedente ha pochi dati il
   // confronto sarebbe rumore: in entrambi i casi il delta non compare.
   const comparison = useMemo(() => {
@@ -116,8 +129,9 @@ export default function Stats() {
   // stare sopra una sul rendimento se è più forte. Ogni frase sa già a quale tab
   // e a quale blocco appartiene, quindi il tap continua a portare al punto giusto.
   const insights = useMemo(
-    () => [...report.insights, ...activity.insights, ...technique.insights].sort((a, b) => b.weight - a.weight),
-    [report, activity, technique]
+    () => [...report.insights, ...activity.insights, ...technique.insights, ...physical.insights]
+      .sort((a, b) => b.weight - a.weight),
+    [report, activity, technique, physical]
   )
 
   // Pattern "selected item derivato": la modale legge sempre il match aggiornato.
@@ -212,6 +226,8 @@ export default function Stats() {
               <Attivita report={activity} periodLabel={PERIODS.find(p => p.id === period)?.label} />
             ) : activeTab === 'tecnica' ? (
               <Tecnica report={technique} periodLabel={PERIODS.find(p => p.id === period)?.label} />
+            ) : activeTab === 'fisico' ? (
+              <Fisico report={physical} periodLabel={PERIODS.find(p => p.id === period)?.label} />
             ) : (
               <ComingSoon tab={TABS.find(t => t.id === activeTab)} />
             )}

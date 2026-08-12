@@ -4,10 +4,11 @@ import { useState } from 'react'
 // 61% dei game ma solo il 48% delle partite" dice tutto.
 //
 // Vive a livello di PAGINA e non dentro una sezione: oggi riceve le frasi di
-// Rendimento e di Attività già concatenate e riordinate per peso, quindi un picco
-// di carico può stare sopra un dato di rendimento. Ogni frase sa a quale tab e a
-// quale blocco appartiene (`tab` + `target`), quindi Tecnica, Fisico e Setup si
-// aggancieranno aggiungendo la loro lista, senza toccare questo componente.
+// Rendimento, Attività e Tecnica già concatenate e riordinate per peso, quindi un
+// picco di carico può stare sopra un dato di rendimento. Ogni frase sa a quale
+// tab e a quale blocco appartiene (`tab` + `target`), quindi Fisico e Setup si
+// aggancieranno aggiungendo la loro lista, senza toccare questo componente
+// (Tecnica lo ha fatto senza modificarlo di una riga).
 
 const VISIBLE = 4
 

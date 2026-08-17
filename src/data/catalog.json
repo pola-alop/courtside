@@ -1,0 +1,4086 @@
+{
+  "racchette": [
+    {
+      "brand": "Wilson",
+      "racket": [
+        {
+          "type": "Pro Staff",
+          "models": [
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff 97L v14 Roland-Garros 2026",
+              "weight": 305,
+              "balance": "335mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staff-97l-v14-roland-garros-2026.webp",
+              "tags": ["controllo", "avanzato"]
+            },
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff 97L v14 Roland-Garros 2026 Session de Soirée",
+              "weight": 330,
+              "balance": "320mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staffl-v14-roland-garros-2026-session-de-soiree.webp",
+              "tags": ["controllo", "avanzato"]
+            },
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff Team v14",
+              "weight": 296,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staff-97-v14.webp",
+              "tags": ["controllo", "avanzato"]
+            },
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff Six.One 95 v14",
+              "weight": 348,
+              "balance": "315mm",
+              "headSize": 97,
+              "pattern": "18x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staff-97-v14.webp",
+              "tags": ["controllo", "avanzato"]
+            },
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff X v14",
+              "weight": 330,
+              "balance": "320mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staff-97-v14.webp",
+              "tags": ["controllo", "avanzato"]
+            },
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff 97L v14",
+              "weight": 305,
+              "balance": "335mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staff-97-v14.webp",
+              "tags": ["controllo", "avanzato"]
+            },
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff 97 v14",
+              "weight": 330,
+              "balance": "320mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staff-97-v14.webp",
+              "tags": ["controllo", "avanzato"]
+            },
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff Team Classic",
+              "weight": 295,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staff-team-classic.webp",
+              "tags": ["controllo", "avanzato"]
+            },
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff 97L Classic",
+              "weight": 305,
+              "balance": "335mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staff-team-classic.webp",
+              "tags": ["controllo", "avanzato"]
+            },
+            {
+              "id": "wilson-pro-staff",
+              "brand": "Wilson",
+              "model": "Pro Staff 97 Classic",
+              "weight": 330,
+              "balance": "320mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/pro-staff/wilson-pro-staff-team-classic.webp",
+              "tags": ["controllo", "avanzato"]
+            }
+          ]
+        },
+        {
+          "type": "Burn",
+          "models": [
+            {
+              "id": "wilson-burn",
+              "brand": "Wilson",
+              "model": "Burn 100ULS V5 RKT (Ecom)",
+              "weight": 276,
+              "balance": "343mm",
+              "headSize": 100,
+              "pattern": "18x16",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/burn/burn-100uls-v5-rkt-ecom.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-burn",
+              "brand": "Wilson",
+              "model": "Burn 100LS V5 RKT (Ecom)",
+              "weight": 296,
+              "balance": "338mm",
+              "headSize": 100,
+              "pattern": "18x16",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/burn/burn-100uls-v5-rkt-ecom.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-burn",
+              "brand": "Wilson",
+              "model": "Burn 100 V5 RKT (Ecom)",
+              "weight": 316,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/burn/burn-100uls-v5-rkt-ecom.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-burn",
+              "brand": "Wilson",
+              "model": "Burn 100ULS V6.0 ECOM",
+              "weight": 276,
+              "balance": "343mm",
+              "headSize": 100,
+              "pattern": "18x16",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/burn/burn-100uls-v6-ecom.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-burn",
+              "brand": "Wilson",
+              "model": "Burn 100LS V6.0 ECOM",
+              "weight": 296,
+              "balance": "338mm",
+              "headSize": 100,
+              "pattern": "18x16",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/burn/burn-100uls-v6-ecom.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-burn",
+              "brand": "Wilson",
+              "model": "Burn 100S V6.0 ECOM",
+              "weight": 316,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "18x16",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/burn/burn-100uls-v6-ecom.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-burn",
+              "brand": "Wilson",
+              "model": "Burn V6 105 S",
+              "weight": 281,
+              "balance": "345mm",
+              "headSize": 100,
+              "pattern": "18x16",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/burn/burn-v6-105s.webp",
+              "tags": ["potenza", "oversize", "permissiva", "topspin"]
+            }
+          ]
+        },
+        {
+          "type": "Shift",
+          "models": [
+            {
+              "id": "wilson-shift",
+              "brand": "Wilson",
+              "model": "Shift 99L V1",
+              "weight": 301,
+              "balance": "330mm",
+              "headSize": 99,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/shift/shift-99l-v1.webp",
+              "tags": ["topspin", "comfort"]
+            },
+            {
+              "id": "wilson-shift",
+              "brand": "Wilson",
+              "model": "Shift 99 V1",
+              "weight": 316,
+              "balance": "325mm",
+              "headSize": 99,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/shift/shift-99l-v1.webp",
+              "tags": ["topspin", "comfort"]
+            },
+            {
+              "id": "wilson-shift",
+              "brand": "Wilson",
+              "model": "Shift 99 Pro V1",
+              "weight": 331,
+              "balance": "325mm",
+              "headSize": 99,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/shift/shift-99l-v1.webp",
+              "tags": ["topspin", "comfort"]
+            },
+            {
+              "id": "wilson-shift",
+              "brand": "Wilson",
+              "model": "Shift 99L V1 US Open",
+              "weight": 301,
+              "balance": "330mm",
+              "headSize": 99,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/shift/shift-99l-v1-us-open.webp",
+              "tags": ["topspin", "comfort"]
+            },
+            {
+              "id": "wilson-shift",
+              "brand": "Wilson",
+              "model": "Shift 99 V1 US Open",
+              "weight": 316,
+              "balance": "325mm",
+              "headSize": 99,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/shift/shift-99l-v1-us-open.webp",
+              "tags": ["topspin", "comfort"]
+            },
+            {
+              "id": "wilson-shift",
+              "brand": "Wilson",
+              "model": "Shift 99L V1 Roland-Garros 2025 Session de Soirée",
+              "weight": 316,
+              "balance": "325mm",
+              "headSize": 99,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/shift/shift-99l-v1-roland-garros-2025-session-de-soirée.webp",
+              "tags": ["topspin", "comfort"]
+            },
+            {
+              "id": "wilson-shift",
+              "brand": "Wilson",
+              "model": "Shift 99 V1 US Open 2025",
+              "weight": 316,
+              "balance": "325mm",
+              "headSize": 99,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/shift/shift-99-v1-us-open-2025.webp",
+              "tags": ["topspin", "comfort"]
+            }
+          ]
+        },
+        {
+          "type": "Ultra",
+          "models": [
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 95 QZ V5",
+              "weight": 302,
+              "balance": "350mm",
+              "headSize": 95,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-95-qz-v5.webp",
+              "tags": ["potenza", "precisione", "controllo"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 100L V5 Roland-Garros 2026",
+              "weight": 295,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-100l-v5-roland-garros-2026.webp",
+              "tags": ["potenza", "precisione", "controllo"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 100 V5 Roland-Garros 2026",
+              "weight": 315,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-100l-v5-roland-garros-2026.webp",
+              "tags": ["potenza", "precisione", "controllo"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra Tour 98 V5",
+              "weight": 324,
+              "balance": "335mm",
+              "headSize": 98,
+              "pattern": "18x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-95-qz-v5.webp",
+              "tags": ["potenza", "precisione", "controllo"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra Power 103",
+              "weight": 290,
+              "balance": "340mm",
+              "headSize": 104,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-power-103.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 108 V4",
+              "weight": 287,
+              "balance": "345mm",
+              "headSize": 108,
+              "pattern": "16x18",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-100-v4.webp",
+              "tags": ["potenza", "comfort", "permissiva"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 100UL V4",
+              "weight": 276,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-100-v4.webp",
+              "tags": ["potenza", "comfort"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 100 V4",
+              "weight": 316,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-100-v4.webp",
+              "tags": ["potenza", "comfort"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra Team V5",
+              "weight": 295,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-95-qz-v5.webp",
+              "tags": ["potenza", "comfort"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 100UL V5 ECOM RKT",
+              "weight": 275,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-95-qz-v5.webp",
+              "tags": ["potenza", "comfort"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 100L V5",
+              "weight": 295,
+              "balance": "295mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-95-qz-v5.webp",
+              "tags": ["potenza", "comfort"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 100 V5",
+              "weight": 315,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-95-qz-v5.webp",
+              "tags": ["potenza", "comfort"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 99 Pro V5",
+              "weight": 321,
+              "balance": "335mm",
+              "headSize": 99,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-95-qz-v5.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 100L V5 Desert",
+              "weight": 295,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-100l-v5-desert.webp",
+              "tags": ["potenza", "topspin", "controllo"]
+            },
+            {
+              "id": "wilson-ultra",
+              "brand": "Wilson",
+              "model": "Ultra 100 V5 Desert",
+              "weight": 315,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/ultra/ultra-100l-v5-desert.webp",
+              "tags": ["potenza", "topspin", "controllo"]
+            }
+          ]
+        },
+        {
+          "type": "Clash",
+          "models": [
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100L V3 Roland-Garros 2026",
+              "weight": 295,
+              "balance": "325mm",
+              "headSize": 101,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100l-v3-roland-garros-2026.webp",
+              "tags": ["leggera"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100 V3 Roland-Garros 2026",
+              "weight": 309,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100l-v3-roland-garros-2026.webp",
+              "tags": ["leggera"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100 V2 Heritage Edition",
+              "weight": 309,
+              "balance": "320mm",
+              "headSize": 101,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100-v2-heritage-edition.webp",
+              "tags": ["potenza", "comfort", "controllo"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100UL V3.0 Reverse ECOM RKT",
+              "weight": 280,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100UL-v3-reverse-ecom-rkt.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash Team 103 V3",
+              "weight": 295,
+              "balance": "320mm",
+              "headSize": 103,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-team-103-v3.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100UL V3 (Ecom) RKT",
+              "weight": 280,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-team-103-v3.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100L V3",
+              "weight": 296,
+              "balance": "325mm",
+              "headSize": 101,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-team-103-v3.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100 Pro V3",
+              "weight": 320,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-team-103-v3.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100 V3",
+              "weight": 310,
+              "balance": "320mm",
+              "headSize": 101,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-team-103-v3.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100L V3 Reverse",
+              "weight": 295,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100UL-v3-reverse-ecom-rkt.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100 Pro V3 Reverse",
+              "weight": 320,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100UL-v3-reverse-ecom-rkt.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100 V3 Reverse",
+              "weight": 310,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100UL-v3-reverse-ecom-rkt.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100L V3 Desert",
+              "weight": 295,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100l-v3-desert.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100 V3 Desert",
+              "weight": 310,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100l-v3-desert.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100L V3 Beauty & Agony",
+              "weight": 295,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100l-v3-beauty-and-agony.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "wilson-clash",
+              "brand": "Wilson",
+              "model": "Clash 100 V3 Beauty & Agony",
+              "weight": 310,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/clash/clash-100l-v3-beauty-and-agony.webp",
+              "tags": ["potenza"]
+            }
+          ]
+        },
+        {
+          "type": "Blade",
+          "models": [
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade Feel Team 103",
+              "weight": 290,
+              "balance": "340mm",
+              "headSize": 103,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-feel-team-103.webp",
+              "tags": ["permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade Feel RXT 105",
+              "weight": 313,
+              "balance": "340mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-feel-rxt-105.webp",
+              "tags": ["permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade Feel 103",
+              "weight": 280,
+              "balance": "340mm",
+              "headSize": 103,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-feel-103.webp",
+              "tags": ["permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade Feel 100",
+              "weight": 300,
+              "balance": "330mm",
+              "headSize": 101,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-feel-103.webp",
+              "tags": ["permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 104 V9",
+              "weight": 306,
+              "balance": "330mm",
+              "headSize": 104,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-104-v9.webp",
+              "tags": ["permissiva", "precisione"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 101L V9",
+              "weight": 290,
+              "balance": "340mm",
+              "headSize": 101,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-104-v9.webp",
+              "tags": ["permissiva", "precisione"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 100UL V9",
+              "weight": 281,
+              "balance": "345mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-104-v9.webp",
+              "tags": ["permissiva", "precisione"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 100L V9",
+              "weight": 301,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-104-v9.webp",
+              "tags": ["permissiva", "precisione"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 100 V9",
+              "weight": 316,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-104-v9.webp",
+              "tags": ["permissiva", "precisione"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 98S V9",
+              "weight": 311,
+              "balance": "335mm",
+              "headSize": 98,
+              "pattern": "18x16",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-104-v9.webp",
+              "tags": ["controllo"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 98(18x20) V9",
+              "weight": 321,
+              "balance": "330mm",
+              "headSize": 98,
+              "pattern": "18x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-104-v9.webp",
+              "tags": ["controllo"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 98(16x19) V9",
+              "weight": 321,
+              "balance": "330mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-104-v9.webp",
+              "tags": ["controllo"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 100L V9 US Open",
+              "weight": 301,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-100l-v9-us-open.webp",
+              "tags": ["controllo"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 98(16x19) V9 US Open 2025",
+              "weight": 321,
+              "balance": "330mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-100l-v9-us-open.webp",
+              "tags": ["controllo"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 101 Team V10",
+              "weight": 290,
+              "balance": "340mm",
+              "headSize": 101,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo", "permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 104 V10",
+              "weight": 305,
+              "balance": "330mm",
+              "headSize": 104,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo", "permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 100UL V10",
+              "weight": 280,
+              "balance": "345mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo", "permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 100L V10",
+              "weight": 300,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo", "permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 100 Pro V10",
+              "weight": 310,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo", "permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 98 Pro 18x20 V10",
+              "weight": 320,
+              "balance": "335mm",
+              "headSize": 98,
+              "pattern": "18x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 98 Pro 16x19 V10",
+              "weight": 320,
+              "balance": "335mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 100 V10",
+              "weight": 315,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo", "permissiva"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 98S V10",
+              "weight": 310,
+              "balance": "335mm",
+              "headSize": 98,
+              "pattern": "18x16",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 98 18x20 V10",
+              "weight": 320,
+              "balance": "330mm",
+              "headSize": 98,
+              "pattern": "18x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo"]
+            },
+            {
+              "id": "wilson-blade",
+              "brand": "Wilson",
+              "model": "Blade 98 16x19 V10",
+              "weight": 320,
+              "balance": "330mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/blade/blade-101-team-v10.webp",
+              "tags": ["controllo"]
+            }
+          ]
+        },
+        {
+          "type": "Defyer",
+          "models": [
+            {
+              "id": "wilson-defyer",
+              "brand": "Wilson",
+              "model": "Defyer 100UL V1",
+              "weight": 281,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/defyer/defyer-100ul-v1.webp",
+              "tags": ["maneggievole"]
+            },
+            {
+              "id": "wilson-defyer",
+              "brand": "Wilson",
+              "model": "Defyer 100L V1",
+              "weight": 300,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/defyer/defyer-100ul-v1.webp",
+              "tags": ["maneggievole"]
+            },
+            {
+              "id": "wilson-defyer",
+              "brand": "Wilson",
+              "model": "Defyer 100 V1",
+              "weight": 315,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/defyer/defyer-100ul-v1.webp",
+              "tags": ["maneggievole"]
+            },
+            {
+              "id": "wilson-defyer",
+              "brand": "Wilson",
+              "model": "Defyer 98 Pro V1",
+              "weight": 320,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "16x20",
+              "flexibility": 58,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/wilson/defyer/defyer-100ul-v1.webp",
+              "tags": ["maneggievole"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Babolat",
+      "racket": [
+        {
+          "type": "Aero",
+          "models": [
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Evo Aero Gen2",
+              "weight": 275,
+              "balance": "320mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 64,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/evo-aero-gen2.webp",
+              "tags": ["topspin", "potenza", "intermedio"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Evo Aero Pink Gen2",
+              "weight": 275,
+              "balance": "320mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 64,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/evo-aero-pink-gen2.webp",
+              "tags": ["topspin", "potenza", "intermedio"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Evo Aero Lite Pink Gen2",
+              "weight": 260,
+              "balance": "325mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 64,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/evo-aero-lite-pink-gen2.webp",
+              "tags": ["topspin", "potenza", "intermedio"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Evo Aero Lite Gen2",
+              "weight": 260,
+              "balance": "325mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 64,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/evo-aero-lite-gen2.webp",
+              "tags": ["topspin", "potenza", "intermedio"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Pure Aero Lite Gen9",
+              "weight": 270,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/pure-aero-lite-gen9.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Boost Aero",
+              "weight": 260,
+              "balance": "340mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 68,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/boost-aero.webp",
+              "tags": ["topspin", "principiante"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Boost Aero Pink",
+              "weight": 260,
+              "balance": "340mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 68,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/boost-aero-pink.webp",
+              "tags": ["topspin", "principiante"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Pure Aero + Gen9",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 69,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/pure-aero-plus-gen9.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Pure Aero Gen9",
+              "weight": 300,
+              "balance": "321mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 69,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/pure-aero-plus-gen9.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Pure Aero Team Gen9",
+              "weight": 285,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/pure-aero-team-gen9.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-aero",
+              "brand": "Babolat",
+              "model": "Pure Aero 98 Gen9",
+              "weight": 305,
+              "balance": "310mm",
+              "headSize": 98,
+              "pattern": "16x20",
+              "flexibility": 71,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/aero/pure-aero-98-gen9.webp",
+              "tags": ["topspin", "potenza"]
+            }
+          ]
+        },
+        {
+          "type": "Drive",
+          "models": [
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Evo Drive Tour Gen2",
+              "weight": 285,
+              "balance": "320mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/evo-drive-tour-gen2.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Evo Drive Lite Gen2",
+              "weight": 255,
+              "balance": "325mm",
+              "headSize": 104,
+              "pattern": "16x17",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/evo-drive-lite-gen2.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Evo Drive Lite White Gen2",
+              "weight": 255,
+              "balance": "325mm",
+              "headSize": 104,
+              "pattern": "16x17",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/evo-drive-lite-white-gen2.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Evo Drive Gen2",
+              "weight": 270,
+              "balance": "325mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/evo-drive-gen2.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Pure Drive Gen11",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 72,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/pure-drive-gen11.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Pure Drive 107 Gen11",
+              "weight": 285,
+              "balance": "320mm",
+              "headSize": 107,
+              "pattern": "16x19",
+              "flexibility": 72,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/pure-drive-107-gen11.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Pure Drive 98 Gen11",
+              "weight": 305,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "16x20",
+              "flexibility": 73,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/pure-drive-98-gen11.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Pure Drive Team Gen11",
+              "weight": 285,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 72,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/pure-drive-team-gen11.webp",
+              "tags": ["topspin", "potenza", "versatile"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Pure Drive + Gen11",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 72,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/pure-drive-plus-gen11.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Pure Drive Lite Gen11",
+              "weight": 270,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 72,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/pure-drive-lite-gen11.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Pure Drive Wimbledon (2026)",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 72,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/pure-drive-wimbledon-2026.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Boost Drive",
+              "weight": 260,
+              "balance": "345mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/boost-drive.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Boost Drive White",
+              "weight": 260,
+              "balance": "345mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/boost-drive-white.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "babolat-drive",
+              "brand": "Babolat",
+              "model": "Boost Wimbledon (2026)",
+              "weight": 260,
+              "balance": "345mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/drive/boost-wimbledon-2026.webp",
+              "tags": ["principiante"]
+            }
+          ]
+        },
+        {
+          "type": "Strike",
+          "models": [
+            {
+              "id": "babolat-strike",
+              "brand": "Babolat",
+              "model": "Pure Strike Lite Gen4",
+              "weight": 265,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 69,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/strike/pure-strike-lite-gen4.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-strike",
+              "brand": "Babolat",
+              "model": "Pure Strike Team Gen4",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 69,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/strike/pure-strike-team-gen4.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-strike",
+              "brand": "Babolat",
+              "model": "Pure Strike 16/19 Gen4",
+              "weight": 305,
+              "balance": "320mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 68,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/strike/pure-strike-1619-gen4.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-strike",
+              "brand": "Babolat",
+              "model": "Pure Strike 98 18/20 Gen4",
+              "weight": 305,
+              "balance": "320mm",
+              "headSize": 98,
+              "pattern": "18x20",
+              "flexibility": 68,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/strike/pure-strike-98-1820-gen4.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-strike",
+              "brand": "Babolat",
+              "model": "Pure Strike 100 16/20 Gen4",
+              "weight": 305,
+              "balance": "310mm",
+              "headSize": 100,
+              "pattern": "16x20",
+              "flexibility": 65,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/strike/pure-strike-100-1620-gen4.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-strike",
+              "brand": "Babolat",
+              "model": "Pure Strike 100 Gen4",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 68,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/strike/pure-strike-100-gen4.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-strike",
+              "brand": "Babolat",
+              "model": "Pure Strike 97 Gen4",
+              "weight": 310,
+              "balance": "310mm",
+              "headSize": 97,
+              "pattern": "16x20",
+              "flexibility": 67,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/strike/pure-strike-97-gen4.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-strike",
+              "brand": "Babolat",
+              "model": "Evo Strike Gen2",
+              "weight": 290,
+              "balance": "320mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/strike/evo-strike-gen2.webp",
+              "tags": ["topspin", "potenza"]
+            },
+            {
+              "id": "babolat-strike",
+              "brand": "Babolat",
+              "model": "Boost Strike",
+              "weight": 285,
+              "balance": "330mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/babolat/strike/boost-strike.webp",
+              "tags": ["topspin", "potenza"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Head",
+      "racket": [
+        {
+          "type": "Gravity",
+          "models": [
+            {
+              "id": "head-gravity",
+              "brand": "Head",
+              "model": "Gravity Team 2023",
+              "weight": 270,
+              "balance": "325mm",
+              "headSize": 104,
+              "pattern": "16x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/gravity/head-gravity-2023.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-gravity",
+              "brand": "Head",
+              "model": "Gravity MP L 2023",
+              "weight": 280,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/gravity/head-gravity-2023.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-gravity",
+              "brand": "Head",
+              "model": "Gravity MP 2023",
+              "weight": 295,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/gravity/head-gravity-2023.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-gravity",
+              "brand": "Head",
+              "model": "Gravity Tour 2023",
+              "weight": 305,
+              "balance": "320mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/gravity/head-gravity-2023.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-gravity",
+              "brand": "Head",
+              "model": "Gravity Pro 2023",
+              "weight": 315,
+              "balance": "310mm",
+              "headSize": 100,
+              "pattern": "18x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/gravity/head-gravity-2023.webp",
+              "tags": ["precisione"]
+            }
+          ]
+        },
+        {
+          "type": "Radical",
+          "models": [
+            {
+              "id": "head-radical",
+              "brand": "Head",
+              "model": "Radical Elite 2025",
+              "weight": 270,
+              "balance": "330mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/radical/head-radical-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-radical",
+              "brand": "Head",
+              "model": "Radical Team L 2025",
+              "weight": 260,
+              "balance": "340mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/radical/head-radical-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-radical",
+              "brand": "Head",
+              "model": "Radical Team 2025",
+              "weight": 280,
+              "balance": "320mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/radical/head-radical-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-radical",
+              "brand": "Head",
+              "model": "Radical MP 2025",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/radical/head-radical-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-radical",
+              "brand": "Head",
+              "model": "Radical Pro 2025",
+              "weight": 315,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/radical/head-radical-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-radical",
+              "brand": "Head",
+              "model": "Radical MP Palm Tree 2025",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/radical/head-radical-mp-palm-tree-2025.webp",
+              "tags": ["potenza", "spin"]
+            }
+          ]
+        },
+        {
+          "type": "Speed",
+          "models":[
+            {
+              "id": "head-speed",
+              "brand": "Head",
+              "model": "Speed Elite 2023",
+              "weight": 275,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/speed/head-speed-2023.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-speed",
+              "brand": "Head",
+              "model": "Speed Team 2023",
+              "weight": 270,
+              "balance": "325mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/speed/head-speed-2023.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-speed",
+              "brand": "Head",
+              "model": "Speed MP UL 2023",
+              "weight": 265,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/speed/head-speed-2023.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-speed",
+              "brand": "Head",
+              "model": "Speed MP L 2023",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/speed/head-speed-2023.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-speed",
+              "brand": "Head",
+              "model": "Speed MP 2023",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/speed/head-speed-2023.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-speed",
+              "brand": "Head",
+              "model": "Speed Tour 2023",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/speed/head-speed-2023.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-speed",
+              "brand": "Head",
+              "model": "Speed Pro 2023",
+              "weight": 310,
+              "balance": "310mm",
+              "headSize": 100,
+              "pattern": "18x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/speed/head-speed-2023.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-speed",
+              "brand": "Head",
+              "model": "Speed MP LEGEND 2025",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/speed/head-speed-legend-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-speed",
+              "brand": "Head",
+              "model": "Speed Pro Legend 2025",
+              "weight": 310,
+              "balance": "310mm",
+              "headSize": 100,
+              "pattern": "18x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/speed/head-speed-legend-2025.webp",
+              "tags": ["precisione"]
+            }
+          ]
+        },
+        {
+          "type": "Boom",
+          "models":[
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom Team 2026",
+              "weight": 260,
+              "balance": "340mm",
+              "headSize": 107,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom Elite 2026",
+              "weight": 270,
+              "balance": "340mm",
+              "headSize": 107,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom MP UL 2026",
+              "weight": 255,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom MP L 2026",
+              "weight": 275,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom MP 2026",
+              "weight": 295,
+              "balance": "315mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom Pro 2026",
+              "weight": 310,
+              "balance": "310mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom Team ALternate 2026",
+              "weight": 260,
+              "balance": "340mm",
+              "headSize": 107,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-alternate-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom MP UL ALternate 2026",
+              "weight": 255,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-alternate-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom MP L Alternate 2026",
+              "weight": 275,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-alternate-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom MP Alternate 2026",
+              "weight": 295,
+              "balance": "315mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-alternate-2026.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom Team Neon 2025",
+              "weight": 275,
+              "balance": "330mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-neon-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom MP L Neon 2025",
+              "weight": 270,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-neon-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-boom",
+              "brand": "Head",
+              "model": "Boom MP Neon 2026",
+              "weight": 295,
+              "balance": "315mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/boom/head-boom-neon-2025.webp",
+              "tags": ["potenza", "spin"]
+            }
+          ]
+        },
+        {
+          "type": "Extreme",
+          "models": [
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme MP 2022",
+              "weight": 300,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2022.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme Elite 2024",
+              "weight": 260,
+              "balance": "345mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2024.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme Team 2024",
+              "weight": 265,
+              "balance": "340mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2024.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme MP L 2024",
+              "weight": 280,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2024.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme MP 2024",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2024.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme Pro 2024",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2024.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme Elite 2026",
+              "weight": 260,
+              "balance": "345mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2026.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme Team 2026",
+              "weight": 265,
+              "balance": "340mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2026.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme MP UL 2026",
+              "weight": 260,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2026.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme MP XL 2026",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2026.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme MP L 2026",
+              "weight": 280,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2026.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme MP 2026",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2026.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-extreme",
+              "brand": "Head",
+              "model": "Extreme Pro 2026",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/extreme/head-extreme-2026.webp",
+              "tags": ["precisione"]
+            }
+          ]
+        },
+        {
+          "type": "Prestige",
+          "models": [
+            {
+              "id": "head-prestige",
+              "brand": "Head",
+              "model": "Prestige MP L 2023",
+              "weight": 300,
+              "balance": "315mm",
+              "headSize": 99,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/prestige/head-prestige-2023.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-prestige",
+              "brand": "Head",
+              "model": "Prestige MP 2023",
+              "weight": 310,
+              "balance": "320mm",
+              "headSize": 99,
+              "pattern": "18x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/prestige/head-prestige-2023.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-prestige",
+              "brand": "Head",
+              "model": "Prestige Tour 2023",
+              "weight": 315,
+              "balance": "315mm",
+              "headSize": 95,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/prestige/head-prestige-2023.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "head-prestige",
+              "brand": "Head",
+              "model": "Prestige Pro 2023",
+              "weight": 320,
+              "balance": "310mm",
+              "headSize": 98,
+              "pattern": "18x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/prestige/head-prestige-2023.webp",
+              "tags": ["precisione"]
+            }
+          ]
+        },
+        {
+          "type": "Instinct",
+          "models": [
+            {
+              "id": "head-instinct",
+              "brand": "Head",
+              "model": "Instinct Team 2025",
+              "weight": 285,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/instinct/head-instinct-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-instinct",
+              "brand": "Head",
+              "model": "Instinct Team L 2025",
+              "weight": 270,
+              "balance": "340mm",
+              "headSize": 107,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/instinct/head-instinct-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-instinct",
+              "brand": "Head",
+              "model": "Instinct PWR 110 2025",
+              "weight": 265,
+              "balance": "345mm",
+              "headSize": 110,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/instinct/head-instinct-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-instinct",
+              "brand": "Head",
+              "model": "Instinct PWR 110 White 2025",
+              "weight": 265,
+              "balance": "345mm",
+              "headSize": 110,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/instinct/head-instinct-pwr-110-white-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-instinct",
+              "brand": "Head",
+              "model": "Instinct PWR 115 2025",
+              "weight": 230,
+              "balance": "375mm",
+              "headSize": 115,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/instinct/head-instinct-pwr-115-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-instinct",
+              "brand": "Head",
+              "model": "Instinct PWR 115 Black 2025",
+              "weight": 230,
+              "balance": "375mm",
+              "headSize": 115,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/instinct/head-instinct-pwr-115-black-2025.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "head-instinct",
+              "brand": "Head",
+              "model": "Instinct Team 2025",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/instinct/head-instinct-2025.webp",
+              "tags": ["potenza", "spin"]
+            }
+          ]
+        },
+        {
+          "type": "Squared",
+          "models": [
+            {
+              "id": "head-squared",
+              "brand": "Head",
+              "model": "Squared 2026",
+              "weight": 295,
+              "balance": "295mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/head/squared/head-squared-2026.webp",
+              "tags": ["potenza", "spin"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Yonex",
+      "racket": [
+        {
+          "type": "Muse",
+          "models": [
+            {
+              "id": "yonex-muse",
+              "brand": "Yonex",
+              "model": "Muse 100SL 2026",
+              "weight": 265,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/muse/yonex-muse-2026.webp",
+              "tags": ["maneggievole"]
+            },
+            {
+              "id": "yonex-muse",
+              "brand": "Yonex",
+              "model": "Muse 100L 2026",
+              "weight": 280,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/muse/yonex-muse-2026.webp",
+              "tags": ["maneggievole"]
+            },
+            {
+              "id": "yonex-muse",
+              "brand": "Yonex",
+              "model": "Muse 100 2026",
+              "weight": 295,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/muse/yonex-muse-2026.webp",
+              "tags": ["maneggievole"]
+            },
+            {
+              "id": "yonex-muse",
+              "brand": "Yonex",
+              "model": "Muse 98 2026",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/muse/yonex-muse-2026.webp",
+              "tags": ["maneggievole"]
+            }
+          ]
+        },
+        {
+          "type": "Regna",
+          "models": [
+            {
+              "id": "yonex-regna",
+              "brand": "Yonex",
+              "model": "Regna 100 2022",
+              "weight": 295,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/regna/yonex-regna-2022.webp",
+              "tags": ["precisione", "potenza", "comfort"]
+            },
+            {
+              "id": "yonex-regna",
+              "brand": "Yonex",
+              "model": "Regna 98 2022",
+              "weight": 310,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/regna/yonex-regna-2022.webp",
+              "tags": ["precisione", "potenza", "comfort"]
+            }
+          ]
+        },
+        {
+          "type": "Smash Team",
+          "models": [
+            {
+              "id": "yonex-smash-team",
+              "brand": "Yonex",
+              "model": "Smash Team Black&White",
+              "weight": 290,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/smash-team/yonex-smash-team-black-and-white.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-smash-team",
+              "brand": "Yonex",
+              "model": "Smash Team Black&White",
+              "weight": 290,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/smash-team/yonex-smash-team-deep-blue.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-smash-team",
+              "brand": "Yonex",
+              "model": "Smash Team Black&White",
+              "weight": 290,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/smash-team/yonex-smash-team-white-silver.webp",
+              "tags": ["principiante"]
+            }
+          ]
+        },
+        {
+          "type": "Percept",
+          "models": [
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 100L Olive Green",
+              "weight": 280,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-L-olive-green.webp",
+              "tags": ["leggera"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 100 Olive Green",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-olive-green.webp",
+              "tags": ["flessibile"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 97D Olive Green",
+              "weight": 320,
+              "balance": "310mm",
+              "headSize": 97,
+              "pattern": "18x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-olive-green.webp",
+              "tags": ["flessibile"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 97H Olive Green",
+              "weight": 330,
+              "balance": "310mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-olive-green.webp",
+              "tags": ["flessibile"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 97L Olive Green",
+              "weight": 290,
+              "balance": "325mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-L-olive-green.webp",
+              "tags": ["leggera"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 97 Olive Green",
+              "weight": 310,
+              "balance": "310mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-olive-green.webp",
+              "tags": ["flessibile"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 100D Midnight Blue",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 100,
+              "pattern": "18x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-midnight-navy.webp",
+              "tags": ["flessibile"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 100L Midnight Blue",
+              "weight": 280,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-midnight-navy.webp",
+              "tags": ["flessibile"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 100 Midnight Blue",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-midnight-navy.webp",
+              "tags": ["flessibile"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 97D Midnight Blue",
+              "weight": 320,
+              "balance": "310mm",
+              "headSize": 97,
+              "pattern": "18x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-midnight-navy.webp",
+              "tags": ["flessibile"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 97L Midnight Blue",
+              "weight": 290,
+              "balance": "325mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-midnight-navy.webp",
+              "tags": ["flessibile"]
+            },
+            {
+              "id": "yonex-percept",
+              "brand": "Yonex",
+              "model": "Percept 97 Midnight Blue",
+              "weight": 310,
+              "balance": "310mm",
+              "headSize": 97,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/percept/yonex-percept-midnight-navy.webp",
+              "tags": ["flessibile"]
+            }
+          ]
+        },
+        {
+          "type": "Ezone",
+          "models": [
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone Play 2025",
+              "weight": 265,
+              "balance": "355mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-play-ace-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone Ace 2025",
+              "weight": 260,
+              "balance": "345mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-play-ace-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone Alfa SL",
+              "weight": 245,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone Alfa L",
+              "weight": 260,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone Alfa",
+              "weight": 275,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 115",
+              "weight": 250,
+              "balance": "360mm",
+              "headSize": 115,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 110",
+              "weight": 255,
+              "balance": "335mm",
+              "headSize": 110,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 105",
+              "weight": 275,
+              "balance": "330mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 100+",
+              "weight": 300,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["versatile"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 100SL",
+              "weight": 270,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["versatile"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 100L",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["versatile"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 100",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 98+",
+              "weight": 305,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 98 Tour",
+              "weight": 315,
+              "balance": "320mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 98L",
+              "weight": 285,
+              "balance": "330mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-ezone",
+              "brand": "Yonex",
+              "model": "Ezone 98",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/ezone/yonex-ezone-2025.webp",
+              "tags": ["principiante"]
+            }
+          ]
+        },
+        {
+          "type": "VCore",
+          "models": [
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore Play 2025",
+              "weight": 265,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-play-ace-2026.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore Ace 2025",
+              "weight": 260,
+              "balance": "345mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-play-ace-2026.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore Alfa SL 2025",
+              "weight": 245,
+              "balance": "340mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore Alfa L 2025",
+              "weight": 260,
+              "balance": "335mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore Alfa 2025",
+              "weight": 275,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore 100D 2025",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 100,
+              "pattern": "16x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2025.webp",
+              "tags": ["spin"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore 100+ 2025",
+              "weight": 300,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2025.webp",
+              "tags": ["spin"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore 100L 2025",
+              "weight": 280,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["spin"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore 100 2025",
+              "weight": 305,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["spin"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore 98+ 2025",
+              "weight": 305,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["spin"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore 98L 2025",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["spin"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore 98 2025",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["spin"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore 98 Tour 2025",
+              "weight": 315,
+              "balance": "320mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["spin"]
+            },
+            {
+              "id": "yonex-vcore",
+              "brand": "Yonex",
+              "model": "Vcore 95 2025",
+              "weight": 310,
+              "balance": "340mm",
+              "headSize": 95,
+              "pattern": "16x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/yonex/vcore/yonex-vcore-2026.webp",
+              "tags": ["spin"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Tecnifibre",
+      "racket": [
+        {
+          "type": "T-Fight",
+          "models": [
+                        {
+              "id": "tecnifibre-tfight",
+              "brand": "Tecnifibre",
+              "model": "T-Fight 255",
+              "weight": 255,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tfight/tecnifibre-tfight.webp",
+              "tags": ["potenza", "controllo"]
+            },
+            {
+              "id": "tecnifibre-tfight",
+              "brand": "Tecnifibre",
+              "model": "T-Fight 270",
+              "weight": 270,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tfight/tecnifibre-tfight.webp",
+              "tags": ["potenza", "controllo"]
+            },
+            {
+              "id": "tecnifibre-tfight",
+              "brand": "Tecnifibre",
+              "model": "T-Fight 285",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tfight/tecnifibre-tfight.webp",
+              "tags": ["potenza", "controllo"]
+            },
+            {
+              "id": "tecnifibre-tfight",
+              "brand": "Tecnifibre",
+              "model": "T-Fight 300",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tfight/tecnifibre-tfight.webp",
+              "tags": ["potenza", "controllo"]
+            },
+            {
+              "id": "tecnifibre-tfight",
+              "brand": "Tecnifibre",
+              "model": "T-Fight 300S",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tfight/tecnifibre-tfight.webp",
+              "tags": ["potenza", "controllo"]
+            },
+            {
+              "id": "tecnifibre-tfight",
+              "brand": "Tecnifibre",
+              "model": "T-Fight 305S",
+              "weight": 305,
+              "balance": "333mm",
+              "headSize": 98,
+              "pattern": "18x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tfight/tecnifibre-tfight.webp",
+              "tags": ["potenza", "controllo"]
+            },
+            {
+              "id": "tecnifibre-tfight",
+              "brand": "Tecnifibre",
+              "model": "T-Fight 315S",
+              "weight": 315,
+              "balance": "310mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tfight/tecnifibre-tfight.webp",
+              "tags": ["potenza", "controllo"]
+            },
+            {
+              "id": "tecnifibre-tfight",
+              "brand": "Tecnifibre",
+              "model": "T-Fight 300 IG",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tfight/tecnifibre-tfight-IG.webp",
+              "tags": ["potenza", "controllo"]
+            },
+            {
+              "id": "tecnifibre-tfight",
+              "brand": "Tecnifibre",
+              "model": "T-Fight 300S IG",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tfight/tecnifibre-tfight-IG.webp",
+              "tags": ["potenza", "controllo"]
+            }
+          ]
+        },
+        {
+          "type": "TF-40",
+          "models": [
+            {
+              "id": "tecnifibre-tf40",
+              "brand": "Tecnifibre",
+              "model": "TF-40 290 16M V3",
+              "weight": 290,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tf40/tecnifibre-tf40.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "tecnifibre-tf40",
+              "brand": "Tecnifibre",
+              "model": "TF-40 305 16M V3",
+              "weight": 305,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tf40/tecnifibre-tf40.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "tecnifibre-tf40",
+              "brand": "Tecnifibre",
+              "model": "TF-40 305 18M V3",
+              "weight": 305,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "18x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tf40/tecnifibre-tf40.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "tecnifibre-tf40",
+              "brand": "Tecnifibre",
+              "model": "TF-40 315 16M V3",
+              "weight": 315,
+              "balance": "310mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tf40/tecnifibre-tf40.webp",
+              "tags": ["precisione"]
+            },
+            {
+              "id": "tecnifibre-tf40",
+              "brand": "Tecnifibre",
+              "model": "TF-40 315 18M V3",
+              "weight": 315,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "18x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tf40/tecnifibre-tf40.webp",
+              "tags": ["precisione"]
+            }
+          ]
+        },
+        {
+          "type": "Fire",
+          "models": [
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Fire 255",
+              "weight": 255,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/fire/tecnifibre-fire.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Fire 260 OS",
+              "weight": 260,
+              "balance": "330mm",
+              "headSize": 110,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/fire/tecnifibre-fire.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Fire 270",
+              "weight": 270,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/fire/tecnifibre-fire.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Fire 285",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/fire/tecnifibre-fire.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Fire 300",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/fire/tecnifibre-fire.webp",
+              "tags": ["potenza"]
+            },
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Fire 305S",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/fire/tecnifibre-fire.webp",
+              "tags": ["potenza"]
+            }
+          ]
+        },
+        {
+          "type": "Tempo",
+          "models": [
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Tempo 255 V2",
+              "weight": 255,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tempo/tecnifibre-tempo-v2.webp",
+              "tags": ["women"]
+            },
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Tempo 265 V2",
+              "weight": 265,
+              "balance": "330mm",
+              "headSize": 102,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tempo/tecnifibre-tempo-v2.webp",
+              "tags": ["women"]
+            },
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Tempo 270 V2",
+              "weight": 270,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tempo/tecnifibre-tempo-v2.webp",
+              "tags": ["women"]
+            },
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Tempo 275 V2",
+              "weight": 275,
+              "balance": "320mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tempo/tecnifibre-tempo-v2.webp",
+              "tags": ["women"]
+            },
+            {
+              "id": "tecnifibre-fire",
+              "brand": "Tecnifibre",
+              "model": "Tempo 285 V2",
+              "weight": 285,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/tecnifibre/tempo/tecnifibre-tempo-v2.webp",
+              "tags": ["women"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Dunlop",
+      "racket": [
+        {
+          "type": "Tristorm",
+          "models": [
+            {
+              "id": "dunlop-tristorm",
+              "brand": "Dunlop",
+              "model": "Tristorm Pro 100 Lite G0 NH",
+              "weight": 265,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/tristorm/dunlop-tristorm-pro-100-lite-g0-nh.webp",
+              "tags": ["maneggievole"]
+            },
+            {
+              "id": "dunlop-tristorm",
+              "brand": "Dunlop",
+              "model": "Tristorm Elite 100",
+              "weight": 270,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/tristorm/dunlop-tristorm-elite-100.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "dunlop-tristorm",
+              "brand": "Dunlop",
+              "model": "Tristorm Pro 100 Super Lite G0 NH",
+              "weight": 255,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/tristorm/dunlop-tristorm-pro-100-super-lite-g0-nh.webp",
+              "tags": ["maneggievole"]
+            },
+            {
+              "id": "dunlop-tristorm",
+              "brand": "Dunlop",
+              "model": "Tristorm Team 100 G1 NH",
+              "weight": 285,
+              "balance": "315mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/tristorm/dunlop-tristorm-team-100-g1-nh.webp",
+              "tags": ["maneggievole"]
+            }
+          ]
+        },
+        {
+          "type": "SX",
+          "models": [
+            {
+              "id": "dunlop-sx",
+              "brand": "Dunlop",
+              "model": "SX Team 100 G0 NH",
+              "weight": 280,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/sx/dunlop-sx-team-100-g0-nh.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "dunlop-sx",
+              "brand": "Dunlop",
+              "model": "SX Team 105 G0 NH",
+              "weight": 260,
+              "balance": "350mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/sx/dunlop-sx-team-100-g0-nh.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "dunlop-sx",
+              "brand": "Dunlop",
+              "model": "25 SX300 Tour G2 NH",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/sx/dunlop-25-sx300.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "dunlop-sx",
+              "brand": "Dunlop",
+              "model": "25 SX300 G1 NH",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/sx/dunlop-25-sx300.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "dunlop-sx",
+              "brand": "Dunlop",
+              "model": "25 SX300 LS G1 NH",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/sx/dunlop-25-sx300.webp",
+              "tags": ["potenza", "spin"]
+            },
+            {
+              "id": "dunlop-sx",
+              "brand": "Dunlop",
+              "model": "25 SX300 Lite G0 NH",
+              "weight": 270,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/sx/dunlop-25-sx300-lite.webp",
+              "tags": ["potenza", "spin"]
+            }
+          ]
+        },
+        {
+          "type": "LX",
+          "models": [
+            {
+              "id": "dunlop-lx",
+              "brand": "Dunlop",
+              "model": "24 LX Team 107 G1 NH",
+              "weight": 270,
+              "balance": "340mm",
+              "headSize": 107,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/lx/dunlop-24-lx-team-107-g1-nh.webp",
+              "tags": ["permissiva"]
+            },
+            {
+              "id": "dunlop-lx",
+              "brand": "Dunlop",
+              "model": "24 LX Team 107 G1 NH",
+              "weight": 270,
+              "balance": "340mm",
+              "headSize": 107,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/lx/dunlop-24-lx-team-107-g1-nh.webp",
+              "tags": ["permissiva"]
+            },
+            {
+              "id": "dunlop-lx",
+              "brand": "Dunlop",
+              "model": "24 LX800 G1 NH",
+              "weight": 255,
+              "balance": "340mm",
+              "headSize": 110,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/lx/dunlop-24-lx800-g1-nh.webp",
+              "tags": ["permissiva"]
+            },
+            {
+              "id": "dunlop-lx",
+              "brand": "Dunlop",
+              "model": "24 LX1000 G1 NH",
+              "weight": 255,
+              "balance": "340mm",
+              "headSize": 115,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/lx/dunlop-24-lx1000-g1-nh.webp",
+              "tags": ["permissiva"]
+            }
+          ]
+        },
+        {
+          "type": "FX",
+          "models": [
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "26 FX Team 100 G1 NH",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-26-fx-team-100-g1-nh.webp",
+              "tags": ["potenza", "comfort"]
+            },
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "26 FX Start 100 G2 HQ",
+              "weight": 250,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-26-fx-start-100-g2-hq.webp",
+              "tags": ["principiante"]
+            },
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "26 FX500 G1 NH",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-26-fx500-g1-nh.webp",
+              "tags": ["maneggievole", "potenza"]
+            },
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "26 FX500 Tour G1 NH",
+              "weight": 300,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-26-fx500-g1-nh.webp",
+              "tags": ["maneggievole", "potenza"]
+            },
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "26 FX500 LS G1 NH",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-26-fx500-ls-g1-nh.webp",
+              "tags": ["maneggievole", "potenza"]
+            },
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "26 FX500 Lite G0 NH",
+              "weight": 270,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-26-fx500-lite-g0-nh.webp",
+              "tags": ["maneggievole", "potenza"]
+            },
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "26 FX500 Super Lite G0 NH",
+              "weight": 255,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x18",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-26-fx500-lite-g0-nh.webp",
+              "tags": ["maneggievole", "potenza"]
+            },
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "FX500 G1 NH",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-fx500-g1-nh.webp",
+              "tags": ["maneggievole", "potenza"]
+            },
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "FX500 Tour G2 NH",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-fx500-g1-nh.webp",
+              "tags": ["maneggievole", "potenza"]
+            },
+            {
+              "id": "dunlop-fx",
+              "brand": "Dunlop",
+              "model": "FX500 LS G1 NH",
+              "weight": 285,
+              "balance": "325mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/fx/dunlop-fx500-g1-nh.webp",
+              "tags": ["maneggievole", "potenza"]
+            }
+          ]
+        },
+        {
+          "type": "CX",
+          "models": [
+            {
+              "id": "dunlop-cx",
+              "brand": "Dunlop",
+              "model": "24 CX200 Tour 18x20 G2 NH",
+              "weight": 315,
+              "balance": "310mm",
+              "headSize": 95,
+              "pattern": "18x20",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/cx/dunlop-24-cx200-tour-18x20-g2-nh.webp",
+              "tags": ["controllo", "potenza"]
+            },
+            {
+              "id": "dunlop-cx",
+              "brand": "Dunlop",
+              "model": "24 CX200 Tour 16x19 G2 NH",
+              "weight": 310,
+              "balance": "310mm",
+              "headSize": 95,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/cx/dunlop-24-cx200-tour-16x19-g2-nh.webp",
+              "tags": ["controllo", "potenza"]
+            },
+            {
+              "id": "dunlop-cx",
+              "brand": "Dunlop",
+              "model": "24 CX200 G2 NH",
+              "weight": 305,
+              "balance": "315mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/cx/dunlop-24-cx200-g2-nh.webp",
+              "tags": ["controllo", "potenza"]
+            },
+            {
+              "id": "dunlop-cx",
+              "brand": "Dunlop",
+              "model": "24 CX200 LS G1 NH",
+              "weight": 290,
+              "balance": "325mm",
+              "headSize": 98,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/cx/dunlop-24-cx200-ls-g1-nh.webp",
+              "tags": ["controllo", "potenza"]
+            },
+            {
+              "id": "dunlop-cx",
+              "brand": "Dunlop",
+              "model": "24 CX200 OS G1 NH",
+              "weight": 295,
+              "balance": "325mm",
+              "headSize": 105,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/cx/dunlop-24-cx200-os-g1-nh.webp",
+              "tags": ["controllo", "potenza"]
+            },
+            {
+              "id": "dunlop-cx",
+              "brand": "Dunlop",
+              "model": "24 CX400 G1 NH",
+              "weight": 300,
+              "balance": "330mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/cx/dunlop-24-cx400-g1-nh.webp",
+              "tags": ["controllo", "potenza"]
+            },
+            {
+              "id": "dunlop-cx",
+              "brand": "Dunlop",
+              "model": "24 CX400 Tour G1 NH",
+              "weight": 300,
+              "balance": "320mm",
+              "headSize": 100,
+              "pattern": "16x19",
+              "flexibility": 70,
+              "surface": "all",
+              "imageUrl": "/catalog/racchette/dunlop/cx/dunlop-24-cx400-tour-g1-nh.webp",
+              "tags": ["controllo", "potenza"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "scarpe": [
+    {
+      "brand": "Nike",
+      "shoes": [
+        {
+          "type": "Vapor",
+          "models": [
+            {
+              "id": "nike-vapor-pro-2-terra",
+              "brand": "Nike",
+              "model": "Air Zoom Vapor Pro 2",
+              "surface": ["terra"],
+              "imageUrl": "https://static.nike.com/a/images/t_PDP_1280_v1/DV2020-700_1.jpg",
+              "tags": ["terra rossa", "leggera"]
+            },
+            {
+              "id": "nike-vapor-pro-2-cemento",
+              "brand": "Nike",
+              "model": "Air Zoom Vapor Pro 2 HC",
+              "surface": ["cemento"],
+              "imageUrl": "https://static.nike.com/a/images/t_PDP_1280_v1/DV2020-101_1.jpg",
+              "tags": ["cemento", "leggera"]
+            }
+          ]
+        },
+        {
+          "type": "Cage",
+          "models": [
+            {
+              "id": "nike-cage-4",
+              "brand": "Nike",
+              "model": "NikeCourt Cage 4",
+              "surface": ["cemento", "indoor"],
+              "imageUrl": "https://static.nike.com/a/images/t_PDP_1280_v1/CD0424-100_1.jpg",
+              "tags": ["cemento", "indoor", "durabile"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Adidas",
+      "shoes": [
+        {
+          "type": "Barricade",
+          "models": [
+            {
+              "id": "adidas-barricade-terra",
+              "brand": "Adidas",
+              "model": "Barricade Clay",
+              "surface": ["terra"],
+              "imageUrl": "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/barricade_clay.jpg",
+              "tags": ["terra rossa", "durabile"]
+            }
+          ]
+        },
+        {
+          "type": "Adizero",
+          "models": [
+            {
+              "id": "adidas-adizero-ubersonic",
+              "brand": "Adidas",
+              "model": "Adizero Ubersonic 4",
+              "surface": ["cemento"],
+              "imageUrl": "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/ubersonic4_hc.jpg",
+              "tags": ["cemento", "veloce", "leggera"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Babolat",
+      "shoes": [
+        {
+          "type": "Propulse",
+          "models": [
+            {
+              "id": "babolat-propulse-fury-terra",
+              "brand": "Babolat",
+              "model": "Propulse Fury Clay",
+              "surface": ["terra"],
+              "imageUrl": "https://www.babolat.com/images/31S22631-100_1.jpg",
+              "tags": ["terra rossa", "grip", "stabilità"]
+            }
+          ]
+        },
+        {
+          "type": "Jet",
+          "models": [
+            {
+              "id": "babolat-jet-mach-cemento",
+              "brand": "Babolat",
+              "model": "Jet Mach III HC",
+              "surface": ["cemento"],
+              "imageUrl": "https://www.babolat.com/images/30S22629-100_1.jpg",
+              "tags": ["cemento", "leggera", "veloce"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Head",
+      "shoes": [
+        {
+          "type": "Sprint",
+          "models": [
+            {
+              "id": "head-sprint-pro-terra",
+              "brand": "Head",
+              "model": "Sprint Pro 3.5 Clay",
+              "surface": ["terra"],
+              "imageUrl": "https://www.head.com/on/demandware.static/-/Sites-head-master/default/images/shoes/273082_Sprint_Pro_3.5_Clay.png",
+              "tags": ["terra rossa", "precisione"]
+            },
+            {
+              "id": "head-sprint-pro-cemento",
+              "brand": "Head",
+              "model": "Sprint Pro 3.5 AC",
+              "surface": ["cemento"],
+              "imageUrl": "https://www.head.com/on/demandware.static/-/Sites-head-master/default/images/shoes/273082_Sprint_Pro_3.5_AC.png",
+              "tags": ["cemento", "comfort"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Wilson",
+      "shoes": [
+        {
+          "type": "Rush",
+          "models": [
+            {
+              "id": "wilson-rush-pro-terra",
+              "brand": "Wilson",
+              "model": "Rush Pro 4.0 Clay",
+              "surface": ["terra"],
+              "imageUrl": "https://www.wilson.com/en-us/media/catalog/product/W/R/WRS331060_1.png",
+              "tags": ["terra rossa", "stabilità"]
+            },
+            {
+              "id": "wilson-rush-pro-cemento",
+              "brand": "Wilson",
+              "model": "Rush Pro 4.0 HC",
+              "surface": ["cemento"],
+              "imageUrl": "https://www.wilson.com/en-us/media/catalog/product/W/R/WRS331050_1.png",
+              "tags": ["cemento", "durabile"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "Asics",
+      "shoes": [
+        {
+          "type": "Gel Resolution",
+          "models": [
+            {
+              "id": "asics-gel-resolution-terra",
+              "brand": "Asics",
+              "model": "Gel-Resolution 9 Clay",
+              "surface": ["terra"],
+              "imageUrl": "https://images.asics.com/is/image/asics/1041A458_100_SR_RT_GLB.jpg",
+              "tags": ["terra rossa", "comfort", "stabilità"]
+            },
+            {
+              "id": "asics-gel-resolution-cemento",
+              "brand": "Asics",
+              "model": "Gel-Resolution 9 HC",
+              "surface": ["cemento"],
+              "imageUrl": "https://images.asics.com/is/image/asics/1041A458_001_SR_RT_GLB.jpg",
+              "tags": ["cemento", "comfort", "durabile"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "brand": "New Balance",
+      "shoes": [
+        {
+          "type": "796",
+          "models": [
+            {
+              "id": "new-balance-796-terra",
+              "brand": "New Balance",
+              "model": "Fresh Foam Lav v2 Clay",
+              "surface": ["terra"],
+              "imageUrl": "https://nb.scene7.com/is/image/NB/mchlavb2_nb_02_i.jpg",
+              "tags": ["terra rossa", "ammortizzazione"]
+            },
+            {
+              "id": "new-balance-796-cemento",
+              "brand": "New Balance",
+              "model": "Fresh Foam Lav v2 HC",
+              "surface": ["cemento"],
+              "imageUrl": "https://nb.scene7.com/is/image/NB/mchlavw2_nb_02_i.jpg",
+              "tags": ["cemento", "ammortizzazione"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -29,6 +29,15 @@ export default function EquipmentDetailModal({
       stringDate:    item.strings?.mountedAt
         ? item.strings.mountedAt.split('T')[0]
         : (item.stringDate || ''),
+      name:         item.name        || '',
+      maglietta:    item.maglietta   || '',
+      pantaloncini: item.pantaloncini || '',
+      calzini:      item.calzini     || '',
+      polsini:      item.polsini     || '',
+      fascia:       item.fascia      || '',
+      brand:        item.brand       || '',
+      model:        item.model       || '',
+      notes:        item.notes       || '',
     })
     setMode('edit')
   }
@@ -37,7 +46,7 @@ export default function EquipmentDetailModal({
   // senza toccare lo storico (per quello c'è "Nuova incordatura")
   const handleSaveEdit = async () => {
     setSaving(true)
-    const data = { nickname: editForm.nickname }
+    let data = { nickname: editForm.nickname }
     if (item.type === 'racchetta') {
       data.strings = {
         brand:          editForm.stringBrand || null,
@@ -45,6 +54,21 @@ export default function EquipmentDetailModal({
         tensionMains:   editForm.stringTensionMains   ? Number(editForm.stringTensionMains)   : null,
         tensionCrosses: editForm.stringTensionCrosses ? Number(editForm.stringTensionCrosses) : null,
         mountedAt: editForm.stringDate ? new Date(editForm.stringDate).toISOString() : null,
+      }
+    } else if (item.type === 'outfit') {
+      data = {
+        name:         editForm.name         || null,
+        maglietta:    editForm.maglietta    || null,
+        pantaloncini: editForm.pantaloncini || null,
+        calzini:      editForm.calzini      || null,
+        polsini:      editForm.polsini      || null,
+        fascia:       editForm.fascia       || null,
+      }
+    } else if (item.type === 'borsone') {
+      data = {
+        brand: editForm.brand || null,
+        model: editForm.model || null,
+        notes: editForm.notes || null,
       }
     }
     await onUpdate(item.id, data)
@@ -332,6 +356,29 @@ export default function EquipmentDetailModal({
                     <EditInput label="Tensione orizzontali (kg)" type="number" value={editForm.stringTensionCrosses} onChange={v => setField('stringTensionCrosses', v)} />
                   </div>
                   <EditInput label="Data montaggio" type="date" value={editForm.stringDate} onChange={v => setField('stringDate', v)} />
+                </div>
+              )}
+
+              {/* Outfit — composizione */}
+              {item.type === 'outfit' && (
+                <div className="space-y-3">
+                  <EditInput label="Nome outfit" value={editForm.name} onChange={v => setField('name', v)} placeholder="Es. Setup Torneo" />
+                  <EditInput label="Maglietta"    value={editForm.maglietta}    onChange={v => setField('maglietta', v)} />
+                  <EditInput label="Pantaloncini" value={editForm.pantaloncini} onChange={v => setField('pantaloncini', v)} />
+                  <EditInput label="Calzini"      value={editForm.calzini}      onChange={v => setField('calzini', v)} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <EditInput label="Polsini"           value={editForm.polsini} onChange={v => setField('polsini', v)} />
+                    <EditInput label="Fascia / Cappellino" value={editForm.fascia} onChange={v => setField('fascia', v)} />
+                  </div>
+                </div>
+              )}
+
+              {/* Borsone */}
+              {item.type === 'borsone' && (
+                <div className="space-y-3">
+                  <EditInput label="Marca"  value={editForm.brand} onChange={v => setField('brand', v)} />
+                  <EditInput label="Modello" value={editForm.model} onChange={v => setField('model', v)} />
+                  <EditInput label="Note" value={editForm.notes} onChange={v => setField('notes', v)} placeholder="Capienza, colore..." />
                 </div>
               )}
 

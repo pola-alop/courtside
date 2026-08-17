@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  MATCH_TYPES, FORMAT_LIST, MATCH_FORMATS, SURFACES,
+  MATCH_TYPES, FORMAT_LIST, MATCH_FORMATS, SURFACES, ROUNDS,
   emptySet, setKind, countSets, computeOutcome, hasScore,
   isTiebreakSet, isTiebreakValid, RESULT_META, surfaceIcon,
 } from '../../lib/tennis'
@@ -31,6 +31,9 @@ function initialForm(initial) {
     opponentId: initial?.opponentId || null,
     type:       initial?.type || 'amichevole',
     eventName:  initial?.eventName || '',
+    // Solo per i tornei. Le partite registrate prima che il campo esistesse
+    // partono a null: modificarle è la via (guidata) per assegnare il turno.
+    round:      initial?.round || null,
     surface:    initial?.surface || null,
     format:     initial?.format || 'amatoriale',
     sets:       initial?.sets?.length ? initial.sets.map(s => ({ ...s })) : [emptySet()],
@@ -63,7 +66,12 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
     switch (step) {
       case 1: return Boolean(form.date)
       case 2: return Boolean(form.opponentId)
-      case 3: return Boolean(form.type) && (!typeMeta?.needsEvent || form.eventName.trim().length > 0)
+      // Il turno è obbligatorio SOLO per i tornei: è un tap su una griglia già
+      // a schermo, e senza di esso la sezione Tornei non può ricostruire il
+      // cammino (una partita senza turno è un buco nel tabellone).
+      case 3: return Boolean(form.type)
+        && (!typeMeta?.needsEvent || form.eventName.trim().length > 0)
+        && (form.type !== 'torneo' || Boolean(form.round))
       case 4: return Boolean(form.surface)
       case 5: {
         const anyScore = form.sets.some(hasScore) || Boolean(form.retired)
@@ -103,6 +111,7 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
       opponentName: opponent?.name || '—',
       type:         form.type,
       eventName:    typeMeta?.needsEvent ? form.eventName.trim() : null,
+      round:        form.type === 'torneo' ? form.round : null,
       surface:      form.surface,
       format:       form.format,
       sets:         cleanedSets,
@@ -340,6 +349,39 @@ function StepType({ form, set }) {
           />
           <p className="text-xs mt-1" style={{ color: 'var(--color-slate)' }}>
             Campionati e tornei devono sempre concludersi con un vincitore.
+          </p>
+        </div>
+      )}
+
+      {/* Turno del tabellone — solo torneo. La scala è "quanto manca alla
+          finale", quindi funziona anche con i tabelloni irregolari (bye,
+          tabelloni limitati, main draw che non sono potenze di 2). */}
+      {form.type === 'torneo' && (
+        <div>
+          <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>
+            Turno *
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {ROUNDS.map(r => {
+              const active = form.round === r.id
+              return (
+                <button key={r.id}
+                  onClick={() => set('round', r.id)}
+                  className="py-2.5 rounded-xl text-xs font-semibold transition-all"
+                  style={{
+                    background: active ? 'var(--color-amber)' : 'var(--color-surface-2)',
+                    color:      active ? 'var(--color-bg)' : 'var(--color-slate)',
+                    border:     active ? '1px solid var(--color-amber)' : '1px solid transparent',
+                    fontFamily: 'var(--font-display)'
+                  }}>
+                  {r.short}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs mt-1" style={{ color: 'var(--color-slate)' }}>
+            Conta all'indietro dalla finale: funziona anche se il tabellone è
+            irregolare o hai avuto un bye.
           </p>
         </div>
       )}

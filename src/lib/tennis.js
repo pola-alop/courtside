@@ -13,6 +13,58 @@ export const MATCH_TYPES = [
   { id: 'torneo',     label: 'Torneo',     needsEvent: true,  allowsDraw: false },
 ]
 
+// ── Turni di un tabellone ───────────────────────────────────
+// Un turno è definito dalla sua DISTANZA DALLA FINALE (`depth`: finale = 1,
+// semifinale = 2, quarti = 3...), non dal numero di iscritti al tabellone.
+// È l'unica definizione che regge i tabelloni FITP reali, che quasi mai sono
+// una potenza di 2 piena: teste di serie che entrano più avanti, bye, tabelloni
+// limitati (LIM 4.1) in cui metà dei giocatori parte da un turno diverso, main
+// draw da 10-12 giocatori. Qualunque sia la forma del tabellone, però, finisce
+// sempre con una finale: contare all'indietro da lì dà un turno ben definito
+// per ogni partita, e rende confrontabili tornei di dimensioni diverse.
+//
+// `qualificazioni` sta fuori dalla scala (`depth: null`) perché è un tabellone
+// a sé che precede il main draw: è un unico gradino anche quando le partite di
+// qualificazione sono più d'una — dettagliarle vorrebbe dire chiedere all'utente
+// una gerarchia che non guarderà mai.
+export const ROUNDS = [
+  { id: 'qualificazioni',      label: 'Qualificazioni',      short: 'Qual.',  depth: null },
+  { id: 'sessantaquattresimi', label: 'Sessantaquattresimi', short: '64esimi', depth: 7 },
+  { id: 'trentaduesimi',       label: 'Trentaduesimi',       short: '32esimi', depth: 6 },
+  { id: 'sedicesimi',          label: 'Sedicesimi',          short: '16esimi', depth: 5 },
+  { id: 'ottavi',              label: 'Ottavi',              short: 'Ottavi',  depth: 4 },
+  { id: 'quarti',              label: 'Quarti',              short: 'Quarti',  depth: 3 },
+  { id: 'semifinale',          label: 'Semifinale',          short: 'Semi',    depth: 2 },
+  { id: 'finale',              label: 'Finale',              short: 'Finale',  depth: 1 },
+]
+
+// Lookup piatto id → meta, e posizione nella scala (0 = qualificazioni, poi dal
+// turno più lontano dalla finale alla finale). L'ordine dell'array È la
+// progressione nel tabellone: ordinare per `roundOrder` crescente ricostruisce
+// il cammino, senza bisogno delle date.
+export const ROUND_BY_ID = Object.fromEntries(ROUNDS.map(r => [r.id, r]))
+
+export function roundOrder(roundId) {
+  const i = ROUNDS.findIndex(r => r.id === roundId)
+  return i === -1 ? -1 : i
+}
+
+export function roundMeta(roundId) {
+  return ROUND_BY_ID[roundId] || null
+}
+
+export function roundLabel(roundId) {
+  return ROUND_BY_ID[roundId]?.label || null
+}
+
+// Turno successivo nella scala (chi vince i quarti va in semifinale). `null`
+// dopo la finale: non c'è nulla oltre.
+export function nextRound(roundId) {
+  const i = roundOrder(roundId)
+  if (i === -1 || i >= ROUNDS.length - 1) return null
+  return ROUNDS[i + 1]
+}
+
 // Formati di gioco. Ogni set normale si vince a `setTarget` game con scarto ≥2;
 // a 6-6 si gioca un tie-break (`setTbTarget` punti, scarto ≥2 → set 7-6).
 // - decidingSetTbTarget: tie-break del set decisivo diverso dagli altri

@@ -11,11 +11,14 @@ import MatchRow from '../components/matches/MatchRow'
 import AddMatchModal from '../components/matches/AddMatchModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
 import Overview from '../components/matches/Overview'
+import Tournaments from '../components/matches/Tournaments'
+import TournamentDetailModal from '../components/matches/TournamentDetailModal'
 import TrainingRow from '../components/trainings/TrainingRow'
 import AddTrainingModal from '../components/trainings/AddTrainingModal'
 import TrainingDetailModal from '../components/trainings/TrainingDetailModal'
 import FocusProgress from '../components/trainings/FocusProgress'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
+import { buildTournaments } from '../lib/tournaments'
 import {
   TRAINING_KINDS, INTENSITIES, FOCUS_CATEGORIES, FOCUS_BY_ID,
   totalMinutes, formatHours,
@@ -24,6 +27,7 @@ import {
 const TABS = [
   { id: 'panoramica',  label: 'Panoramica',  icon: '🗂' },
   { id: 'partite',     label: 'Partite',     icon: '🎾' },
+  { id: 'tornei',      label: 'Tornei',      icon: '🏆' },
   { id: 'avversari',   label: 'Avversari',   icon: '👥' },
   { id: 'allenamenti', label: 'Allenamenti', icon: '🎯' },
 ]
@@ -79,6 +83,9 @@ export default function Matches() {
   const [fDateTo, setFDateTo]     = useState('')
   const [fResult, setFResult]     = useState('all')
 
+  // Tornei
+  const [selectedTournamentId, setSelectedTournamentId] = useState(null)
+
   // Allenamenti
   const [showAddTraining, setShowAddTraining] = useState(intent === 'training')
   const [editingTraining, setEditingTraining] = useState(null)
@@ -90,10 +97,18 @@ export default function Matches() {
   const [fTrDateFrom, setFTrDateFrom] = useState('')
   const [fTrDateTo, setFTrDateTo]     = useState('')
 
+  // I tornei non sono documenti: sono la lettura delle partite di tipo torneo
+  // raggruppate per evento ed edizione. Si ricostruiscono qui, una volta sola,
+  // perché la stessa lista serve alla sezione e alla derivazione del torneo
+  // selezionato — costruirla anche dentro `Tournaments` significherebbe due
+  // sorgenti della stessa verità.
+  const tournaments = buildTournaments(matches)
+
   // Item selezionati derivati (pattern "selected item derivato")
   const selectedOpponent = selectedOpponentId ? opponents.find(o => o.id === selectedOpponentId) || null : null
   const selectedMatch    = selectedMatchId ? matches.find(m => m.id === selectedMatchId) || null : null
   const selectedTraining = selectedTrainingId ? trainings.find(t => t.id === selectedTrainingId) || null : null
+  const selectedTournament = selectedTournamentId ? tournaments.find(t => t.id === selectedTournamentId) || null : null
 
   // Record H2H reale (chiusura del cerchio con la sezione Partite)
   const recordFor = (opponentId) => {
@@ -165,7 +180,10 @@ export default function Matches() {
   const oppQuery = oppSearch.trim().toLowerCase()
   const visibleOpponents = oppQuery ? opponents.filter(o => o.name.toLowerCase().includes(oppQuery)) : opponents
 
-  const showAddButton = activeTab === 'avversari' || activeTab === 'partite' || activeTab === 'allenamenti'
+  // Nel tab Tornei il `+` apre comunque il wizard partita: un torneo non si
+  // crea, nasce dalla prima partita che gli si attribuisce.
+  const showAddButton = activeTab === 'avversari' || activeTab === 'partite'
+    || activeTab === 'allenamenti' || activeTab === 'tornei'
   const onAdd = () => {
     if (activeTab === 'avversari') setShowAddOpponent(true)
     else if (activeTab === 'allenamenti') setShowAddTraining(true)
@@ -264,6 +282,22 @@ export default function Matches() {
                 </div>
               )}
             </div>
+          )
+        )}
+
+        {/* ── TORNEI ── */}
+        {activeTab === 'tornei' && (
+          matchLoading ? (
+            <Spinner />
+          ) : tournaments.length === 0 ? (
+            <EmptyState
+              icon="🏆"
+              title="Nessun torneo."
+              sub="Registra una partita di tipo Torneo indicando il turno: il tabellone si costruisce da solo."
+              onAdd={() => setShowAddMatch(true)}
+            />
+          ) : (
+            <Tournaments runs={tournaments} onSelectTournament={setSelectedTournamentId} />
           )
         )}
 
@@ -382,6 +416,20 @@ export default function Matches() {
             setSelectedOpponentId(null)
             setOppDeleteToast(true)
           }}
+        />
+      )}
+
+      {/* ── Modale Torneo ── */}
+      {/* Sta PRIMA dei modali partita (che nel JSX vengono dopo, quindi sopra
+          nello stacking): dal cammino si apre il dettaglio di una partita — e
+          da lì il wizard di modifica — senza chiudere il tabellone, e tornando
+          indietro si è di nuovo nel torneo. Stessa coesistenza già usata da
+          OpponentDetailModal con MatchDetailModal. */}
+      {selectedTournament && (
+        <TournamentDetailModal
+          run={selectedTournament}
+          onClose={() => setSelectedTournamentId(null)}
+          onSelectMatch={(matchId) => setSelectedMatchId(matchId)}
         />
       )}
 

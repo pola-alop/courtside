@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ScoreBoard from './ScoreBoard'
-import { RESULT_META, MATCH_FORMATS, MATCH_TYPES, surfaceIcon } from '../../lib/tennis'
+import { RESULT_META, MATCH_FORMATS, MATCH_TYPES, surfaceIcon, roundLabel } from '../../lib/tennis'
 import { intensityMeta } from '../../lib/training'
 import AthleticsSection from '../athletics/AthleticsSection'
 
@@ -129,6 +129,9 @@ export default function MatchDetailModal({
             <Section title="Dettagli">
               <Row label="Avversario" value={match.opponentName || '—'} />
               <Row label="Tipo" value={match.eventName ? `${typeLabel} · ${match.eventName}` : typeLabel} />
+              {/* Solo i tornei hanno un turno; le partite di torneo registrate
+                  prima che il campo esistesse non ce l'hanno e la riga non compare. */}
+              {roundLabel(match.round) && <Row label="Turno" value={roundLabel(match.round)} />}
               <Row label="Superficie" value={`${surfaceIcon(match.surface)} ${cap(match.surface)}`} />
               <Row label="Formato" value={fmt?.label || match.format} />
               {/* Facoltativa, e assente su tutte le partite registrate prima

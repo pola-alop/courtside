@@ -1,5 +1,5 @@
 import ScoreBoard from './ScoreBoard'
-import { RESULT_META, surfaceIcon, MATCH_TYPES } from '../../lib/tennis'
+import { RESULT_META, surfaceIcon, MATCH_TYPES, roundMeta } from '../../lib/tennis'
 
 // Riga compatta della lista partite: data + avversario, bollino esito con
 // etichetta, punteggio stile tennis, superficie e tipo. Tap → dettaglio.
@@ -7,6 +7,7 @@ export default function MatchRow({ match, onClick }) {
   const meta = RESULT_META[match.result] || RESULT_META.draw
   const typeLabel = MATCH_TYPES.find(t => t.id === match.type)?.label || match.type
   const eventSuffix = match.eventName ? ` · ${match.eventName}` : ''
+  const round = roundMeta(match.round)
 
   return (
     <button
@@ -35,12 +36,24 @@ export default function MatchRow({ match, onClick }) {
         size="sm"
       />
 
-      {/* Bottom — superficie + tipo */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs">{surfaceIcon(match.surface)}</span>
-        <span className="text-xs" style={{ color: 'var(--color-slate)' }}>
-          {cap(match.surface)} · {typeLabel}{eventSuffix}
-        </span>
+      {/* Bottom — superficie + tipo, con il turno come bollino a destra.
+          Il turno non è accodato alla riga di testo ma sta in un bollino
+          proprio: è l'informazione che dà la posta in gioco della partita
+          ("era un quarto di finale") e in coda a superficie ed evento sarebbe
+          la prima cosa a essere troncata su uno schermo stretto. */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-xs shrink-0">{surfaceIcon(match.surface)}</span>
+          <span className="text-xs truncate" style={{ color: 'var(--color-slate)' }}>
+            {cap(match.surface)} · {typeLabel}{eventSuffix}
+          </span>
+        </div>
+        {round && (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap"
+                style={{ background: 'rgba(244,163,0,0.14)', color: 'var(--color-amber-light)', fontFamily: 'var(--font-display)' }}>
+            {round.short}
+          </span>
+        )}
       </div>
     </button>
   )

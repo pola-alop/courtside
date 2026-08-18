@@ -50,6 +50,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background-color: var(--color-bg);
   color: var(--color-white);

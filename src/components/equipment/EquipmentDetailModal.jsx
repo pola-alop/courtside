@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { computeWear, wearLevelMeta, linkedSessionsCount } from '../../lib/wear'
 
 export default function EquipmentDetailModal({
-  item, matches = [], trainings = [], onClose, onArchive, onUnarchive, onDelete, onUpdate, onAddStrings, onDeleteStringsHistory
+  item, matches = [], trainings = [], onClose, onArchive, onUnarchive, onDelete, onUpdate, onAddStrings, onDeleteStringsHistory, onUpdateStringsHistory
 }) {
   const [mode, setMode]             = useState('view')  // view | edit | addStrings | confirmArchive | confirmUnarchive | confirmDelete
   const [editForm, setEditForm]     = useState(null)
@@ -12,6 +12,12 @@ export default function EquipmentDetailModal({
   // Storico: voce in attesa di conferma eliminazione / popup di esito
   const [historyDeleteTarget, setHistoryDeleteTarget] = useState(null)
   const [historyDeleteDone, setHistoryDeleteDone]     = useState(false)
+
+  // Storico: voce in modifica
+  const [historyEditTarget, setHistoryEditTarget] = useState(null)
+  const [historyEditForm, setHistoryEditForm]     = useState(null)
+  const [historyEditError, setHistoryEditError]   = useState(null)
+  const [historyEditSaving, setHistoryEditSaving] = useState(false)
 
   const setField = (k, v) => setEditForm(f => ({ ...f, [k]: v }))
 
@@ -29,6 +35,15 @@ export default function EquipmentDetailModal({
       stringDate:    item.strings?.mountedAt
         ? item.strings.mountedAt.split('T')[0]
         : (item.stringDate || ''),
+      name:         item.name        || '',
+      maglietta:    item.maglietta   || '',
+      pantaloncini: item.pantaloncini || '',
+      calzini:      item.calzini     || '',
+      polsini:      item.polsini     || '',
+      fascia:       item.fascia      || '',
+      brand:        item.brand       || '',
+      model:        item.model       || '',
+      notes:        item.notes       || '',
     })
     setMode('edit')
   }
@@ -37,7 +52,7 @@ export default function EquipmentDetailModal({
   // senza toccare lo storico (per quello c'è "Nuova incordatura")
   const handleSaveEdit = async () => {
     setSaving(true)
-    const data = { nickname: editForm.nickname }
+    let data = { nickname: editForm.nickname }
     if (item.type === 'racchetta') {
       data.strings = {
         brand:          editForm.stringBrand || null,
@@ -45,6 +60,21 @@ export default function EquipmentDetailModal({
         tensionMains:   editForm.stringTensionMains   ? Number(editForm.stringTensionMains)   : null,
         tensionCrosses: editForm.stringTensionCrosses ? Number(editForm.stringTensionCrosses) : null,
         mountedAt: editForm.stringDate ? new Date(editForm.stringDate).toISOString() : null,
+      }
+    } else if (item.type === 'outfit') {
+      data = {
+        name:         editForm.name         || null,
+        maglietta:    editForm.maglietta    || null,
+        pantaloncini: editForm.pantaloncini || null,
+        calzini:      editForm.calzini      || null,
+        polsini:      editForm.polsini      || null,
+        fascia:       editForm.fascia       || null,
+      }
+    } else if (item.type === 'borsone') {
+      data = {
+        brand: editForm.brand || null,
+        model: editForm.model || null,
+        notes: editForm.notes || null,
       }
     }
     await onUpdate(item.id, data)
@@ -85,6 +115,47 @@ export default function EquipmentDetailModal({
     setHistoryDeleteTarget(null)
     await onDeleteStringsHistory(item.id, entry)
     setHistoryDeleteDone(true)
+  }
+
+  const openHistoryEdit = (entry) => {
+    setHistoryEditTarget(entry)
+    setHistoryEditForm({
+      brand:          entry.brand || '',
+      model:          entry.model || '',
+      tensionMains:   entry.tensionMains   ?? entry.tension ?? '',
+      tensionCrosses: entry.tensionCrosses ?? entry.tension ?? '',
+      mountedAt:      entry.mountedAt ? entry.mountedAt.split('T')[0] : '',
+    })
+    setHistoryEditError(null)
+  }
+
+  // Una voce dello storico deve restare cronologicamente precedente
+  // all'incordatura attuale, e non può essere una data futura
+  const handleSaveHistoryEdit = async () => {
+    const newDateStr = historyEditForm.mountedAt
+    if (newDateStr) {
+      const todayStr = new Date().toISOString().split('T')[0]
+      if (newDateStr > todayStr) {
+        setHistoryEditError('La data non può essere futura.')
+        return
+      }
+      const currentDateStr = item.strings?.mountedAt ? item.strings.mountedAt.split('T')[0] : null
+      if (currentDateStr && newDateStr > currentDateStr) {
+        setHistoryEditError("La data non può essere successiva all'incordatura attuale.")
+        return
+      }
+    }
+    setHistoryEditSaving(true)
+    await onUpdateStringsHistory(item.id, historyEditTarget, {
+      brand:          historyEditForm.brand || null,
+      model:          historyEditForm.model || null,
+      tensionMains:   historyEditForm.tensionMains   ? Number(historyEditForm.tensionMains)   : null,
+      tensionCrosses: historyEditForm.tensionCrosses ? Number(historyEditForm.tensionCrosses) : null,
+      mountedAt: newDateStr ? new Date(newDateStr).toISOString() : null,
+    })
+    setHistoryEditSaving(false)
+    setHistoryEditTarget(null)
+    setHistoryEditForm(null)
   }
 
   const wearInfo = computeWear(item, matches, trainings)
@@ -261,6 +332,7 @@ export default function EquipmentDetailModal({
                 <StringsHistorySection
                   history={item.stringsHistory}
                   onRequestDelete={setHistoryDeleteTarget}
+                  onRequestEdit={openHistoryEdit}
                 />
               </>
             )}
@@ -332,6 +404,29 @@ export default function EquipmentDetailModal({
                     <EditInput label="Tensione orizzontali (kg)" type="number" value={editForm.stringTensionCrosses} onChange={v => setField('stringTensionCrosses', v)} />
                   </div>
                   <EditInput label="Data montaggio" type="date" value={editForm.stringDate} onChange={v => setField('stringDate', v)} />
+                </div>
+              )}
+
+              {/* Outfit — composizione */}
+              {item.type === 'outfit' && (
+                <div className="space-y-3">
+                  <EditInput label="Nome outfit" value={editForm.name} onChange={v => setField('name', v)} placeholder="Es. Setup Torneo" />
+                  <EditInput label="Maglietta"    value={editForm.maglietta}    onChange={v => setField('maglietta', v)} />
+                  <EditInput label="Pantaloncini" value={editForm.pantaloncini} onChange={v => setField('pantaloncini', v)} />
+                  <EditInput label="Calzini"      value={editForm.calzini}      onChange={v => setField('calzini', v)} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <EditInput label="Polsini"           value={editForm.polsini} onChange={v => setField('polsini', v)} />
+                    <EditInput label="Fascia / Cappellino" value={editForm.fascia} onChange={v => setField('fascia', v)} />
+                  </div>
+                </div>
+              )}
+
+              {/* Borsone */}
+              {item.type === 'borsone' && (
+                <div className="space-y-3">
+                  <EditInput label="Marca"  value={editForm.brand} onChange={v => setField('brand', v)} />
+                  <EditInput label="Modello" value={editForm.model} onChange={v => setField('model', v)} />
+                  <EditInput label="Note" value={editForm.notes} onChange={v => setField('notes', v)} placeholder="Capienza, colore..." />
                 </div>
               )}
 
@@ -542,6 +637,56 @@ export default function EquipmentDetailModal({
       </div>
     )}
 
+    {/* Modifica voce storico */}
+    {historyEditTarget && historyEditForm && (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+        style={{ background: 'rgba(2,13,25,0.85)' }}
+        onClick={e => { if (e.target === e.currentTarget) { setHistoryEditTarget(null); setHistoryEditForm(null) } }}
+      >
+        <div className="w-full max-w-sm rounded-3xl p-6"
+             style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
+          <p className="text-sm mb-4 text-center font-semibold"
+             style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+            Modifica incordatura storica
+          </p>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <EditInput label="Marca corda"   value={historyEditForm.brand} onChange={v => setHistoryEditForm(f => ({ ...f, brand: v }))} />
+              <EditInput label="Modello corda" value={historyEditForm.model} onChange={v => setHistoryEditForm(f => ({ ...f, model: v }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <EditInput label="Tensione verticali (kg)"   type="number" value={historyEditForm.tensionMains}   onChange={v => setHistoryEditForm(f => ({ ...f, tensionMains: v }))} />
+              <EditInput label="Tensione orizzontali (kg)" type="number" value={historyEditForm.tensionCrosses} onChange={v => setHistoryEditForm(f => ({ ...f, tensionCrosses: v }))} />
+            </div>
+            <EditInput label="Data montaggio" type="date" value={historyEditForm.mountedAt} onChange={v => { setHistoryEditForm(f => ({ ...f, mountedAt: v })); setHistoryEditError(null) }} />
+            {historyEditError && (
+              <p className="text-xs" style={{ color: '#e05555' }}>{historyEditError}</p>
+            )}
+          </div>
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => { setHistoryEditTarget(null); setHistoryEditForm(null) }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+              style={{ background: 'var(--color-surface-2)', color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
+              Annulla
+            </button>
+            <button
+              onClick={handleSaveHistoryEdit}
+              disabled={historyEditSaving}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+              style={{
+                background: historyEditSaving ? 'var(--color-surface-2)' : 'var(--color-amber)',
+                color: historyEditSaving ? 'var(--color-slate)' : 'var(--color-bg)',
+                fontFamily: 'var(--font-display)'
+              }}>
+              {historyEditSaving ? 'Salvo...' : 'Salva'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     {/* Esito eliminazione voce storico */}
     {historyDeleteDone && (
       <div
@@ -603,7 +748,7 @@ function Row({ label, value }) {
 
 const HISTORY_PREVIEW_COUNT = 3
 
-function StringsHistorySection({ history, onRequestDelete }) {
+function StringsHistorySection({ history, onRequestDelete, onRequestEdit }) {
   const [expanded, setExpanded] = useState(false)
 
   const sorted = [...(history || [])].sort(
@@ -622,7 +767,7 @@ function StringsHistorySection({ history, onRequestDelete }) {
       </p>
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
         {visible.map((s, i) => (
-          <StringHistoryRow key={i} strings={s} onDelete={() => onRequestDelete(s)} />
+          <StringHistoryRow key={i} strings={s} onEdit={() => onRequestEdit(s)} onDelete={() => onRequestDelete(s)} />
         ))}
         {hiddenCount > 0 && (
           <button
@@ -637,7 +782,7 @@ function StringsHistorySection({ history, onRequestDelete }) {
   )
 }
 
-function StringHistoryRow({ strings, onDelete }) {
+function StringHistoryRow({ strings, onEdit, onDelete }) {
   const label = [strings.brand, strings.model].filter(Boolean).join(' ') || '—'
   return (
     <div className="flex justify-between items-center px-4 py-3"
@@ -655,6 +800,13 @@ function StringHistoryRow({ strings, onDelete }) {
               style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
           {formatTensionPair(strings)}
         </span>
+        <button
+          onClick={onEdit}
+          aria-label="Modifica incordatura storica"
+          className="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0"
+          style={{ background: 'var(--color-surface)', color: 'var(--color-teal)' }}>
+          ✏️
+        </button>
         <button
           onClick={onDelete}
           aria-label="Elimina incordatura dallo storico"

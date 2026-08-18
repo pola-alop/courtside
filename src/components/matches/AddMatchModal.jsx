@@ -14,6 +14,7 @@ import {
 // allenamenti: descrive lo sforzo di una SESSIONE, e una partita è una sessione.
 // Riusarla è meglio che duplicare tre etichette e tre colori.
 import { INTENSITIES } from '../../lib/training'
+import { levelLabel } from '../../lib/opponents'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura', 'Atletica']
@@ -294,7 +295,7 @@ function StepOpponent({ opponents, value, onChange }) {
                   </p>
                   {(o.hand || o.level) && (
                     <p className="text-xs truncate" style={{ color: active ? 'var(--color-teal-light)' : 'var(--color-slate)' }}>
-                      {[o.hand === 'destro' ? 'Destro' : o.hand === 'sinistro' ? 'Mancino' : null, o.level].filter(Boolean).join(' · ')}
+                      {[o.hand === 'destro' ? 'Destro' : o.hand === 'sinistro' ? 'Mancino' : null, levelLabel(o.level)].filter(Boolean).join(' · ')}
                     </p>
                   )}
                 </div>

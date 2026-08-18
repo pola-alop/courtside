@@ -83,7 +83,7 @@ export default function MatchDetailModal({
               <p className="text-xs" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
                 {formatDate(match.date)}
               </p>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full mt-1"
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full mt-2"
                     style={{ background: meta.bg, color: meta.color, fontFamily: 'var(--font-display)' }}>
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.color }} />
                 {meta.label}{!match.completed && match.result !== 'draw' ? ' · interrotta' : ''}

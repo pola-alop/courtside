@@ -16,7 +16,7 @@ export default function MatchRow({ match, onClick }) {
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}
     >
       {/* Top — data + esito */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
           {formatShortDate(match.date)}
         </span>
@@ -44,7 +44,7 @@ export default function MatchRow({ match, onClick }) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-xs shrink-0">{surfaceIcon(match.surface)}</span>
-          <span className="text-xs truncate" style={{ color: 'var(--color-slate)' }}>
+          <span className="text-xs truncate min-w-0" style={{ color: 'var(--color-slate)' }}>
             {cap(match.surface)} · {typeLabel}{eventSuffix}
           </span>
         </div>

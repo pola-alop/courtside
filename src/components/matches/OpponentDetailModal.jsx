@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import MatchRow from './MatchRow'
+import { LEVELS, PLAYSTYLES, levelLabel, playstyleLabel } from '../../lib/opponents'
 
 const HANDS = [
   { id: 'destro',   label: 'Destro'  },
@@ -54,8 +55,8 @@ export default function OpponentDetailModal({
     await onUpdate(opponent.id, {
       name:      editForm.name.trim(),
       hand:      editForm.hand || null,
-      level:     editForm.level.trim()     || null,
-      playstyle: editForm.playstyle.trim() || null,
+      level:     editForm.level     || null,
+      playstyle: editForm.playstyle || null,
     })
     setSaving(false)
     setEditForm(null)
@@ -135,7 +136,7 @@ export default function OpponentDetailModal({
             </h2>
             {(opponent.hand || opponent.level) && (
               <p className="text-sm mt-0.5 truncate" style={{ color: 'var(--color-slate)' }}>
-                {[handLabel(opponent.hand), opponent.level].filter(Boolean).join(' · ')}
+                {[handLabel(opponent.hand), levelLabel(opponent.level)].filter(Boolean).join(' · ')}
               </p>
             )}
           </div>
@@ -178,8 +179,8 @@ export default function OpponentDetailModal({
 
             <Section title="Dettagli">
               <Row label="Mano"          value={handLabel(opponent.hand) || '—'} />
-              <Row label="Livello"       value={opponent.level     || '—'} />
-              <Row label="Stile di gioco" value={opponent.playstyle || '—'} />
+              <Row label="Livello"       value={levelLabel(opponent.level)         || '—'} />
+              <Row label="Stile di gioco" value={playstyleLabel(opponent.playstyle) || '—'} />
             </Section>
 
             <NotesSection notes={sortedNotes} onAdd={openAddNote} onEditNote={openEditNote} />
@@ -243,8 +244,8 @@ export default function OpponentDetailModal({
                 </div>
               </div>
 
-              <EditInput label="Livello / classifica" value={editForm.level} onChange={v => setField('level', v)} placeholder="Es. 4.3, 3ª categoria..." />
-              <EditInput label="Stile di gioco" value={editForm.playstyle} onChange={v => setField('playstyle', v)} placeholder="Es. Aggressivo da fondo..." />
+              <EditSelect label="Livello / classifica" value={editForm.level} onChange={v => setField('level', v)} options={LEVELS} placeholder="Seleziona un livello..." />
+              <EditSelect label="Stile di gioco" value={editForm.playstyle} onChange={v => setField('playstyle', v)} options={PLAYSTYLES} placeholder="Seleziona uno stile..." />
 
               <div className="flex gap-3 pt-2">
                 <button
@@ -513,6 +514,29 @@ function MatchHistorySection({ matches, onSelectMatch }) {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function EditSelect({ label, value, onChange, options, placeholder }) {
+  return (
+    <div>
+      <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>{label}</label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full p-3 rounded-xl text-sm outline-none"
+        style={{
+          background: 'var(--color-surface-2)',
+          color: value ? 'var(--color-white)' : 'var(--color-slate)',
+          border: '1px solid var(--color-teal-dark)',
+          fontFamily: 'var(--font-body)'
+        }}>
+        <option value="">{placeholder}</option>
+        {options.map(o => (
+          <option key={o.id} value={o.id}>{o.label}</option>
+        ))}
+      </select>
     </div>
   )
 }

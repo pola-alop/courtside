@@ -24,7 +24,7 @@ const CLUSTER_ORDER = [
 ]
 
 export default function Equipment() {
-  const { equipment, loading, add, update, archive, unarchive, remove, addStrings, deleteStringsHistory } = useEquipment()
+  const { equipment, loading, add, update, archive, unarchive, remove, addStrings, deleteStringsHistory, updateStringsHistory } = useEquipment()
   // Partite E allenamenti dell'utente: insieme chiudono il cerchio con
   // l'attrezzatura (usura corde/suola calcolata dal gioco reale fatto con ogni
   // capo, su due assi separati). Vedi src/lib/wear.js.
@@ -237,6 +237,9 @@ export default function Equipment() {
           }}
           onDeleteStringsHistory={async (id, entry) => {
             await deleteStringsHistory(id, entry)
+          }}
+          onUpdateStringsHistory={async (id, originalEntry, data) => {
+            await updateStringsHistory(id, originalEntry, data)
           }}
         />
       )}

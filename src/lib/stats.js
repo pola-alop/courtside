@@ -21,6 +21,7 @@
 import {
   MATCH_FORMATS, MATCH_TYPES, countSets, hasScore, isTiebreakSet, setKind, setWinner,
 } from './tennis'
+import { levelLabel, playstyleLabel } from './opponents'
 
 // ── Soglie minime di campione ──────────────────────────────
 export const MIN_CORE     = 5   // per mostrare qualunque aggregato
@@ -431,34 +432,28 @@ export const SPLIT_DIMENSIONS = [
 
 const cap = s => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
-// `level` e `playstyle` sono campi di testo libero nell'anagrafica avversari:
-// non esiste un vocabolario controllato, quindi si raggruppa per valore
-// normalizzato. Se l'utente scrive "4NC" e "4 NC" restano due gruppi diversi —
-// è un limite del dato, non del calcolo, e la soglia MIN_SPLIT lo tiene a bada.
+// `level` e `playstyle` sono vocabolario controllato (src/lib/opponents.js),
+// quindi la chiave è direttamente l'id salvato — niente più normalizzazione
+// di testo libero.
 function splitKey(dimension, match, opponent) {
   switch (dimension) {
     case 'surface': return match.surface || null
     case 'type':    return match.type || null
     case 'format':  return match.format || null
     case 'hand':    return opponent?.hand || null
-    case 'level':   return opponent?.level ? opponent.level.trim().toLowerCase() : null
-    case 'playstyle': return opponent?.playstyle ? opponent.playstyle.trim().toLowerCase() : null
+    case 'level':   return opponent?.level     || null
+    case 'playstyle': return opponent?.playstyle || null
     default: return null
   }
 }
 
-function splitLabel(dimension, key, matches) {
+function splitLabel(dimension, key) {
   switch (dimension) {
     case 'type':   return MATCH_TYPES.find(t => t.id === key)?.label || cap(key)
     case 'format': return MATCH_FORMATS[key]?.label || cap(key)
     case 'hand':   return key === 'destro' ? 'Destrorsi' : 'Mancini'
-    case 'level':
-    case 'playstyle': {
-      // Si mostra la grafia originale della prima occorrenza, non quella
-      // normalizzata usata come chiave.
-      const raw = matches[0]?.__rawLabel
-      return raw ? cap(raw) : cap(key)
-    }
+    case 'level':     return levelLabel(key) || cap(key)
+    case 'playstyle': return playstyleLabel(key) || cap(key)
     default: return cap(key)
   }
 }
@@ -471,10 +466,7 @@ export function splitBy(matches, opponentsById, dimension, overallRate) {
     const key = splitKey(dimension, m, opponent)
     if (!key) return
     if (!groups.has(key)) groups.set(key, [])
-    const entry = { ...m }
-    if (dimension === 'level')     entry.__rawLabel = opponent?.level
-    if (dimension === 'playstyle') entry.__rawLabel = opponent?.playstyle
-    groups.get(key).push(entry)
+    groups.get(key).push(m)
   })
 
   return [...groups.entries()]
@@ -482,7 +474,7 @@ export function splitBy(matches, opponentsById, dimension, overallRate) {
       const core = coreStats(list)
       return {
         key,
-        label: splitLabel(dimension, key, list),
+        label: splitLabel(dimension, key),
         matches: list,
         n: list.length,
         wins: core.wins, losses: core.losses, draws: core.draws,

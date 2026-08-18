@@ -25,3 +25,7 @@ dist-ssr
 
 # Rules
 firestore.rules
+
+# Chiavi service account Firebase (usate da scripts/seed-dev) — mai committare
+*firebase-adminsdk*.json
+*serviceAccountKey*.json

@@ -58,7 +58,6 @@ export default function SplitsBlock({ report, onDrill }) {
         La tacca chiara è il tuo rendimento medio ({formatPct(overall)}): le barre vanno
         lette rispetto a quella, non al 50%. Le righe con meno di {MIN_SPLIT} partite
         sono in trasparenza.
-        {(active.id === 'level' || active.id === 'playstyle') && ' Livello e stile sono campi liberi dell\'anagrafica avversari: due grafie diverse dello stesso valore restano due gruppi distinti.'}
       </Note>
     </Card>
   )
@@ -84,10 +83,6 @@ function SplitsInfo() {
         Lo scostamento in punti percentuali rispetto alla tua media generale — mostrata anche dalla
         linea verticale chiara sulla barra: verde se in quella situazione rendi meglio del solito,
         rosso se rendi peggio.
-      </InfoItem>
-      <InfoItem>
-        Livello e stile sono campi di testo libero nell'anagrafica avversari: scritture diverse
-        dello stesso valore (es. "4NC" e "4 NC") restano righe separate.
       </InfoItem>
     </>
   )

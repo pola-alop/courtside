@@ -1,3 +1,5 @@
+import { levelLabel, playstyleLabel } from '../../lib/opponents'
+
 export default function OpponentCard({ opponent, record = null, onClick }) {
   const initials = getInitials(opponent.name)
   const accent   = avatarAccent(opponent.name)
@@ -44,7 +46,7 @@ export default function OpponentCard({ opponent, record = null, onClick }) {
 // ── Helpers ────────────────────────────────────────────────
 
 function getSubtitle(opponent) {
-  return [handLabel(opponent.hand), opponent.level, opponent.playstyle]
+  return [handLabel(opponent.hand), levelLabel(opponent.level), playstyleLabel(opponent.playstyle)]
     .filter(Boolean)
     .join(' · ') || null
 }

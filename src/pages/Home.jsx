@@ -56,7 +56,10 @@ export default function Home() {
     [matches, trainings, equipment]
   )
 
-  const firstName = (user?.displayName || '').trim().split(' ')[0] || null
+  const rawFirstName = (user?.displayName || '').trim().split(' ')[0] || null
+  const firstName = rawFirstName
+    ? rawFirstName[0].toUpperCase() + rawFirstName.slice(1).toLowerCase()
+    : null
 
   // Il profilo entra nel gate pur servendo al solo onboarding: è una lettura di
   // un documento, parte in parallelo alle altre tre, e senza di lei il primo

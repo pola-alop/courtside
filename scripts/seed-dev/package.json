@@ -1,0 +1,13 @@
+{
+  "name": "courtside-seed-dev",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Script per popolare il progetto Firebase DEV con dati sintetici. Non fa parte dell'app.",
+  "scripts": {
+    "seed": "node seed.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.2.0"
+  }
+}

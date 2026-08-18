@@ -515,10 +515,12 @@ function MatchFilters({
       )}
 
       {/* Tipo */}
-      <div className="flex gap-2 overflow-x-auto" style={{ minWidth: 'max-content' }}>
-        {[{ id: 'all', label: 'Tutti' }, ...MATCH_TYPES.map(t => ({ id: t.id, label: t.label }))].map(t => (
-          <Chip key={t.id} active={type === t.id} onClick={() => setType(t.id)}>{t.label}</Chip>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
+          {[{ id: 'all', label: 'Tutti' }, ...MATCH_TYPES.map(t => ({ id: t.id, label: t.label }))].map(t => (
+            <Chip key={t.id} active={type === t.id} onClick={() => setType(t.id)}>{t.label}</Chip>
+          ))}
+        </div>
       </div>
 
       {/* Range di date */}
@@ -542,13 +544,15 @@ function MatchFilters({
       </div>
 
       {/* Superficie */}
-      <div className="flex gap-2 overflow-x-auto" style={{ minWidth: 'max-content' }}>
-        <Chip active={surface === 'all'} onClick={() => setSurface('all')}>Tutte</Chip>
-        {SURFACES.map(s => (
-          <Chip key={s} active={surface === s} onClick={() => setSurface(s)} icon={surfaceIcon(s)}>
-            <span className="capitalize">{s}</span>
-          </Chip>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
+          <Chip active={surface === 'all'} onClick={() => setSurface('all')}>Tutte</Chip>
+          {SURFACES.map(s => (
+            <Chip key={s} active={surface === s} onClick={() => setSurface(s)} icon={surfaceIcon(s)}>
+              <span className="capitalize">{s}</span>
+            </Chip>
+          ))}
+        </div>
       </div>
 
       {/* Esito */}
@@ -593,11 +597,13 @@ function TrainingFilters({
       )}
 
       {/* Tipo di blocco */}
-      <div className="flex gap-2 overflow-x-auto" style={{ minWidth: 'max-content' }}>
-        <Chip active={kind === 'all'} onClick={() => setKind('all')}>Tutti</Chip>
-        {TRAINING_KINDS.map(k => (
-          <Chip key={k.id} active={kind === k.id} onClick={() => setKind(k.id)} icon={k.icon}>{k.label}</Chip>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
+          <Chip active={kind === 'all'} onClick={() => setKind('all')}>Tutti</Chip>
+          {TRAINING_KINDS.map(k => (
+            <Chip key={k.id} active={kind === k.id} onClick={() => setKind(k.id)} icon={k.icon}>{k.label}</Chip>
+          ))}
+        </div>
       </div>
 
       {/* Range di date */}

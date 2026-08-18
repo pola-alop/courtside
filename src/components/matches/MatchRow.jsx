@@ -16,7 +16,7 @@ export default function MatchRow({ match, onClick }) {
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}
     >
       {/* Top — data + esito */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
           {formatShortDate(match.date)}
         </span>

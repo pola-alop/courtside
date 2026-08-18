@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { LEVELS, PLAYSTYLES } from '../../lib/opponents'
 
 const HANDS = [
   { id: 'destro',   label: 'Destro'  },
@@ -18,8 +19,8 @@ export default function AddOpponentModal({ onClose, onSave }) {
     await onSave({
       name:      form.name.trim(),
       hand:      form.hand || null,
-      level:     form.level.trim()     || null,
-      playstyle: form.playstyle.trim() || null,
+      level:     form.level     || null,
+      playstyle: form.playstyle || null,
       notes:     [],
     })
     setSaving(false)
@@ -65,18 +66,20 @@ export default function AddOpponentModal({ onClose, onSave }) {
 
           <HandSelector value={form.hand} onChange={v => set('hand', v)} />
 
-          <Input
+          <Select
             label="Livello / classifica"
             value={form.level}
             onChange={v => set('level', v)}
-            placeholder="Es. 4.3, 3ª categoria..."
+            options={LEVELS}
+            placeholder="Seleziona un livello..."
           />
 
-          <Input
+          <Select
             label="Stile di gioco"
             value={form.playstyle}
             onChange={v => set('playstyle', v)}
-            placeholder="Es. Aggressivo da fondo, serve & volley..."
+            options={PLAYSTYLES}
+            placeholder="Seleziona uno stile..."
           />
 
           <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
@@ -126,6 +129,29 @@ function HandSelector({ value, onChange }) {
           )
         })}
       </div>
+    </div>
+  )
+}
+
+function Select({ label, value, onChange, options, placeholder }) {
+  return (
+    <div>
+      <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>{label}</label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full p-3 rounded-xl text-sm outline-none"
+        style={{
+          background: 'var(--color-surface-2)',
+          color: value ? 'var(--color-white)' : 'var(--color-slate)',
+          border: '1px solid transparent',
+          fontFamily: 'var(--font-body)'
+        }}>
+        <option value="">{placeholder}</option>
+        {options.map(o => (
+          <option key={o.id} value={o.id}>{o.label}</option>
+        ))}
+      </select>
     </div>
   )
 }

@@ -89,3 +89,16 @@ export async function deleteStringsHistoryEntry(userId, itemId, entry) {
   const updated = history.filter(h => h.mountedAt !== entry.mountedAt)
   return await updateDoc(ref, { stringsHistory: updated, updatedAt: serverTimestamp() })
 }
+
+// Corregge i dati di una voce già presente nello storico incordature
+// (identificata dal suo mountedAt originale, unico per voce)
+export async function updateStringsHistoryEntry(userId, itemId, originalEntry, data) {
+  const ref = doc(db, 'users', userId, 'equipment', itemId)
+  const snap = await getDoc(ref)
+  const current = snap.data() || {}
+  const history = current.stringsHistory || []
+  const updated = history.map(h =>
+    h.mountedAt === originalEntry.mountedAt ? { ...h, ...data } : h
+  )
+  return await updateDoc(ref, { stringsHistory: updated, updatedAt: serverTimestamp() })
+}

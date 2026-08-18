@@ -3,7 +3,7 @@ import { useAuthState } from './useAuth'
 import {
   getEquipment, addEquipment, updateEquipment,
   archiveEquipment, unarchiveEquipment, deleteEquipment,
-  addStringsEntry, deleteStringsHistoryEntry
+  addStringsEntry, deleteStringsHistoryEntry, updateStringsHistoryEntry
 } from '../firebase/equipment'
 
 export function useEquipment() {
@@ -67,8 +67,14 @@ export function useEquipment() {
     await load()
   }
 
+  // Corregge una voce già presente nello storico incordature
+  const updateStringsHistory = async (itemId, originalEntry, data) => {
+    await updateStringsHistoryEntry(user.uid, itemId, originalEntry, data)
+    await load()
+  }
+
   return {
     equipment, loading, error, add, update, archive, unarchive, remove,
-    addStrings, deleteStringsHistory, reload: load
+    addStrings, deleteStringsHistory, updateStringsHistory, reload: load
   }
 }

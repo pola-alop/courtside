@@ -17,7 +17,8 @@ export function useOpponents() {
       setLoading(true)
       const data = await getOpponents(user.uid)
       const cleaned = await sanitizeLegacyFields(user.uid, data)
-      setOpponents(cleaned)
+      const sorted = [...cleaned].sort((a, b) => a.name.localeCompare(b.name))
+      setOpponents(sorted)
     } catch (e) {
       setError(e.message)
     } finally {

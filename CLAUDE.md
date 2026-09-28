@@ -166,6 +166,26 @@ Decise insieme e volutamente **non** implementate ora. Non reimplementarle senza
 - **Tabellone completo con le partite degli altri giocatori.** Scartata, non rimandata: vedi il bullet "Dominio Tornei". Se un giorno la FITP esponesse i tabelloni in modo importabile la valutazione cambierebbe, ma l'inserimento **manuale** resta fuori discussione — e anche con i dati altrui la resa resterebbe la scala verticale, non l'albero.
 - **Template di sessione ricorrente** ("lezione del martedì" precompilata). È la leva più forte sull'attrito di inserimento dopo il wizard corto: tap → conferma data → salva.
 
+## Roadmap versione 2.0.0
+
+Elenco dei miglioramenti pianificati per la **2.0.0** dell'app, dettati dall'utente il 2026-09-28. Sono **bozze di intenti**, non specifiche: ogni punto verrà sviscerato in uno sviluppo dedicato, uno alla volta, e i dettagli mancanti (rappresentazioni, immagini di riferimento) arriveranno in quella fase. Non implementare nulla di questa sezione senza una richiesta esplicita per quel punto; quando un punto viene sviluppato, sposta qui le decisioni prese e documenta l'implementazione nella sezione architetturale. Nota: la sezione "Idee approvate ma rimandate alla V2" sopra è un elenco diverso (idee di tennis emerse prima); qualche voce potrà confluire qui, ma non darle per incluse.
+
+### 1. Corsa e palestra come nuove attività
+Il tennis non è solo tennis: la preparazione include corsa e palestra, che entrano nell'app come attività di prima classe. **Da decidere in sviluppo**: pagina dedicata nella sidebar o collocazione altrove.
+
+- **Corsa**: inserimento di un allenamento con titolo specifico e rappresentazione in stile Garmin (da specificare in sviluppo). Come per il tennis, a fine allenamento si raccolgono tutte le informazioni e si producono studi statistici per tracciare le proprie capacità nel tempo.
+- **Palestra**: inserimento di una scheda con gli esercizi eseguiti. Serve un **database di esercizi** in cui ogni esercizio è già associato alle parti del corpo che coinvolge. A fine allenamento si registrano i dati e si producono analisi statistiche specifiche per la palestra. Le parti del corpo allenate vanno mostrate su un **manichino umano frontale e dorsale**, come su Garmin (foto di riferimento in sviluppo).
+
+### 2. Relazioni tra corsa/palestra e tennis (punto centrale della 2.0.0)
+Unire i dati delle nuove attività con quelli del tennis per capire se portano beneficio, affaticamento o simili, **sia rispetto agli allenamenti di tennis sia rispetto alle partite**. **Cosa cercare, come misurarlo e dove mostrarlo nelle schermate delle statistiche è compito di Claude** da proporre: tenere presente il carico già calcolato in `src/lib/activity.js` (`loadStatus`: ACWR, monotonia, strain) e dichiarare sempre il campione nelle correlazioni, come già fatto nel tab Fisico.
+
+### 3. Calendario nella landing
+Calendario del **mese corrente** nella pagina di landing, con i giorni e le attività di ciascuno (corsa, palestra, tennis) in miniatura, solo icone. **La settimana corrente** è invece mostrata con più dettaglio (disegno di riferimento in sviluppo).
+
+### 4. Bug da risolvere
+1. **Rinomina di un'anagrafica non propagata a tutte le partite**: dopo aver cambiato il nominativo di un'anagrafica (avversario), alcune partite sono state aggiornate e altre sono rimaste al vecchio nome (immagini allegate in fase di risoluzione). Indagare prima la shape reale dei documenti (nome denormalizzato sul match vs riferimento per id, path legacy) e come la rinomina propaga — vedi le note su schema non tipizzato in "Come approcciarti a debugging".
+2. **Card dei tornei: le informazioni sforano la card su smartphone** (immagine allegata in fase di risoluzione). Verificare a viewport stretto.
+
 ## Coding convention
 
 - Componenti: **function declarations** con `export default function NomeComponente()`, non arrow function assegnate a const.

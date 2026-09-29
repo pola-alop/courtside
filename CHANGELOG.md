@@ -2,6 +2,16 @@
 
 Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il progetto segue [Semantic Versioning](https://semver.org/lang/it/).
 
+## [Unreleased]
+
+### Aggiunto
+- **Corsa** come nuovo tipo di allenamento: schede a fasi e ripetute in stile Garmin (riscaldamento, corsa, camminata, recupero, riposo, defaticamento, altro), con durata a tempo, distanza, calorie o frequenza cardiaca e una zona per ogni fase.
+- Libreria delle schede di corsa: una scheda si riusa tra una corsa e l'altra, si rinomina, si modifica o si elimina senza toccare le corse già registrate.
+- Grafico delle fasi (durata o distanza, altezza per zona, colore per tipo di fase) con tempo totale e distanza stimati.
+- Dati reali della corsa trascritti dall'orologio (durata, distanza, FC, calorie, training effect, zone), con passo medio calcolato e confronto con la stima della scheda.
+- Tabella **Zone di corsa** nel Profilo (passo per zona Z1–Z5, passo di camminata, peso facoltativo): è il prerequisito per registrare corse.
+- "+ Allenamento" chiede il tipo (Tennis / Corsa / Palestra in arrivo); la lista Allenamenti mostra tennis e corse insieme con i filtri Tutti / Tennis / Corsa.
+
 ## [1.1.0] - 2026-08-18
 
 ### Aggiunto

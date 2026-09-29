@@ -3,7 +3,8 @@
 //
 // Riusa i moduli puri dell'app (src/lib/tennis.js, athletics.js) per calcolare
 // risultati/normalizzazioni esattamente come farebbe l'app. Cancella TUTTI i
-// dati esistenti (equipment/opponents/matches/trainings + profilo) dell'utente
+// dati esistenti (equipment/opponents/matches/trainings/runs/runWorkouts +
+// profilo) dell'utente
 // target e li ricrea da zero — pensato solo per il progetto dev.
 
 import { readFileSync } from 'fs'
@@ -95,7 +96,7 @@ async function main() {
   console.log(`Utente target: ${user.email} (uid=${uid})`)
 
   // ── Pulizia ──────────────────────────────────────────────
-  for (const col of ['equipment', 'opponents', 'matches', 'trainings']) {
+  for (const col of ['equipment', 'opponents', 'matches', 'trainings', 'runs', 'runWorkouts']) {
     const n = await wipeSubcollection(uid, col)
     console.log(`Eliminati ${n} doc esistenti in ${col}`)
   }
@@ -492,15 +493,115 @@ async function main() {
   if (trainOps > 0) await trainBatch.commit()
   console.log(`Allenamenti creati: ${trainCount}`)
 
+  // ── Corsa: schede e sessioni ─────────────────────────────
+  // Le strutture sono scritte già nella forma normalizzata di
+  // normalizeItems (src/lib/running.js): quel modulo non si importa da qui
+  // perché usa import senza estensione, che risolve Vite ma non Node.
+  let stepSeq = 0
+  const st = (stepType, target, duration, notes = '') => ({ kind: 'step', id: `s${++stepSeq}`, stepType, notes, duration, target })
+  const time = sec => ({ type: 'time', sec })
+  const dist = (meters, unit = 'km') => ({ type: 'distance', meters, unit })
+  const rep = (times, steps, skipLastRecovery = false) => ({ kind: 'repeat', id: `r${++stepSeq}`, times, skipLastRecovery, steps })
+
+  const workoutsCol = userRef.collection('runWorkouts')
+  // HIIT sullo schema dello screenshot Garmin: ripetute brevi, recuperi a FC
+  // (fase stimata, tratteggiata nel grafico) e salto dell'ultimo recupero.
+  const hiitItems = [
+    st('camminata', 'camminata', time(180)),
+    st('riscaldamento', 'z1', time(600)),
+    st('camminata', 'camminata', time(120)),
+    rep(5, [st('corsa', 'z5', time(15)), st('recupero', 'camminata', time(45))]),
+    rep(8, [
+      st('corsa', 'z5', time(10)),
+      st('corsa', 'z4', dist(200, 'm')),
+      st('recupero', 'fermo', { type: 'hr', bpm: 120, condition: 'sotto', estimatedSec: 90 }),
+    ], true),
+    st('defaticamento', 'z1', dist(1500)),
+    st('camminata', 'camminata', time(180)),
+  ]
+  const lentoItems = [st('corsa', 'z2', dist(8000), 'Conversazionale, senza guardare il passo')]
+  const ripetuteItems = [
+    st('riscaldamento', 'z1', time(900)),
+    rep(4, [st('corsa', 'z4', dist(1000)), st('recupero', 'camminata', time(120))], true),
+    st('defaticamento', 'z1', { type: 'calories', kcal: 60 }),
+  ]
+  const progressivoItems = [
+    st('riscaldamento', 'z1', time(600)),
+    st('corsa', 'z2', time(900)),
+    st('corsa', 'z3', time(900)),
+    st('corsa', 'z4', time(600)),
+    st('defaticamento', 'z1', time(300)),
+  ]
+  const wHiit = await workoutsCol.add({ name: 'HIIT brevi distanze', items: hiitItems, createdAt: ts('2026-06-01') })
+  const wLento = await workoutsCol.add({ name: 'Lento 8 km', items: lentoItems, createdAt: ts('2026-06-01') })
+  const wRipetute = await workoutsCol.add({ name: 'Ripetute 1000', items: ripetuteItems, createdAt: ts('2026-06-10') })
+  // Mai corsa: per lo stato "Mai corsa" della libreria
+  await workoutsCol.add({ name: 'Progressivo 45\'', items: progressivoItems, createdAt: ts('2026-08-01') })
+
+  // Dati dell'orologio coerenti con un passo medio (s/km) e una distanza.
+  const runAthletics = (km, paceSec, intensity) => normalizeAthletics({
+    distanceKm: km,
+    durationSec: Math.round(km * paceSec),
+    calories: Math.round(km * 72),
+    avgHr: { leggera: randInt(135, 145), media: randInt(145, 155), intensa: randInt(155, 168) }[intensity],
+    maxHr: randInt(170, 186),
+    trainingEffect: { leggera: 2.6, media: 3.2, intensa: 3.9 }[intensity],
+    anaerobicTrainingEffect: { leggera: 0.8, media: 1.6, intensa: 2.8 }[intensity],
+    zones: null,
+  })
+
+  const rawRuns = [
+    { date: '2026-06-03', w: wLento, name: 'Lento 8 km', items: lentoItems, intensity: 'leggera', ath: [8.1, 400, 'leggera'] },
+    { date: '2026-06-10', w: wHiit, name: 'HIIT brevi distanze', items: hiitItems, intensity: 'intensa', ath: [6.9, 455, 'intensa'] },
+    { date: '2026-06-17', w: wRipetute, name: 'Ripetute 1000', items: ripetuteItems, intensity: 'intensa', ath: [7.6, 390, 'intensa'] },
+    { date: '2026-06-24', w: wLento, name: 'Lento 8 km', items: lentoItems, intensity: 'leggera', ath: null },
+    { date: '2026-07-01', w: wHiit, name: 'HIIT brevi distanze', items: hiitItems, intensity: 'intensa', ath: [7.1, 450, 'intensa'] },
+    // Variante di un giorno: 3 ripetute invece di 4, senza toccare la scheda
+    { date: '2026-07-08', w: wRipetute, name: 'Ripetute 1000', intensity: 'media', ath: [6.4, 395, 'media'],
+      items: [ripetuteItems[0], { ...ripetuteItems[1], times: 3 }, ripetuteItems[2]],
+      notes: [note('Caldo: fatte 3 ripetute invece di 4.', '2026-07-08')] },
+    { date: '2026-07-22', w: wLento, name: 'Lento 8 km', items: lentoItems, intensity: 'media', ath: [8.0, 385, 'media'] },
+    // Scheda eliminata dalla libreria: la corsa conserva nome e struttura
+    { date: '2026-07-29', w: { id: 'scheda-eliminata' }, name: 'Collinare 6 km', intensity: 'media', ath: [6.2, 430, 'media'],
+      items: [st('riscaldamento', 'z1', time(600)), st('corsa', 'z3', dist(6000)), st('defaticamento', 'z1', time(300))] },
+    { date: '2026-08-05', w: wHiit, name: 'HIIT brevi distanze', items: hiitItems, intensity: 'intensa', ath: null },
+    { date: '2026-08-12', w: wRipetute, name: 'Ripetute 1000', items: ripetuteItems, intensity: 'intensa', ath: [7.7, 385, 'intensa'] },
+  ]
+
+  const runsCol = userRef.collection('runs')
+  const runBatch = db.batch()
+  rawRuns.forEach(r => {
+    runBatch.set(runsCol.doc(), {
+      date: iso(r.date),
+      workoutId: r.w.id,
+      workoutName: r.name,
+      items: r.items,
+      intensity: r.intensity,
+      athletics: r.ath ? runAthletics(...r.ath) : null,
+      notes: r.notes || [],
+      createdAt: ts(r.date),
+    })
+  })
+  await runBatch.commit()
+  console.log(`Corse create: ${rawRuns.length} (4 schede, di cui una mai corsa)`)
+
   // ── Profilo ──────────────────────────────────────────────
+  // `running` è la tabella zone → passo (s/km) che sblocca la corsa.
   await userRef.update({
-    profile: { dominantHand: 'destro', level: '3.4', birthYear: 1994, playingSince: 2008 },
+    profile: {
+      dominantHand: 'destro', level: '3.4', birthYear: 1994, playingSince: 2008,
+      running: {
+        zones: [[420, 460], [380, 420], [340, 380], [300, 340], [260, 300]].map(([fast, slow]) => ({ fast, slow })),
+        walk: { fast: 570, slow: 690 },
+        weightKg: 74,
+      },
+    },
     updatedAt: FieldValue.serverTimestamp(),
   })
   console.log('Profilo aggiornato')
 
   console.log('\n✅ Seed completato con successo su', DEV_PROJECT_ID)
-  console.log(`   Equipment: 7 · Avversari: 6 · Partite: ${matchCount} · Allenamenti: ${trainCount}`)
+  console.log(`   Equipment: 7 · Avversari: 6 · Partite: ${matchCount} · Allenamenti: ${trainCount} · Corse: ${rawRuns.length}`)
 }
 
 main().then(() => process.exit(0)).catch(err => {

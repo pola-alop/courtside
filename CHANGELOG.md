@@ -12,6 +12,9 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 - Tabella **Zone di corsa** nel Profilo (passo per zona Z1–Z5, passo di camminata, peso facoltativo): è il prerequisito per registrare corse.
 - "+ Allenamento" chiede il tipo (Tennis / Corsa / Palestra in arrivo); la lista Allenamenti mostra tennis e corse insieme con i filtri Tutti / Tennis / Corsa.
 
+### Modificato
+- Le card degli allenamenti di tennis mostrano la 🎾 davanti al titolo, come la 🏃 delle corse, per riconoscere il tipo a colpo d'occhio.
+
 ## [1.1.0] - 2026-08-18
 
 ### Aggiunto

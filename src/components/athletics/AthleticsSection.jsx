@@ -2,6 +2,7 @@ import {
   HR_ZONES, hasAthletics, zonesTotalSec, zonePercents, avgSpeedKmh,
   trainingEffectLabel, formatDuration, formatSpeed, formatHr, formatTrainingEffect,
 } from '../../lib/athletics'
+import { avgPaceSec, formatPace } from '../../lib/running'
 import TrainingEffectInfoButton from './TrainingEffectInfo'
 
 // Visualizzazione dei dati atletici di una sessione (partita o allenamento).
@@ -9,10 +10,13 @@ import TrainingEffectInfoButton from './TrainingEffectInfo'
 // stessa shape `athletics`, stesse tile, stesso training effect, stesse zone.
 // Interamente nascosta se la sessione non ha dati (le partite registrate prima
 // della feature non hanno affatto il campo `athletics`).
-export default function AthleticsSection({ athletics, title = 'Dati atletici' }) {
+// Con `pace` (le corse) la riga derivata è il passo in min/km invece della
+// velocità in km/h: è l'unità con cui un runner legge la propria andatura.
+export default function AthleticsSection({ athletics, title = 'Dati atletici', pace = false }) {
   if (!hasAthletics(athletics)) return null
 
   const speed = avgSpeedKmh(athletics)
+  const paceSec = pace ? avgPaceSec(athletics) : null
 
   // Le tile mostrano solo i valori davvero presenti: una griglia con buchi
   // sarebbe peggio di una griglia più corta.
@@ -27,7 +31,8 @@ export default function AthleticsSection({ athletics, title = 'Dati atletici' })
 
   const rows = [
     { key: 'maxHr', label: 'FC massima',   show: isSet(athletics.maxHr),          value: formatHr(athletics.maxHr) },
-    { key: 'speed', label: 'Velocità media (calcolata)', show: speed !== null,    value: formatSpeed(speed) },
+    { key: 'speed', label: 'Velocità media (calcolata)', show: !pace && speed !== null, value: formatSpeed(speed) },
+    { key: 'pace',  label: 'Passo medio (calcolato)',    show: paceSec !== null,        value: `${formatPace(paceSec)} /km` },
   ].filter(r => r.show)
 
   const zonesTotal = zonesTotalSec(athletics.zones)

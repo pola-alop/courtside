@@ -101,7 +101,7 @@ export function athleticsIssues(a) {
 
   const zonesTotal = zonesTotalSec(a.zones)
   if (zonesTotal > 0 && isNum(a.durationSec) && zonesTotal > a.durationSec) {
-    issues.push('Il tempo totale nelle zone supera la durata della partita.')
+    issues.push('Il tempo totale nelle zone supera la durata della sessione.')
   }
 
   return issues

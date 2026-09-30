@@ -39,6 +39,13 @@
   --color-zone-4: #f4a300;
   --color-zone-5: #e05a5a;
 
+  /* Manichino della palestra: scala assoluta giallo → arancio → rosso.
+     `off` è il muscolo non toccato, quasi il colore dello sfondo. */
+  --color-muscle-off: #0d1b2e;
+  --color-muscle-low: #f6d24c;
+  --color-muscle-mid: #f4a300;
+  --color-muscle-high: #e0373a;
+
   /* Font */
   --font-display: 'DM Sans', sans-serif;
   --font-body: 'Inter', sans-serif;

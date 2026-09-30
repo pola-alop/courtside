@@ -3,9 +3,11 @@
 Popola il progetto Firebase **dev** (`courtside-dev-a2ca6`) con un set di dati
 sintetici — attrezzatura, avversari, partite (inclusi tornei con turni,
 campionati, ritiri, pareggi), allenamenti, schede e sessioni di corsa (con la
-tabella zone → passo nel profilo) — sotto l'utente Google già loggato in dev.
+tabella zone → passo nel profilo), schede e sessioni di palestra (con un esercizio
+personalizzato) — sotto l'utente Google già loggato in dev.
 **Cancella prima tutti i dati esistenti** di quell'utente (equipment,
-opponents, matches, trainings, runs, runWorkouts, profilo) e li ricrea da zero.
+opponents, matches, trainings, runs, runWorkouts, gymWorkouts, gymSessions,
+gymExercises, profilo) e li ricrea da zero.
 
 Bypassa le regole di sicurezza di Firestore usando `firebase-admin`, quindi
 serve una service account key del progetto dev (mai quella di produzione —

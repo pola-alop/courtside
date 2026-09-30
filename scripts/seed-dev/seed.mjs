@@ -96,7 +96,7 @@ async function main() {
   console.log(`Utente target: ${user.email} (uid=${uid})`)
 
   // ── Pulizia ──────────────────────────────────────────────
-  for (const col of ['equipment', 'opponents', 'matches', 'trainings', 'runs', 'runWorkouts']) {
+  for (const col of ['equipment', 'opponents', 'matches', 'trainings', 'runs', 'runWorkouts', 'gymWorkouts', 'gymSessions', 'gymExercises']) {
     const n = await wipeSubcollection(uid, col)
     console.log(`Eliminati ${n} doc esistenti in ${col}`)
   }
@@ -585,6 +585,94 @@ async function main() {
   await runBatch.commit()
   console.log(`Corse create: ${rawRuns.length} (4 schede, di cui una mai corsa)`)
 
+  // ── Palestra: esercizio personalizzato, schede e sessioni ─
+  // Gli esercizi si citano per id del database (src/data/exercises.json); quello
+  // personalizzato ha id `custom:<docId>` e le sue sessioni portano lo snapshot,
+  // come fa normalizeItems (src/lib/gym.js).
+  const customCol = userRef.collection('gymExercises')
+  const customDef = { name: 'Rematore Pendlay', equipment: 'bilanciere', mode: 'reps-kg', primary: ['dorsali'], secondary: ['trapezio', 'bicipiti', 'lombari'] }
+  const customRef = await customCol.add({ ...customDef, createdAt: ts('2026-06-01') })
+  const customId = `custom:${customRef.id}`
+  const gi = (exerciseId, sets, extra = {}) => ({ id: `g${++stepSeq}`, exerciseId, sets, ...extra })
+  const uni = (n, set) => Array.from({ length: n }, () => ({ ...set }))
+  const pendlay = kg => gi(customId, uni(4, { reps: 6, kg }), { snapshot: { ...customDef, movement: 'pull' } })
+
+  const pushItems = kg => [
+    gi('panca-piana-bilanciere', [{ reps: 8, kg }, { reps: 8, kg }, { reps: 6, kg: kg + 5 }, { reps: 6, kg: kg + 5 }]),
+    gi('shoulder-press-manubri', uni(3, { reps: 10, kg: 18 + Math.round((kg - 60) / 10) * 2 })),
+    gi('alzate-laterali', uni(3, { reps: 15, kg: 8 })),
+    gi('pushdown-cavi', uni(3, { reps: 12, kg: 30 })),
+  ]
+  const pullItems = kg => [
+    pendlay(kg),
+    gi('trazioni-prone', uni(4, { reps: 6 })),
+    gi('pulley-basso', uni(3, { reps: 10, kg: 55 })),
+    gi('curl-bilanciere', uni(3, { reps: 10, kg: 30 })),
+    gi('face-pull', uni(3, { reps: 15, kg: 20 })),
+  ]
+  const legsItems = kg => [
+    gi('squat-bilanciere', uni(4, { reps: 5, kg })),
+    gi('stacco-rumeno', uni(3, { reps: 8, kg: kg - 20 })),
+    gi('leg-press', uni(3, { reps: 12, kg: 140 })),
+    gi('calf-raise-in-piedi', uni(3, { reps: 15, kg: 60 })),
+    gi('plank', [{ sec: 45 }, { sec: 60 }, { sec: 60 }]),
+  ]
+
+  const gymWorkoutsCol = userRef.collection('gymWorkouts')
+  const gPush = await gymWorkoutsCol.add({ name: 'Push', items: pushItems(70), createdAt: ts('2026-06-01') })
+  const gPull = await gymWorkoutsCol.add({ name: 'Pull', items: pullItems(60), createdAt: ts('2026-06-01') })
+  const gLegs = await gymWorkoutsCol.add({ name: 'Gambe', items: legsItems(90), createdAt: ts('2026-06-01') })
+  // Mai fatta: per lo stato "Mai fatta" della libreria
+  await gymWorkoutsCol.add({
+    name: 'Full body A',
+    items: [gi('goblet-squat', uni(3, { reps: 12, kg: 20 })), gi('piegamenti', uni(3, { reps: 15 })), gi('rematore-manubrio', uni(3, { reps: 10, kg: 24 })), gi('crunch', uni(3, { reps: 20 }))],
+    createdAt: ts('2026-08-20'),
+  })
+
+  const gymAthletics = (min, hr, intensity) => normalizeAthletics({
+    durationSec: min * 60,
+    calories: Math.round(min * 5.5),
+    avgHr: hr,
+    maxHr: hr + randInt(25, 40),
+    trainingEffect: { leggera: 1.2, media: 2.0, intensa: 2.8 }[intensity],
+    anaerobicTrainingEffect: { leggera: 0, media: 0.4, intensa: 1.2 }[intensity],
+    zones: null,
+  })
+
+  // Dieci settimane, tre sessioni a settimana con carichi che salgono piano:
+  // dà alla sezione Stats progressione, bilancio e qualche buco (una settimana
+  // saltata, il pull che sparisce nell'ultimo mese).
+  const gymSeed = []
+  const start = new Date('2026-07-06T00:00:00Z')
+  for (let w = 0; w < 12; w++) {
+    const monday = new Date(start.getTime() + w * 7 * 86400000)
+    const at = d => new Date(monday.getTime() + d * 86400000).toISOString().slice(0, 10)
+    if (w === 6) continue
+    const up = w * 2.5
+    gymSeed.push({ date: at(0), w: gPush, name: 'Push', items: pushItems(70 + up), intensity: 'media', ath: w % 2 ? [58, 112, 'media'] : null })
+    if (w < 8) gymSeed.push({ date: at(2), w: gPull, name: 'Pull', items: pullItems(60 + up), intensity: 'media', ath: null })
+    gymSeed.push({ date: at(4), w: gLegs, name: 'Gambe', items: legsItems(90 + up), intensity: w % 3 === 0 ? 'intensa' : 'media', ath: w % 3 === 0 ? [64, 121, 'intensa'] : null,
+      notes: w === 3 ? [note('Ginocchio un po\' fastidioso, carico ridotto sul leg press.', at(4))] : [] })
+  }
+  const gymCol = userRef.collection('gymSessions')
+  for (let i = 0; i < gymSeed.length; i += 400) {
+    const b = db.batch()
+    gymSeed.slice(i, i + 400).forEach(g => {
+      b.set(gymCol.doc(), {
+        date: iso(g.date),
+        workoutId: g.w.id,
+        workoutName: g.name,
+        items: g.items,
+        intensity: g.intensity,
+        athletics: g.ath ? gymAthletics(...g.ath) : null,
+        notes: g.notes || [],
+        createdAt: ts(g.date),
+      })
+    })
+    await b.commit()
+  }
+  console.log(`Sessioni di palestra create: ${gymSeed.length} (3 schede in uso, una mai fatta, 1 esercizio personalizzato)`)
+
   // ── Profilo ──────────────────────────────────────────────
   // `running` è la tabella zone → passo (s/km) che sblocca la corsa.
   await userRef.update({
@@ -601,7 +689,7 @@ async function main() {
   console.log('Profilo aggiornato')
 
   console.log('\n✅ Seed completato con successo su', DEV_PROJECT_ID)
-  console.log(`   Equipment: 7 · Avversari: 6 · Partite: ${matchCount} · Allenamenti: ${trainCount} · Corse: ${rawRuns.length}`)
+  console.log(`   Equipment: 7 · Avversari: 6 · Partite: ${matchCount} · Allenamenti: ${trainCount} · Corse: ${rawRuns.length} · Palestra: ${gymSeed.length}`)
 }
 
 main().then(() => process.exit(0)).catch(err => {

@@ -10,10 +10,17 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 - Grafico delle fasi (durata o distanza, altezza per zona, colore per tipo di fase) con tempo totale e distanza stimati.
 - Dati reali della corsa trascritti dall'orologio (durata, distanza, FC, calorie, training effect, zone), con passo medio calcolato e confronto con la stima della scheda.
 - Tabella **Zone di corsa** nel Profilo (passo per zona Z1–Z5, passo di camminata, peso facoltativo): è il prerequisito per registrare corse.
-- "+ Allenamento" chiede il tipo (Tennis / Corsa / Palestra in arrivo); la lista Allenamenti mostra tennis e corse insieme con i filtri Tutti / Tennis / Corsa.
+- "+ Allenamento" chiede il tipo (Tennis / Corsa / Palestra); la lista Allenamenti mostra tennis, corse e palestra insieme con i filtri Tutti / Tennis / Corsa / Palestra.
+- **Palestra** come nuovo tipo di allenamento: database di 110 esercizi già associati ai muscoli che coinvolgono (principali e secondari), esercizi personalizzati, schede riutilizzabili con serie, ripetizioni e kg (o secondi per gli esercizi a tempo), libreria delle schede.
+- **Manichino** frontale e dorsale dei muscoli allenati, nel dettaglio di ogni sessione e nell'editor della scheda: muscolo non allenato con il colore dello sfondo, poi dal giallo (poco) al rosso (tanto) su una scala assoluta; al tocco mostra gli esercizi che lo hanno lavorato.
+- **Stats › Palestra**: volume e serie a settimana, manichino su periodo e ultimi 7 giorni, muscoli trascurati, bilancio spinta/trazione, progressione del massimale stimato per esercizio e medie dei dati dell'orologio, con i relativi insight.
 
 ### Modificato
+- Le ore del mese nella lista Allenamenti sommano anche le sessioni di palestra.
 - Le card degli allenamenti di tennis mostrano la 🎾 davanti al titolo, come la 🏃 delle corse, per riconoscere il tipo a colpo d'occhio.
+
+### Corretto
+- La sezione dei dati atletici non si rompe più quando la sessione non ha una distanza.
 
 ## [1.1.0] - 2026-08-18
 

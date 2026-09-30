@@ -17,7 +17,13 @@ import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 // dentro lo step 3 del wizard; il default è l'editor completo con Salva/Annulla
 // aperto dal dettaglio. I widget sono duplicati da TrainingAthleticsEditor,
 // stessa convenzione già annotata lì.
-export default function RunAthleticsEditor({ athletics, saving, onCancel, onSave }) {
+//
+// Lo riusa anche la palestra: `showDistance={false}` toglie distanza e passo
+// (una sessione di pesi non ha chilometri), `title`/`clearLabel` cambiano i testi.
+export default function RunAthleticsEditor({
+  athletics, saving, onCancel, onSave,
+  showDistance = true, title = 'Dati della corsa', clearLabel = 'Svuota i dati della corsa',
+}) {
   const [draft, setDraft] = useState(() => ({ ...emptyAthletics(), ...(athletics || {}) }))
   const issues = athleticsIssues(draft)
   const canSave = issues.length === 0
@@ -26,14 +32,14 @@ export default function RunAthleticsEditor({ athletics, saving, onCancel, onSave
     <div className="space-y-4">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-display)' }}>
-          Dati della corsa
+          {title}
         </p>
         <p className="text-xs mt-1" style={{ color: 'var(--color-slate)' }}>
           Trascrivi i dati dal tuo orologio o dall'app. Tutto è facoltativo.
         </p>
       </div>
 
-      <RunAthleticsFields draft={draft} setDraft={setDraft} />
+      <RunAthleticsFields draft={draft} setDraft={setDraft} showDistance={showDistance} />
 
       {issues.map(msg => (
         <p key={msg} className="text-xs" style={{ color: 'var(--color-loss)' }}>⚠ {msg}</p>
@@ -59,14 +65,14 @@ export default function RunAthleticsEditor({ athletics, saving, onCancel, onSave
         <button onClick={() => setDraft(emptyAthletics())}
           className="w-full py-2.5 rounded-2xl text-xs font-semibold transition-all"
           style={{ background: 'var(--color-surface-2)', color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-          Svuota i dati della corsa
+          {clearLabel}
         </button>
       )}
     </div>
   )
 }
 
-export function RunAthleticsFields({ draft, setDraft }) {
+export function RunAthleticsFields({ draft, setDraft, showDistance = true }) {
   const [showZones, setShowZones] = useState(() => zonesTotalSec(draft?.zones) > 0)
   const patch = (p) => setDraft(d => ({ ...d, ...p }))
   const { h, m, s } = splitDuration(draft.durationSec)
@@ -87,7 +93,7 @@ export function RunAthleticsFields({ draft, setDraft }) {
 
   return (
     <div className="space-y-4">
-      <FieldGroup label="Tempo e distanza">
+      <FieldGroup label={showDistance ? 'Tempo e distanza' : 'Tempo e calorie'}>
         <div>
           <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Durata</label>
           <div className="rounded-2xl p-2 flex items-center gap-1.5" style={{ background: 'var(--color-surface-2)' }}>
@@ -99,13 +105,15 @@ export function RunAthleticsFields({ draft, setDraft }) {
             <span className="text-xs" style={{ color: 'var(--color-slate)' }}>sec</span>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <NumberField label="Distanza" suffix="km" placeholder="0,0"
-            value={draft.distanceKm} onChange={v => patch({ distanceKm: v })} {...ATHLETIC_LIMITS.distanceKm} />
+        <div className={showDistance ? 'grid grid-cols-2 gap-2' : ''}>
+          {showDistance && (
+            <NumberField label="Distanza" suffix="km" placeholder="0,0"
+              value={draft.distanceKm} onChange={v => patch({ distanceKm: v })} {...ATHLETIC_LIMITS.distanceKm} />
+          )}
           <NumberField label="Calorie" suffix="kcal" placeholder="0"
             value={draft.calories} onChange={v => patch({ calories: v })} {...ATHLETIC_LIMITS.calories} />
         </div>
-        {pace && (
+        {showDistance && pace && (
           <p className="text-xs" style={{ color: 'var(--color-teal)' }}>
             Passo medio: {formatPace(pace)} /km
           </p>

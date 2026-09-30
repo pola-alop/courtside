@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 
 // Primo tap di "+ Allenamento": che tipo di allenamento? Tennis, corsa e
 // palestra sono tutti allenamenti in preparazione delle partite e vivono nella
-// stessa lista; cambia solo il wizard che si apre.
+// stessa lista; cambia solo il wizard che si apre. La palestra non ha
+// prerequisiti: il database esercizi è nell'app.
 //
 // La corsa è bloccata finché le zone di passo del Profilo non sono complete:
 // senza, nessuna fase della scheda si traduce in una durata. Invece di
@@ -15,7 +16,7 @@ export default function SessionTypePicker({ runningReady, profileLoading = false
       enabled: runningReady,
       blocked: !runningReady && !profileLoading ? 'Prima configura le zone di passo nel Profilo.' : null,
     },
-    { id: 'palestra', icon: '🏋️', label: 'Palestra', sub: 'In arrivo', enabled: false },
+    { id: 'palestra', icon: '🏋️', label: 'Palestra', sub: 'Scheda di esercizi con serie e carichi, e il manichino dei muscoli', enabled: true },
   ]
 
   return (

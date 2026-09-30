@@ -19,11 +19,13 @@ export default function AthleticsSection({ athletics, title = 'Dati atletici', p
   const paceSec = pace ? avgPaceSec(athletics) : null
 
   // Le tile mostrano solo i valori davvero presenti: una griglia con buchi
-  // sarebbe peggio di una griglia più corta.
+  // sarebbe peggio di una griglia più corta. Il `?.` sulla distanza serve alla
+  // palestra, che non ne ha: il valore si calcola per tutte le tile prima del
+  // filtro, e `null.toLocaleString` romperebbe l'intera sezione.
   // Numero nudo nella tile e unità nell'etichetta: con 2 colonne su mobile un
   // "2,54 km" a caratteri grandi va a capo, "2,54" no.
   const tiles = [
-    { key: 'dist', label: 'Distanza (km)', show: isSet(athletics.distanceKm),  value: athletics.distanceKm.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), color: 'var(--color-teal)' },
+    { key: 'dist', label: 'Distanza (km)', show: isSet(athletics.distanceKm),  value: athletics.distanceKm?.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), color: 'var(--color-teal)' },
     { key: 'time', label: 'Tempo',         show: isSet(athletics.durationSec), value: formatDuration(athletics.durationSec), color: 'var(--color-white)' },
     { key: 'kcal', label: 'Calorie',       show: isSet(athletics.calories),    value: Math.round(athletics.calories).toLocaleString('it-IT'), color: 'var(--color-amber)' },
     { key: 'hr',   label: 'FC media (bpm)', show: isSet(athletics.avgHr),      value: String(Math.round(athletics.avgHr)), color: 'var(--color-loss)' },

@@ -6,6 +6,9 @@ import { useTrainings } from '../hooks/useTrainings'
 import { useEquipment } from '../hooks/useEquipment'
 import { useRuns } from '../hooks/useRuns'
 import { useRunWorkouts } from '../hooks/useRunWorkouts'
+import { useGymSessions } from '../hooks/useGymSessions'
+import { useGymWorkouts } from '../hooks/useGymWorkouts'
+import { useGymExercises } from '../hooks/useGymExercises'
 import { useProfile } from '../hooks/useProfile'
 import OpponentCard from '../components/matches/OpponentCard'
 import AddOpponentModal from '../components/matches/AddOpponentModal'
@@ -26,6 +29,11 @@ import AddRunModal from '../components/runs/AddRunModal'
 import RunDetailModal from '../components/runs/RunDetailModal'
 import WorkoutLibrary from '../components/runs/WorkoutLibrary'
 import WorkoutEditModal from '../components/runs/WorkoutEditModal'
+import GymRow from '../components/gym/GymRow'
+import AddGymModal from '../components/gym/AddGymModal'
+import GymDetailModal from '../components/gym/GymDetailModal'
+import GymWorkoutLibrary from '../components/gym/GymWorkoutLibrary'
+import GymWorkoutEditModal from '../components/gym/GymWorkoutEditModal'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
 import {
@@ -33,6 +41,7 @@ import {
   totalMinutes, formatHours,
 } from '../lib/training'
 import { isRunningReady, runMinutes, workoutUsage, sortWorkoutsByUse } from '../lib/running'
+import { gymMinutes, workoutUsage as gymWorkoutUsage, sortWorkoutsByUse as sortGymWorkoutsByUse } from '../lib/gym'
 
 const TABS = [
   { id: 'panoramica',  label: 'Panoramica',  icon: '🗂' },
@@ -47,6 +56,7 @@ const SPORT_FILTERS = [
   { id: 'all',    label: 'Tutti' },
   { id: 'tennis', label: 'Tennis', icon: '🎾' },
   { id: 'corsa',  label: 'Corsa',  icon: '🏃' },
+  { id: 'palestra', label: 'Palestra', icon: '🏋️' },
 ]
 
 const RESULT_FILTERS = [
@@ -63,6 +73,9 @@ export default function Matches() {
   const { equipment } = useEquipment()
   const { runs, loading: runLoading, add: addRun, update: updateRun, remove: removeRun } = useRuns()
   const { workouts, add: addWorkout, update: updateWorkout, remove: removeWorkout } = useRunWorkouts()
+  const { sessions: gymSessions, loading: gymLoading, add: addGymSession, update: updateGymSession, remove: removeGymSession } = useGymSessions()
+  const { workouts: gymWorkouts, add: addGymWorkout, update: updateGymWorkout, remove: removeGymWorkout } = useGymWorkouts()
+  const exerciseApi = useGymExercises()
   const { profile, loading: profileLoading } = useProfile()
   const running = profile?.running || null
   const runningReady = isRunningReady(running)
@@ -119,8 +132,12 @@ export default function Matches() {
   const [fIntensity, setFIntensity] = useState('all')
   const [fTrDateFrom, setFTrDateFrom] = useState('')
   const [fTrDateTo, setFTrDateTo]     = useState('')
-  const [fSport, setFSport]           = useState(() => (intent === 'run' || searchParams.get('run') ? 'corsa' : 'all'))
+  const [fSport, setFSport]           = useState(() => (
+    intent === 'run' || searchParams.get('run') ? 'corsa'
+      : intent === 'gym' || searchParams.get('gym') ? 'palestra' : 'all'
+  ))
   const [fWorkout, setFWorkout]       = useState('all')
+  const [fGymWorkout, setFGymWorkout] = useState('all')
 
   // Corsa
   const [showAddRun, setShowAddRun] = useState(intent === 'run')
@@ -129,6 +146,14 @@ export default function Matches() {
   const [runDeleteToast, setRunDeleteToast] = useState(false)
   const [editingWorkoutId, setEditingWorkoutId] = useState(null)
   const [creatingWorkout, setCreatingWorkout] = useState(false)
+
+  // Palestra
+  const [showAddGym, setShowAddGym] = useState(intent === 'gym')
+  const [editingGym, setEditingGym] = useState(null)
+  const [selectedGymId, setSelectedGymId] = useState(() => searchParams.get('gym'))
+  const [gymDeleteToast, setGymDeleteToast] = useState(false)
+  const [editingGymWorkoutId, setEditingGymWorkoutId] = useState(null)
+  const [creatingGymWorkout, setCreatingGymWorkout] = useState(false)
 
   // I tornei non sono documenti: sono la lettura delle partite di tipo torneo
   // raggruppate per evento ed edizione. Si ricostruiscono qui, una volta sola,
@@ -144,6 +169,8 @@ export default function Matches() {
   const selectedTournament = selectedTournamentId ? tournaments.find(t => t.id === selectedTournamentId) || null : null
   const selectedRun      = selectedRunId ? runs.find(r => r.id === selectedRunId) || null : null
   const editingWorkout   = editingWorkoutId ? workouts.find(w => w.id === editingWorkoutId) || null : null
+  const selectedGym          = selectedGymId ? gymSessions.find(g => g.id === selectedGymId) || null : null
+  const editingGymWorkout   = editingGymWorkoutId ? gymWorkouts.find(w => w.id === editingGymWorkoutId) || null : null
 
   // Record H2H reale (chiusura del cerchio con la sezione Partite)
   const recordFor = (opponentId) => {
@@ -199,7 +226,7 @@ export default function Matches() {
   // sembrerebbe un bug.
   const inDateRange = (date) => !(fTrDateFrom && date.slice(0, 10) < fTrDateFrom) && !(fTrDateTo && date.slice(0, 10) > fTrDateTo)
 
-  const filteredTrainings = fSport === 'corsa' ? [] : trainings.filter(t => {
+  const filteredTrainings = (fSport === 'corsa' || fSport === 'palestra') ? [] : trainings.filter(t => {
     if (fSport === 'tennis') {
       if (fKind !== 'all' && !(t.blocks || []).some(b => b.kind === fKind)) return false
       if (fFocus !== 'all' && !(t.focus || []).includes(fFocus)) return false
@@ -207,23 +234,31 @@ export default function Matches() {
     }
     return inDateRange(t.date)
   })
-  const filteredRuns = fSport === 'tennis' ? [] : runs.filter(r => {
+  const filteredRuns = (fSport === 'tennis' || fSport === 'palestra') ? [] : runs.filter(r => {
     if (fSport === 'corsa' && fWorkout !== 'all' && r.workoutId !== fWorkout) return false
     return inDateRange(r.date)
+  })
+  const filteredGym = (fSport === 'tennis' || fSport === 'corsa') ? [] : gymSessions.filter(g => {
+    if (fSport === 'palestra' && fGymWorkout !== 'all' && g.workoutId !== fGymWorkout) return false
+    return inDateRange(g.date)
   })
   const sessionEntries = [
     ...filteredTrainings.map(t => ({ sport: 'tennis', id: t.id, date: t.date, item: t })),
     ...filteredRuns.map(r => ({ sport: 'corsa', id: r.id, date: r.date, item: r })),
+    ...filteredGym.map(g => ({ sport: 'palestra', id: g.id, date: g.date, item: g })),
   ].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
   const trainingMonthGroups = groupByMonth(sessionEntries)
 
   // Solo le schede davvero corse compaiono nel filtro per scheda.
   const usage = workoutUsage(runs)
   const usedWorkouts = sortWorkoutsByUse(workouts.filter(w => usage[w.id]), runs)
+  const gymUsage = gymWorkoutUsage(gymSessions)
+  const usedGymWorkouts = sortGymWorkoutsByUse(gymWorkouts.filter(w => gymUsage[w.id]), gymSessions)
 
   const hasActiveTrainingFilters = fTrDateFrom !== '' || fTrDateTo !== ''
     || (fSport === 'tennis' && (fKind !== 'all' || fFocus !== 'all' || fIntensity !== 'all'))
     || (fSport === 'corsa' && fWorkout !== 'all')
+    || (fSport === 'palestra' && fGymWorkout !== 'all')
   const resetTrainingFilters = () => {
     setFKind('all')
     setFFocus('all')
@@ -231,6 +266,7 @@ export default function Matches() {
     setFTrDateFrom('')
     setFTrDateTo('')
     setFWorkout('all')
+    setFGymWorkout('all')
   }
 
   // Scelta del tipo di allenamento → wizard corrispondente.
@@ -238,6 +274,7 @@ export default function Matches() {
     setShowTypePicker(false)
     setShowAddTraining(type === 'tennis')
     setShowAddRun(type === 'corsa')
+    setShowAddGym(type === 'palestra')
   }
 
   // Salvataggio di una corsa: il wizard consegna la sessione e la scheda, qui
@@ -251,6 +288,16 @@ export default function Matches() {
     const data = { ...run, workoutId }
     if (editingRun) await updateRun(editingRun.id, data)
     else await addRun(data)
+  }
+
+  // Salvataggio di una sessione di palestra: stessa orchestrazione della corsa.
+  const saveGym = async ({ session, workout }) => {
+    let workoutId = workout.id
+    if (!workoutId) workoutId = await addGymWorkout({ name: workout.name, items: session.items })
+    else if (workout.updateLibrary) await updateGymWorkout(workoutId, { items: session.items })
+    const data = { ...session, workoutId }
+    if (editingGym) await updateGymSession(editingGym.id, data)
+    else await addGymSession(data)
   }
 
   const oppQuery = oppSearch.trim().toLowerCase()
@@ -407,10 +454,10 @@ export default function Matches() {
 
         {/* ── ALLENAMENTI ── */}
         {activeTab === 'allenamenti' && (
-          (trainLoading || runLoading) ? (
+          (trainLoading || runLoading || gymLoading) ? (
             <Spinner />
-          ) : trainings.length === 0 && runs.length === 0 && workouts.length === 0 ? (
-            <EmptyState icon="🎯" title="Nessun allenamento." sub="Registra sessioni di tennis e corse per vedere su cosa stai lavorando davvero." onAdd={() => setShowTypePicker(true)} />
+          ) : trainings.length === 0 && runs.length === 0 && workouts.length === 0 && gymSessions.length === 0 && gymWorkouts.length === 0 ? (
+            <EmptyState icon="🎯" title="Nessun allenamento." sub="Registra sessioni di tennis, corse e palestra per vedere su cosa stai lavorando davvero." onAdd={() => setShowTypePicker(true)} />
           ) : (
             <div className="space-y-4">
               {/* Tipo di allenamento */}
@@ -420,7 +467,7 @@ export default function Matches() {
                 ))}
               </div>
 
-              {fSport !== 'corsa' && trainings.length > 0 && <FocusProgress trainings={trainings} />}
+              {(fSport === 'all' || fSport === 'tennis') && trainings.length > 0 && <FocusProgress trainings={trainings} />}
               {fSport === 'corsa' && (
                 <WorkoutLibrary
                   workouts={workouts}
@@ -431,12 +478,24 @@ export default function Matches() {
                 />
               )}
 
+              {fSport === 'palestra' && (
+                <GymWorkoutLibrary
+                  workouts={gymWorkouts}
+                  sessions={gymSessions}
+                  index={exerciseApi.index}
+                  onSelect={setEditingGymWorkoutId}
+                  onAdd={() => setCreatingGymWorkout(true)}
+                />
+              )}
+
               <TrainingFilters
                 sport={fSport}
                 kind={fKind} setKind={setFKind}
                 focus={fFocus} setFocus={setFFocus} focusOptions={usedFocusIds}
                 intensity={fIntensity} setIntensity={setFIntensity}
-                workout={fWorkout} setWorkout={setFWorkout} workoutOptions={usedWorkouts}
+                workout={fSport === 'palestra' ? fGymWorkout : fWorkout}
+                setWorkout={fSport === 'palestra' ? setFGymWorkout : setFWorkout}
+                workoutOptions={fSport === 'palestra' ? usedGymWorkouts : usedWorkouts}
                 dateFrom={fTrDateFrom} setDateFrom={setFTrDateFrom}
                 dateTo={fTrDateTo} setDateTo={setFTrDateTo}
                 hasActiveFilters={hasActiveTrainingFilters}
@@ -447,12 +506,13 @@ export default function Matches() {
                 <p className="text-sm text-center pt-8" style={{ color: 'var(--color-slate)' }}>
                   {hasActiveTrainingFilters
                     ? 'Nessun allenamento con questi filtri.'
-                    : fSport === 'corsa' ? 'Nessuna corsa registrata.' : 'Nessun allenamento di tennis registrato.'}
+                    : fSport === 'corsa' ? 'Nessuna corsa registrata.'
+                    : fSport === 'palestra' ? 'Nessun allenamento di palestra registrato.' : 'Nessun allenamento registrato.'}
                 </p>
               ) : (
                 <div className="space-y-6">
                   {trainingMonthGroups.map(group => {
-                    const hours = monthHours(group.items, running)
+                    const hours = monthHours(group.items, running, exerciseApi.index)
                     return (
                       <div key={group.key}>
                         <div className="flex items-center gap-2 mb-3">
@@ -469,6 +529,8 @@ export default function Matches() {
                           {group.items.map(e => (
                             e.sport === 'corsa' ? (
                               <RunRow key={e.id} run={e.item} workouts={workouts} running={running} onClick={() => setSelectedRunId(e.id)} />
+                            ) : e.sport === 'palestra' ? (
+                              <GymRow key={e.id} session={e.item} workouts={gymWorkouts} index={exerciseApi.index} onClick={() => setSelectedGymId(e.id)} />
                             ) : (
                               <TrainingRow key={e.id} training={e.item} onClick={() => setSelectedTrainingId(e.id)} />
                             )
@@ -643,11 +705,48 @@ export default function Matches() {
         />
       )}
 
+      {/* ── Modali Palestra ── */}
+      {(showAddGym || editingGym) && (
+        <AddGymModal
+          initial={editingGym}
+          workouts={gymWorkouts}
+          sessions={gymSessions.filter(g => g.id !== editingGym?.id)}
+          exerciseApi={exerciseApi}
+          onClose={() => { setShowAddGym(false); setEditingGym(null) }}
+          onSave={saveGym}
+        />
+      )}
+      {selectedGym && (
+        <GymDetailModal
+          session={selectedGym}
+          workouts={gymWorkouts}
+          index={exerciseApi.index}
+          onClose={() => setSelectedGymId(null)}
+          onEdit={() => { setEditingGym(selectedGym); setSelectedGymId(null) }}
+          onUpdate={async (id, data) => { await updateGymSession(id, data) }}
+          onDelete={async (id) => { await removeGymSession(id); setSelectedGymId(null); setGymDeleteToast(true) }}
+        />
+      )}
+      {(creatingGymWorkout || editingGymWorkout) && (
+        <GymWorkoutEditModal
+          workout={editingGymWorkout}
+          sessionsCount={editingGymWorkout ? gymSessions.filter(g => g.workoutId === editingGymWorkout.id).length : 0}
+          exerciseApi={exerciseApi}
+          onClose={() => { setCreatingGymWorkout(false); setEditingGymWorkoutId(null) }}
+          onSave={async (data) => {
+            if (editingGymWorkout) await updateGymWorkout(editingGymWorkout.id, data)
+            else await addGymWorkout(data)
+          }}
+          onDelete={async (id) => { await removeGymWorkout(id) }}
+        />
+      )}
+
       {/* Toast eliminazione */}
       {oppDeleteToast && <Toast title="Avversario eliminato" sub="È stato rimosso dalla tua anagrafica." onClose={() => setOppDeleteToast(false)} />}
       {matchDeleteToast && <Toast title="Partita eliminata" sub="È stata rimossa dallo storico." onClose={() => setMatchDeleteToast(false)} />}
       {trainingDeleteToast && <Toast title="Allenamento eliminato" sub="È stato rimosso dallo storico." onClose={() => setTrainingDeleteToast(false)} />}
       {runDeleteToast && <Toast title="Corsa eliminata" sub="È stata rimossa dallo storico." onClose={() => setRunDeleteToast(false)} />}
+      {gymDeleteToast && <Toast title="Allenamento eliminato" sub="È stato rimosso dallo storico." onClose={() => setGymDeleteToast(false)} />}
     </div>
   )
 }
@@ -766,8 +865,8 @@ function TrainingFilters({
         <DateInput value={dateTo} onChange={setDateTo} placeholder="A" />
       </div>
 
-      {/* Scheda di corsa */}
-      {sport === 'corsa' && workoutOptions.length > 0 && (
+      {/* Scheda di corsa o di palestra */}
+      {(sport === 'corsa' || sport === 'palestra') && workoutOptions.length > 0 && (
         <div className="flex">
           <Select value={workout} onChange={setWorkout}>
             <option value="all">Tutte le schede</option>
@@ -912,6 +1011,7 @@ function initialTab(searchParams) {
   if (add === 'match'    || searchParams.get('match'))    return 'partite'
   if (add === 'training' || searchParams.get('training')) return 'allenamenti'
   if (add === 'run'      || searchParams.get('run'))      return 'allenamenti'
+  if (add === 'gym'      || searchParams.get('gym'))      return 'allenamenti'
   if (add === 'opponent') return 'avversari'
   return 'panoramica'
 }
@@ -930,12 +1030,17 @@ function monthLabelFromKey(key) {
 }
 
 // Ore del mese nella lista allenamenti: minuti dei blocchi per il tennis,
-// durata dell'orologio per la corsa (o la stima della scheda, che accende il "~").
-function monthHours(entries, running) {
+// durata dell'orologio per corsa e palestra (o la stima della scheda, che
+// accende il "~").
+function monthHours(entries, running, exerciseIndex) {
   let minutes = 0
   let estimated = false
   entries.forEach(e => {
-    if (e.sport === 'corsa') {
+    if (e.sport === 'palestra') {
+      const g = gymMinutes(e.item, exerciseIndex)
+      minutes += g.minutes
+      estimated = estimated || g.estimated
+    } else if (e.sport === 'corsa') {
       const r = runMinutes(e.item, running)
       minutes += r.minutes
       estimated = estimated || r.estimated

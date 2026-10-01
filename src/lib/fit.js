@@ -31,6 +31,7 @@ const SEMICIRCLE_TO_DEG = 180 / 2 ** 31
 export const MAX_SERIES_POINTS = 500
 export const MAX_ROUTE_POINTS = 300
 export const MIN_SERIES_STEP_SEC = 5
+const MAX_CHART_PACE = 720   // 12:00 /km: oltre è una camminata, e allungherebbe la scala del grafico
 
 // ── Tipo di sessione ───────────────────────────────────────
 
@@ -85,7 +86,7 @@ export function summarizeFit(messages) {
   const fitId = buildFitId(fileId, start)
 
   const athletics = {
-    distanceKm:   positive(session.totalDistance) ? session.totalDistance / 1000 : null,
+    distanceKm:   positive(session.totalDistance) ? round(session.totalDistance / 1000, 2) : null,
     durationSec,
     calories:     positive(session.totalCalories) ? Math.round(session.totalCalories) : null,
     avgHr:        positive(session.avgHeartRate) ? Math.round(session.avgHeartRate) : null,
@@ -94,8 +95,8 @@ export function summarizeFit(messages) {
     anaerobicTrainingEffect: isNum(session.totalAnaerobicTrainingEffect) ? session.totalAnaerobicTrainingEffect : null,
     zones:        zonesFromMessage(zonesMsg),
     hrBounds:     boundsFromMessage(zonesMsg),
-    trainingLoad: positive(session.trainingLoadPeak) ? session.trainingLoadPeak : null,
-    maxSpeedKmh:  positive(speedOf(session, 'max')) ? speedOf(session, 'max') * 3.6 : null,
+    trainingLoad: positive(session.trainingLoadPeak) ? round(session.trainingLoadPeak, 1) : null,
+    maxSpeedKmh:  positive(speedOf(session, 'max')) ? round(speedOf(session, 'max') * 3.6, 1) : null,
     ascentM:      kind === 'running' && isNum(session.totalAscent) ? Math.round(session.totalAscent) : null,
     descentM:     kind === 'running' && isNum(session.totalDescent) ? Math.round(session.totalDescent) : null,
     dynamics:     kind === 'running' ? runDynamics(session) : null,
@@ -258,6 +259,13 @@ export function buildRoute(records) {
     lon.push(Math.round(r.positionLong * SEMICIRCLE_TO_DEG * 1e5))
   })
   return { lat, lon }
+}
+
+// Serie velocità (0,1 km/h) → passo in s/km per il grafico; fermo o troppo
+// lento (sotto 2,5 km/h) → null, un buco nella linea e non un passo di 24 min/km;
+// le camminate si appiattiscono a 12:00 /km perché non dilatino la scala.
+export function paceSeries(speed) {
+  return (speed || []).map(v => (typeof v === 'number' && v >= 25 ? Math.min(MAX_CHART_PACE, Math.round(3600 / (v / 10))) : null))
 }
 
 // ── Lap (corsa) ────────────────────────────────────────────
@@ -442,23 +450,31 @@ function targetOf(fit, type, real, running) {
   if (fit.hrZone) return `z${fit.hrZone}`
   if (type === 'riposo') return 'fermo'
   if (type === 'camminata') return 'camminata'
-  const zones = running?.zones
   const meters = real.reduce((s, l) => s + (l.m || 0), 0)
   const sec = real.reduce((s, l) => s + (l.sec || 0), 0)
-  if (Array.isArray(zones) && zones.length === HR_ZONES.length && meters >= 5 && sec > 0) {
+  if (meters >= 5 && sec > 0) {
     const pace = sec / (meters / 1000)
     // Più lento della camminata più veloce del profilo: è una camminata, anche
     // se il file la chiama recupero o corsa.
     if (isNum(running?.walk?.fast) && pace >= running.walk.fast) return 'camminata'
-    let best = null, bestDiff = Infinity
-    zones.forEach((z, i) => {
-      if (!isNum(z?.fast) || !isNum(z?.slow)) return
-      const diff = Math.abs(pace - (z.fast + z.slow) / 2)
-      if (diff < bestDiff) { bestDiff = diff; best = i }
-    })
-    if (best !== null) return `z${best}`
+    const zone = zoneForPace(pace, running)
+    if (zone !== null) return `z${zone}`
   }
   return DEFAULT_TARGETS[type] || 'z2'
+}
+
+// La zona (0…6) il cui passo di riferimento — il punto medio del range del
+// profilo — è più vicino a `pace` (s/km), oppure null senza tabella.
+export function zoneForPace(pace, running) {
+  const zones = running?.zones
+  if (!isNum(pace) || !Array.isArray(zones) || zones.length !== HR_ZONES.length) return null
+  let best = null, bestDiff = Infinity
+  zones.forEach((z, i) => {
+    if (!isNum(z?.fast) || !isNum(z?.slow)) return
+    const diff = Math.abs(pace - (z.fast + z.slow) / 2)
+    if (diff < bestDiff) { bestDiff = diff; best = i }
+  })
+  return best
 }
 
 // Gli stessi default di STEP_TYPES in running.js (non importato: serve solo

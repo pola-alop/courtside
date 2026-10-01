@@ -3,7 +3,8 @@
 // di activity.js / technique.js / physical.js. Risponde a "cosa alleno in
 // palestra, e sto progredendo?": volume, muscoli allenati (il manichino sul
 // periodo), muscoli trascurati, bilancio spinta/trazione, progressione dei
-// carichi e — solo dove trascritti — i dati dell'orologio.
+// carichi, record battuti, costanza e — solo dove ci sono — i dati
+// dell'orologio, distinguendo quelli misurati dal file .FIT da quelli trascritti.
 //
 // ── L'unità è la SERIA ──
 // Come il minuto per Attività e il battito per Fisico: qui tutto nasce dalle
@@ -26,9 +27,11 @@
 
 import {
   MUSCLES, MOVEMENTS, resolveExercise, muscleScores, sumScores, estimate1RM, heatOf,
-  workoutTotals, PRIMARY_WEIGHT, SECONDARY_WEIGHT, WEEK_FULL_SETS,
+  workoutTotals, PRIMARY_WEIGHT, SECONDARY_WEIGHT, WEEK_FULL_SETS, REST_SEC,
 } from './gym'
 import { dayTime } from './stats'
+import { readZones, zonesTotalSec } from './athletics'
+import { consistency, LOAD_RPE, DEFAULT_RPE } from './activity'
 
 // ── Soglie minime di campione ──────────────────────────────
 export const MIN_GYM         = 3   // sessioni nel periodo, per aprire la sezione
@@ -40,6 +43,20 @@ export const NEGLECT_DAYS    = 21  // giorni senza allenare un muscolo per segna
 export const TRAINED_POINTS  = 2   // serie equivalenti in una sessione per dire "allenato"
 export const MIN_WATCH       = 3   // sessioni con l'orologio, per le medie
 export const CHART_WEEKS     = 16  // settimane massime nel grafico del volume
+export const MIN_REPS_SETS   = 20  // serie con ripetizioni, per il mix delle fasce
+export const MIN_ZONES_GYM   = 3   // sessioni con le zone FC, per la loro distribuzione
+export const MIN_DENSITY     = 3   // sessioni con la durata reale, per il riposo medio
+export const STALE_DAYS      = 14  // giorni senza allenarsi per segnalarlo
+export const MAX_RECORDS     = 6   // record mostrati
+
+// Fasce di ripetizioni: il numero di ripetizioni di una serie orienta lo
+// stimolo (forza, ipertrofia, resistenza muscolare). I confini sono quelli di
+// uso comune in letteratura; non sono un obiettivo, un riferimento.
+export const REP_BANDS = [
+  { id: 'forza',      label: 'Forza',       hint: '1-5 ripetizioni',   test: r => r <= 5 },
+  { id: 'ipertrofia', label: 'Ipertrofia',  hint: '6-12 ripetizioni',  test: r => r >= 6 && r <= 12 },
+  { id: 'resistenza', label: 'Resistenza',  hint: '13+ ripetizioni',   test: r => r >= 13 },
+]
 
 const DAY_MS = 86400000
 
@@ -209,21 +226,160 @@ function bestOfSession(sets, mode) {
 }
 
 // ── Dati dall'orologio ─────────────────────────────────────
+// Le sessioni con i dati dell'orologio, divise tra quelle MISURATE (importate dal
+// file .FIT: hanno tutti i campi) e quelle trascritte a mano (solo alcuni). Ogni
+// media porta il proprio `n`.
+//
+// ── Riposo medio tra le serie: una stima, e va detto ──
+// La scheda dice quante serie e ripetizioni; l'orologio dice quanto è durata la
+// sessione. Togliendo il tempo di esecuzione stimato (`SEC_PER_REP` per
+// ripetizione) il resto è, in media, il riposo tra una serie e l'altra. Mescola
+// anche cambi di attrezzo e pause: dà un ordine di grandezza, non un
+// cronometro. Serve la durata REALE (non quella stimata dalla scheda, che
+// sarebbe circolare).
 
-export function watchSummary(sessions) {
-  const withAth = sessions.filter(s => s.athletics)
+export function watchSummary(sessions, index) {
+  const withAth = sessions.filter(s => s.athletics && hasAny(s.athletics))
+  const measured = withAth.filter(s => s.athletics.source === 'fit')
   const pick = (f) => withAth.map(s => s.athletics[f]).filter(v => typeof v === 'number')
   const hr = pick('avgHr'), kcal = pick('calories'), dur = pick('durationSec')
-  const te = pick('trainingEffect'), an = pick('anaerobicTrainingEffect')
+  const te = pick('trainingEffect'), an = pick('anaerobicTrainingEffect'), load = pick('trainingLoad')
+
+  // Zone FC: secondi sommati zona per zona, non media delle percentuali.
+  const withZones = withAth.filter(s => zonesTotalSec(s.athletics.zones) > 0)
+  const secs = [0, 1, 2, 3, 4, 5, 6].map(() => 0)
+  withZones.forEach(s => readZones(s.athletics.zones).forEach((v, i) => { secs[i] += v || 0 }))
+  const zonesTotal = secs.reduce((a, b) => a + b, 0)
+
+  // Densità: serie all'ora e riposo medio, sulle sole sessioni con durata reale.
+  const dens = withAth
+    .filter(s => typeof s.athletics.durationSec === 'number' && s.athletics.durationSec > 0)
+    .map(s => {
+      const t = workoutTotals(s.items, index)
+      if (!t.sets) return null
+      const exec = Math.max(0, t.estimatedSec - t.sets * REST_SEC)
+      return {
+        perHour: t.sets / (s.athletics.durationSec / 3600),
+        restSec: Math.max(0, (s.athletics.durationSec - exec) / t.sets),
+      }
+    })
+    .filter(Boolean)
+
   return {
     n: withAth.length,
+    measured: measured.length,
+    manual: withAth.length - measured.length,
     enough: withAth.length >= MIN_WATCH,
     avgHr: { n: hr.length, value: avg(hr) },
     calories: { n: kcal.length, value: avg(kcal) },
     durationSec: { n: dur.length, value: avg(dur) },
     trainingEffect: { n: te.length, value: avg(te) },
     anaerobic: { n: an.length, value: avg(an) },
+    load: { n: load.length, value: avg(load), max: load.length ? Math.max(...load) : null },
+    zones: {
+      n: withZones.length,
+      enough: withZones.length >= MIN_ZONES_GYM,
+      secs, total: zonesTotal,
+      shares: secs.map(v => (zonesTotal ? v / zonesTotal : 0)),
+    },
+    density: {
+      n: dens.length,
+      enough: dens.length >= MIN_DENSITY,
+      setsPerHour: avg(dens.map(d => d.perHour)),
+      restSec: avg(dens.map(d => d.restSec)),
+    },
   }
+}
+
+function hasAny(a) {
+  return ['avgHr', 'calories', 'durationSec', 'trainingEffect', 'anaerobicTrainingEffect', 'trainingLoad']
+    .some(f => typeof a[f] === 'number') || zonesTotalSec(a.zones) > 0
+}
+
+// ── Costanza ───────────────────────────────────────────────
+// Stesso motore di Attività (`consistency`): settimane attive, buco più lungo,
+// striscia e giorni dall'ultima sessione. Striscia e ultima sessione sono fatti
+// del presente e leggono l'intero storico.
+
+function toDays(sessions) {
+  return sessions
+    .map(s => ({
+      day: dayTime(s.date),
+      minutes: (s.athletics?.durationSec || 0) / 60,
+      rpe: LOAD_RPE[s.intensity] ?? DEFAULT_RPE,
+    }))
+    .filter(x => x.day != null)
+    .sort((a, b) => a.day - b.day)
+}
+
+// ── Esercizi e fasce di ripetizioni ────────────────────────
+
+export function exerciseMix(sessions, index) {
+  const by = {}
+  const bandSets = Object.fromEntries(REP_BANDS.map(b => [b.id, 0]))
+  sessions.forEach(s => {
+    const seen = new Set()
+    ;(s.items || []).forEach(it => {
+      const ex = resolveExercise(it, index)
+      const n = it.sets?.length || 0
+      if (!n) return
+      const row = by[ex.id] || (by[ex.id] = { exercise: ex, sets: 0, sessions: 0 })
+      row.sets += n
+      if (!seen.has(ex.id)) { row.sessions++; seen.add(ex.id) }
+      if (ex.mode === 'time') return
+      ;(it.sets || []).forEach(set => {
+        if (!(set.reps > 0)) return
+        const band = REP_BANDS.find(b => b.test(set.reps))
+        if (band) bandSets[band.id]++
+      })
+    })
+  })
+  const rows = Object.values(by).sort((a, b) => b.sets - a.sets || a.exercise.name.localeCompare(b.exercise.name, 'it'))
+  const totalSets = rows.reduce((t, r) => t + r.sets, 0)
+  const repSets = Object.values(bandSets).reduce((t, v) => t + v, 0)
+  return {
+    top: rows.slice(0, 6).map(r => ({ ...r, share: totalSets ? r.sets / totalSets : 0 })),
+    distinct: rows.length,
+    totalSets,
+    bands: REP_BANDS.map(b => ({ id: b.id, label: b.label, hint: b.hint, sets: bandSets[b.id], share: repSets ? bandSets[b.id] / repSets : 0 })),
+    repSets,
+    bandsEnough: repSets >= MIN_REPS_SETS,
+    bandsMissing: Math.max(0, MIN_REPS_SETS - repSets),
+  }
+}
+
+// ── Record battuti nel periodo ─────────────────────────────
+// Il valore migliore di un esercizio (stessa misura di `progression`) nel
+// periodo, contro il migliore che avevi PRIMA del periodo. Se l'esercizio nasce
+// dentro il periodo non c'è un «prima»: il riferimento è la sua prima sessione,
+// e un record c'è solo se poi l'hai superata. Si legge l'intero storico per
+// sapere cosa c'era prima.
+
+export function recordsInPeriod(allSessions, periodIds, index) {
+  const ordered = [...allSessions].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+  const by = {}
+  ordered.forEach(s => {
+    const inPeriod = periodIds.has(s.id)
+    ;(s.items || []).forEach(it => {
+      const ex = resolveExercise(it, index)
+      const value = bestOfSession(it.sets || [], ex.mode)
+      if (!value) return
+      const row = by[ex.id] || (by[ex.id] = { exercise: ex, runningMax: 0, baseline: null, periodMax: 0, date: null })
+      if (inPeriod) {
+        if (row.baseline == null) row.baseline = row.runningMax || value
+        if (value > row.periodMax) { row.periodMax = value; row.date = s.date }
+      }
+      row.runningMax = Math.max(row.runningMax, value)
+    })
+  })
+  return Object.values(by)
+    .filter(r => r.baseline != null && r.periodMax > r.baseline)
+    .map(r => ({
+      exercise: r.exercise, date: r.date, value: r.periodMax, previous: r.baseline,
+      delta: r.periodMax / r.baseline - 1,
+      unit: r.exercise.mode === 'time' ? 's' : r.exercise.mode === 'reps' ? 'rip.' : 'kg',
+    }))
+    .sort((a, b) => b.delta - a.delta)
 }
 
 // ── Report ─────────────────────────────────────────────────
@@ -261,7 +417,10 @@ export function buildGym({ sessions, allSessions, previousSessions = [], index, 
     },
     balance: movementBalance(sessions, index),
     progress: progression(sessions, index),
-    watch: watchSummary(sessions),
+    consistency: consistency(toDays(sessions), range, toDays(allSessions)),
+    mix: exerciseMix(sessions, index),
+    records: recordsInPeriod(allSessions, new Set(sessions.map(s => s.id)), index),
+    watch: watchSummary(sessions, index),
   }
   report.insights = report.enough ? gymInsights(report) : []
   return report
@@ -334,6 +493,34 @@ export function gymInsights(r) {
     out.push(insight({
       id: 'regresso', target: 'progressione', tone: 'bad', icon: '📉', weight: 1.3,
       text: `${p.exercise.name}: il massimale stimato è sceso da ${one(p.first)} a ${one(p.last)} kg (${Math.round(p.delta * 100)}%).`,
+    }))
+  }
+
+  // Record battuti nel periodo.
+  const rec = r.records[0]
+  if (rec && rec.delta >= 0.03) {
+    out.push(insight({
+      id: 'record-palestra', target: 'record-palestra', tone: 'good', icon: '🏅', weight: 1.5,
+      text: `${rec.exercise.name}: nuovo massimo di periodo, da ${one(rec.previous)} a ${one(rec.value)} ${rec.unit} (+${Math.round(rec.delta * 100)}%).`,
+    }))
+  }
+
+  // Fermo da tanto: un fatto del presente.
+  const c = r.consistency
+  if (r.total >= MIN_NEGLECT_SESSIONS && c.sinceLast != null && c.sinceLast >= STALE_DAYS) {
+    out.push(insight({
+      id: 'ferma-palestra', target: 'costanza-palestra', tone: 'neutral', icon: '⏸',
+      weight: Math.min(1.5, 0.8 + c.sinceLast / 100),
+      text: `Non ti alleni in palestra da ${c.sinceLast} giorni.`,
+    }))
+  }
+
+  // Una sola fascia di ripetizioni.
+  const top = [...r.mix.bands].sort((a, b) => b.share - a.share)[0]
+  if (r.mix.bandsEnough && top && top.share >= 0.8) {
+    out.push(insight({
+      id: 'fasce', target: 'esercizi', tone: 'neutral', icon: '🎚', weight: 0.8,
+      text: `Il ${Math.round(top.share * 100)}% delle tue serie è in fascia ${top.label.toLowerCase()} (${top.hint}): gli altri stimoli restano fuori.`,
     }))
   }
 

@@ -5,6 +5,11 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 ## [Unreleased]
 
 ### Aggiunto
+- **Import dei file Garmin (.fit o .zip)** per partite, allenamenti di tennis, corse e palestra: si sceglie il file scaricato da Garmin Connect ("Esporta originale") e l'app precompila durata, distanza, calorie, frequenza cardiaca, training effect e zone. Il file si legge sul telefono, non viene caricato né conservato.
+- Dal file arrivano anche il **carico Garmin**, la velocità massima, il dislivello e, per la corsa, potenza, cadenza e dinamiche di corsa (lunghezza del passo, oscillazione verticale, contatto al suolo).
+- **Curva della frequenza cardiaca** con le zone colorate nel dettaglio di ogni sessione importata; per la corsa anche passo, altitudine, potenza e percorso.
+- **Corsa dal file**: la scheda eseguita diventa la struttura della corsa (fasi e ripetute), si riconosce in libreria per nome o viene creata, e data, intensità percepita e dati reali sono già compilati. Il dettaglio mostra **fase per fase** il pianificato contro il reale (tempo, passo, FC, potenza, zona).
+- Il file viene rifiutato se è di uno sport diverso dalla sessione o se è già stato importato in un'altra, e avvisa se la data non coincide.
 - **Corsa** come nuovo tipo di allenamento: schede a fasi e ripetute in stile Garmin (riscaldamento, corsa, camminata, recupero, riposo, defaticamento, altro), con durata a tempo, distanza, calorie o frequenza cardiaca e una zona per ogni fase.
 - Libreria delle schede di corsa: una scheda si riusa tra una corsa e l'altra, si rinomina, si modifica o si elimina senza toccare le corse già registrate.
 - Grafico delle fasi (durata o distanza, altezza per zona, colore per tipo di fase) con tempo totale e distanza stimati.
@@ -16,6 +21,7 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 - **Stats › Palestra**: volume e serie a settimana, manichino su periodo e ultimi 7 giorni, muscoli trascurati, bilancio spinta/trazione, progressione del massimale stimato per esercizio e medie dei dati dell'orologio, con i relativi insight.
 
 ### Modificato
+- **Zone cardiache a 7 fasce come Garmin** (Z0 riposo, Z1–Z5, Z6 oltre il massimo) in tutta l'app: dati atletici, tabella **Zone di corsa** del Profilo, zone delle fasi di corsa e statistiche Fisico. I dati salvati con 5 zone restano validi; per correre serve ora compilare anche il passo di Z0 e Z6.
 - Le ore del mese nella lista Allenamenti sommano anche le sessioni di palestra.
 - Le card degli allenamenti di tennis mostrano la 🎾 davanti al titolo, come la 🏃 delle corse, per riconoscere il tipo a colpo d'occhio.
 

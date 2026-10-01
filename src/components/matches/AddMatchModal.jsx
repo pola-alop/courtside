@@ -16,6 +16,7 @@ import {
 import { INTENSITIES } from '../../lib/training'
 import { levelLabel } from '../../lib/opponents'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
+import FitImport from '../athletics/FitImport'
 
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura', 'Atletica']
 
@@ -50,10 +51,14 @@ function initialForm(initial) {
     // significherebbe far dichiarare all'utente uno sforzo che non ha scelto e
     // abbassargli il carico senza che se ne accorga.
     intensity:  initial?.intensity || null,
+    // Import da file .FIT: il riassunto già applicato (per la conferma a video)
+    // e i dettagli pesanti, che si salvano insieme alla partita e non prima.
+    fitSummary: null,
+    fitDetails: null,
   }
 }
 
-export default function AddMatchModal({ initial = null, opponents = [], equipment = [], onClose, onSave }) {
+export default function AddMatchModal({ initial = null, opponents = [], equipment = [], fitUse = null, onClose, onSave }) {
   const [step, setStep]   = useState(1)
   const [form, setForm]   = useState(() => initialForm(initial))
   const [saving, setSaving] = useState(false)
@@ -62,6 +67,10 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
   const typeMeta = MATCH_TYPES.find(t => t.id === form.type)
   const outcome  = computeOutcome(form.sets, form.format, form.retired)
   const athIssues = athleticsIssues(form.athletics)
+
+  const importFit = (summary) => setForm(f => ({
+    ...f, athletics: athleticsDraft(summary.athletics), fitSummary: summary, fitDetails: summary.details,
+  }))
 
   const stepValid = (() => {
     switch (step) {
@@ -106,6 +115,10 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
       tbMe: s.tbMe ?? null, tbOpp: s.tbOpp ?? null,
     }))
     const out = computeOutcome(cleanedSets, form.format, form.retired)
+    const athletics = normalizeAthletics(form.athletics)
+    // I dettagli del file vanno salvati solo se la partita li referenzia ancora
+    // (se l'utente ha svuotato i dati dopo l'import, non c'è più niente da legare).
+    const fitDetails = athletics?.fitId && form.fitDetails?.fitId === athletics.fitId ? form.fitDetails : null
     await onSave({
       date:         new Date(form.date).toISOString(),
       opponentId:   form.opponentId,
@@ -123,9 +136,9 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
       setsOpp:      out.setsOpp,
       equipment:    form.equipment,
       intensity:    form.intensity || null,
-      athletics:    normalizeAthletics(form.athletics),
+      athletics,
       notes:        initial?.notes || [],
-    })
+    }, fitDetails)
     setSaving(false)
     onClose()
   }
@@ -176,7 +189,8 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
           {step === 6 && <StepEquipment equipment={equipment} value={form.equipment} onChange={v => set('equipment', v)} />}
           {step === 7 && (
             <StepAthletics value={form.athletics} onChange={v => set('athletics', v)} issues={athIssues}
-                           intensity={form.intensity} onIntensityChange={v => set('intensity', v)} />
+                           intensity={form.intensity} onIntensityChange={v => set('intensity', v)}
+                           fit={{ summary: form.fitSummary, date: form.date, fitUse, onImport: importFit, onUseDate: d => set('date', d) }} />
           )}
         </div>
 
@@ -654,7 +668,7 @@ function StepEquipment({ equipment, value, onChange }) {
 
 // ── Step 7 — Atletica ──────────────────────────────────────
 
-function StepAthletics({ value, onChange, issues, intensity, onIntensityChange }) {
+function StepAthletics({ value, onChange, issues, intensity, onIntensityChange, fit }) {
   // Le zone partono aperte solo se ci sono già dati: sono 5 righe, e sul
   // mobile appesantiscono lo step per chi non le usa.
   const [showZones, setShowZones] = useState(() => zonesTotalSec(value.zones) > 0)
@@ -714,6 +728,17 @@ function StepAthletics({ value, onChange, issues, intensity, onIntensityChange }
             : 'Se non la indichi, in Stats la partita viene contata come sforzo alto — che è quello che una partita è di solito.'}
         </p>
       </FieldGroup>
+
+      <FitImport
+        expected="tennis"
+        imported={fit.summary}
+        currentFitId={value.fitId}
+        hasData={hasAthletics(value)}
+        date={fit.date}
+        onUseDate={fit.onUseDate}
+        fitUse={fit.fitUse}
+        onImport={fit.onImport}
+      />
 
       <FieldGroup label="Dati dall'orologio">
         <div className="grid grid-cols-2 gap-2">

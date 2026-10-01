@@ -6,6 +6,7 @@ import {
 } from '../../lib/athletics'
 import { avgPaceSec, formatPace } from '../../lib/running'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
+import FitImport from '../athletics/FitImport'
 
 // Dati reali di una corsa, trascritti dall'orologio. Stessa shape `athletics`
 // di partite e allenamenti, ma — a differenza di TrainingAthleticsEditor —
@@ -20,11 +21,20 @@ import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 //
 // Lo riusa anche la palestra: `showDistance={false}` toglie distanza e passo
 // (una sessione di pesi non ha chilometri), `title`/`clearLabel` cambiano i testi.
+//
+// Importa anche il file .FIT: qui solo i dati atletici (la struttura della
+// scheda si importa dal wizard di una corsa nuova). `onSave(athletics,
+// fitDetails)`: i dettagli del file si salvano insieme alla sessione.
 export default function RunAthleticsEditor({
-  athletics, saving, onCancel, onSave,
+  athletics, saving, onCancel, onSave, sessionDate = null, fitUse = null,
   showDistance = true, title = 'Dati della corsa', clearLabel = 'Svuota i dati della corsa',
 }) {
   const [draft, setDraft] = useState(() => athleticsDraft(athletics))
+  const [fit, setFit] = useState({ summary: null, details: null })
+  const importFit = (summary) => {
+    setDraft(athleticsDraft(summary.athletics))
+    setFit({ summary, details: summary.details })
+  }
   const issues = athleticsIssues(draft)
   const canSave = issues.length === 0
 
@@ -35,9 +45,19 @@ export default function RunAthleticsEditor({
           {title}
         </p>
         <p className="text-xs mt-1" style={{ color: 'var(--color-slate)' }}>
-          Trascrivi i dati dal tuo orologio o dall'app. Tutto è facoltativo.
+          Importa il file Garmin o trascrivi i dati dal tuo orologio. Tutto è facoltativo.
         </p>
       </div>
+
+      <FitImport
+        expected={showDistance ? 'running' : 'gym'}
+        imported={fit.summary}
+        currentFitId={draft.fitId}
+        hasData={hasAthletics(draft)}
+        date={sessionDate}
+        fitUse={fitUse}
+        onImport={importFit}
+      />
 
       <RunAthleticsFields draft={draft} setDraft={setDraft} showDistance={showDistance} />
 
@@ -50,7 +70,11 @@ export default function RunAthleticsEditor({
           style={{ background: 'var(--color-surface-2)', color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
           Annulla
         </button>
-        <button onClick={() => canSave && !saving && onSave(normalizeAthletics(draft))} disabled={!canSave || saving}
+        <button onClick={() => {
+          if (!canSave || saving) return
+          const out = normalizeAthletics(draft)
+          onSave(out, out?.fitId && fit.details?.fitId === out.fitId ? fit.details : null)
+        }} disabled={!canSave || saving}
           className="flex-1 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
           style={{
             background: (!canSave || saving) ? 'var(--color-surface-2)' : 'var(--color-amber)',

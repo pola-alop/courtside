@@ -8,6 +8,8 @@ import {
 import AthleticsSection from '../athletics/AthleticsSection'
 import WorkoutChart from './WorkoutChart'
 import RunAthleticsEditor from './RunAthleticsEditor'
+import PhaseCompare from './PhaseCompare'
+import { useFitDetail } from '../../hooks/useFitDetail'
 
 const MAX_NOTE_LENGTH = 150
 
@@ -15,13 +17,17 @@ const MAX_NOTE_LENGTH = 150
 // struttura in sola lettura, i dati dell'orologio e le note. La struttura si
 // modifica riaprendo il wizard (`onEdit`), come per partite e allenamenti.
 export default function RunDetailModal({
-  run, workouts = [], running, onClose, onEdit, onUpdate, onDelete
+  run, workouts = [], running, fitUse = null, onClose, onEdit, onUpdate, onDelete
 }) {
   // view | confirmDelete | editAthletics | addNote | editNote | confirmDeleteNote
   const [mode, setMode]     = useState('view')
   const [saving, setSaving] = useState(false)
   const [noteDraft, setNoteDraft]   = useState('')
   const [noteTarget, setNoteTarget] = useState(null)
+
+  // Dettagli del file .FIT (se la corsa è stata importata): le serie per i
+  // grafici e i lap per il confronto fase per fase.
+  const { details } = useFitDetail(run.athletics?.fitId)
 
   const intensity = intensityMeta(run.intensity)
   const plan = workoutTotals(run.items, running)
@@ -59,10 +65,10 @@ export default function RunDetailModal({
     setSaving(false); setNoteDraft(''); setNoteTarget(null); setMode('view')
   }
 
-  const handleSaveAthletics = async (athletics) => {
+  const handleSaveAthletics = async (athletics, fitDetails) => {
     if (saving) return
     setSaving(true)
-    await onUpdate(run.id, { athletics })
+    await onUpdate(run.id, { athletics }, { details: fitDetails, prevFitId: run.athletics?.fitId || null })
     setSaving(false); setMode('view')
   }
 
@@ -154,7 +160,9 @@ export default function RunDetailModal({
               </p>
             )}
 
-            <AthleticsSection athletics={run.athletics} title="Dati della corsa" pace />
+            {details?.laps?.length > 0 && <PhaseCompare items={run.items || []} laps={details.laps} running={running} />}
+
+            <AthleticsSection athletics={run.athletics} title="Dati della corsa" pace details={details} />
 
             <button
               onClick={() => setMode('editAthletics')}
@@ -178,6 +186,8 @@ export default function RunDetailModal({
           {mode === 'editAthletics' && (
             <RunAthleticsEditor
               athletics={run.athletics}
+              sessionDate={run.date ? run.date.split('T')[0] : null}
+              fitUse={fitUse}
               saving={saving}
               onCancel={() => setMode('view')}
               onSave={handleSaveAthletics}

@@ -18,7 +18,7 @@ const EQUIP_TYPES = [
 ]
 
 export default function TrainingDetailModal({
-  training, equipment = [], onClose, onEdit, onUpdate, onDelete
+  training, equipment = [], fitUse = null, onClose, onEdit, onUpdate, onDelete
 }) {
   // view | confirmDelete | editAthletics | addNote | editNote | confirmDeleteNote
   const [mode, setMode]     = useState('view')
@@ -62,10 +62,10 @@ export default function TrainingDetailModal({
     setSaving(false); setNoteDraft(''); setNoteTarget(null); setMode('view')
   }
 
-  const handleSaveAthletics = async (athletics) => {
+  const handleSaveAthletics = async (athletics, fitDetails) => {
     if (saving) return
     setSaving(true)
-    await onUpdate(training.id, { athletics })
+    await onUpdate(training.id, { athletics }, { details: fitDetails, prevFitId: training.athletics?.fitId || null })
     setSaving(false); setMode('view')
   }
 
@@ -228,6 +228,8 @@ export default function TrainingDetailModal({
             <TrainingAthleticsEditor
               athletics={training.athletics}
               sessionMinutes={minutes}
+              sessionDate={training.date ? training.date.split('T')[0] : null}
+              fitUse={fitUse}
               saving={saving}
               onCancel={() => setMode('view')}
               onSave={handleSaveAthletics}

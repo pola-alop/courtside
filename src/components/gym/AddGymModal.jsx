@@ -7,7 +7,9 @@ import {
 } from '../../lib/gym'
 import ExerciseEditor from './ExerciseEditor'
 import WorkoutSummary from './WorkoutSummary'
+import { intensityFromRpe } from '../../lib/fit'
 import { RunAthleticsFields } from '../runs/RunAthleticsEditor'
+import FitImport from '../athletics/FitImport'
 
 // Wizard di una sessione di palestra in tre passi: quale SCHEDA (dalla libreria
 // o nuova) → i suoi ESERCIZI (l'editor con le serie) → la SESSIONE (data,
@@ -41,10 +43,14 @@ function initialForm(initial, workouts) {
     intensity:  initial?.intensity || 'media',
     athletics:  athleticsDraft(initial?.athletics),
     showAthletics: hasAthletics(initial?.athletics),
+    // Import da file .FIT: serve SOLO ai dati atletici. Serie, ripetizioni e
+    // pesi del file non si leggono: a comandare è sempre la scheda.
+    fitSummary: null,
+    fitDetails: null,
   }
 }
 
-export default function AddGymModal({ initial = null, workouts = [], sessions = [], exerciseApi, onClose, onSave }) {
+export default function AddGymModal({ initial = null, workouts = [], sessions = [], exerciseApi, fitUse = null, onClose, onSave }) {
   const [step, setStep]     = useState(1)
   const [form, setForm]     = useState(() => initialForm(initial, workouts))
   const [saving, setSaving] = useState(false)
@@ -78,16 +84,27 @@ export default function AddGymModal({ initial = null, workouts = [], sessions = 
     ...f, source: 'new', workoutId: null, name: '', items: [], updateLibrary: false,
   }))
 
+  const importFit = (summary) => setForm(f => ({
+    ...f,
+    athletics: athleticsDraft(summary.athletics),
+    showAthletics: true,
+    intensity: intensityFromRpe(summary.rpe) || f.intensity,
+    fitSummary: summary,
+    fitDetails: summary.details,
+  }))
+
   const handleSave = async () => {
     if (!stepValid || saving) return
     setSaving(true)
+    const athletics = normalizeAthletics(form.athletics)
+    const fitDetails = athletics?.fitId && form.fitDetails?.fitId === athletics.fitId ? form.fitDetails : null
     await onSave({
       session: {
         date:        new Date(form.date).toISOString(),
         workoutName: form.name.trim(),
         items:       normalizeItems(form.items, index),
         intensity:   form.intensity,
-        athletics:   normalizeAthletics(form.athletics),
+        athletics,
         notes:       initial?.notes || [],
       },
       workout: {
@@ -95,6 +112,7 @@ export default function AddGymModal({ initial = null, workouts = [], sessions = 
         name: form.name.trim(),
         updateLibrary: form.source === 'library' && modified && form.updateLibrary,
       },
+      fitDetails,
     })
     setSaving(false)
     onClose()
@@ -162,7 +180,8 @@ export default function AddGymModal({ initial = null, workouts = [], sessions = 
           )}
 
           {step === 3 && (
-            <StepSession form={form} set={set} setForm={setForm} issues={athleticsProblems} index={index} />
+            <StepSession form={form} set={set} setForm={setForm} issues={athleticsProblems} index={index}
+                         fit={{ fitUse, onImport: importFit }} />
           )}
         </div>
 
@@ -289,7 +308,7 @@ function StepWorkout({ form, set, workouts, sessions, index, onPick, onPickNew }
 
 // ── Step 3 — Sessione ──────────────────────────────────────
 
-function StepSession({ form, set, setForm, issues, index }) {
+function StepSession({ form, set, setForm, issues, index, fit }) {
   const setAthletics = (updater) => setForm(f => ({ ...f, athletics: typeof updater === 'function' ? updater(f.athletics) : updater }))
   const t = workoutTotals(form.items, index)
 
@@ -333,6 +352,17 @@ function StepSession({ form, set, setForm, issues, index }) {
           })}
         </div>
       </div>
+
+      <FitImport
+        expected="gym"
+        imported={form.fitSummary}
+        currentFitId={form.athletics.fitId}
+        hasData={hasAthletics(form.athletics)}
+        date={form.date}
+        onUseDate={d => set('date', d)}
+        fitUse={fit.fitUse}
+        onImport={fit.onImport}
+      />
 
       <div>
         <button onClick={() => set('showAthletics', !form.showAthletics)} className="w-full flex items-center justify-between py-2">

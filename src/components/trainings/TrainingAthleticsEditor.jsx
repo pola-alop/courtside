@@ -5,6 +5,7 @@ import {
   formatDuration,
 } from '../../lib/athletics'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
+import FitImport from '../athletics/FitImport'
 
 // Form dei dati atletici di un ALLENAMENTO, aperto dal dettaglio sessione.
 //
@@ -17,12 +18,27 @@ import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 // sessione, così `avgSpeedKmh`, `athleticsIssues` (zone più lunghe della
 // sessione) e la tile "Tempo" continuano a funzionare senza modifiche.
 //
+// Eccezione: se i dati arrivano da un file .FIT (`source: 'fit'`) la durata è
+// quella MISURATA dall'orologio e si tiene così com'è. Con la distanza misurata,
+// dividerla per i minuti dei blocchi darebbe una velocità sbagliata; il volume
+// della sessione (blocchi) e la durata dell'orologio restano due numeri diversi
+// e dichiarati tali.
+//
 // I widget di input sono volutamente duplicati da AddMatchModal invece di
 // essere estratti: sono una manciata di righe banali, e condividerli avrebbe
 // richiesto di parametrizzare il wizard match per una differenza (la durata)
 // che è concettuale, non cosmetica.
-export default function TrainingAthleticsEditor({ athletics, sessionMinutes, saving, onCancel, onSave }) {
-  const [draft, setDraft] = useState(() => ({ ...athleticsDraft(athletics), durationSec: null }))
+export default function TrainingAthleticsEditor({ athletics, sessionMinutes, sessionDate = null, fitUse = null, saving, onCancel, onSave }) {
+  const [draft, setDraft] = useState(() => ({
+    ...athleticsDraft(athletics),
+    durationSec: athletics?.source === 'fit' ? athletics.durationSec : null,
+  }))
+  const [fit, setFit] = useState({ summary: null, details: null })
+  const fromFit = draft.source === 'fit'
+  const importFit = (summary) => {
+    setDraft(athleticsDraft(summary.athletics))
+    setFit({ summary, details: summary.details })
+  }
   const [showZones, setShowZones] = useState(() => zonesTotalSec(athletics?.zones) > 0)
 
   const sessionSeconds = Math.max(0, Math.round((sessionMinutes || 0) * 60)) || null
@@ -38,7 +54,7 @@ export default function TrainingAthleticsEditor({ athletics, sessionMinutes, sav
   // La validazione gira sul draft con la durata della sessione iniettata:
   // altrimenti il controllo "zone più lunghe della sessione" non avrebbe un
   // riferimento contro cui misurarsi.
-  const issues = athleticsIssues({ ...draft, durationSec: sessionSeconds })
+  const issues = athleticsIssues({ ...draft, durationSec: fromFit ? draft.durationSec : sessionSeconds })
   const canSave = issues.length === 0
 
   const teLabel = trainingEffectLabel(draft.trainingEffect)
@@ -51,11 +67,16 @@ export default function TrainingAthleticsEditor({ athletics, sessionMinutes, sav
     // l'oggetto deve risultare vuoto e finire a `null`, altrimenti su Firestore
     // resterebbe un athletics con la sola durata — un dato che non è mai stato
     // inserito dall'utente.
+    if (fromFit) {
+      const out = normalizeAthletics(draft)
+      onSave(out, out?.fitId && fit.details?.fitId === out.fitId ? fit.details : null)
+      return
+    }
     const base = normalizeAthletics({ ...draft, durationSec: null })
-    onSave(base ? { ...base, durationSec: sessionSeconds } : null)
+    onSave(base ? { ...base, durationSec: sessionSeconds } : null, null)
   }
 
-  const filled = hasAthletics({ ...draft, durationSec: null })
+  const filled = hasAthletics({ ...draft, durationSec: fromFit ? draft.durationSec : null })
 
   return (
     <div className="space-y-4">
@@ -64,10 +85,21 @@ export default function TrainingAthleticsEditor({ athletics, sessionMinutes, sav
           Dati atletici
         </p>
         <p className="text-xs mt-1" style={{ color: 'var(--color-slate)' }}>
-          Trascrivi i dati dal tuo orologio o dall'app. La durata è già quella della
-          sessione ({formatDuration(sessionSeconds)}), non va reinserita.
+          {fromFit
+            ? `Durata dell'orologio: ${formatDuration(draft.durationSec)}. La sessione ne conta ${formatDuration(sessionSeconds)} (i blocchi).`
+            : `Importa il file Garmin o trascrivi i dati dall'orologio. La durata è già quella della sessione (${formatDuration(sessionSeconds)}), non va reinserita.`}
         </p>
       </div>
+
+      <FitImport
+        expected="tennis"
+        imported={fit.summary}
+        currentFitId={draft.fitId}
+        hasData={filled}
+        date={sessionDate}
+        fitUse={fitUse}
+        onImport={importFit}
+      />
 
       <FieldGroup label="Sforzo">
         <div className="grid grid-cols-2 gap-2">

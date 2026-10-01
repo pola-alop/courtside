@@ -5,9 +5,11 @@ import {
   normalizeItems, workoutIssues, sameItems, starterItems, sortWorkoutsByUse,
   workoutUsage,
 } from '../../lib/running'
+import { itemsFromWorkout, intensityFromRpe, zoneForPace } from '../../lib/fit'
 import WorkoutEditor from './WorkoutEditor'
 import WorkoutChart from './WorkoutChart'
 import { RunAthleticsFields } from './RunAthleticsEditor'
+import FitImport from '../athletics/FitImport'
 
 // Wizard di una corsa in tre passi: quale SCHEDA (dalla libreria o nuova) →
 // la sua STRUTTURA (l'editor stile Garmin) → la SESSIONE (data, intensità,
@@ -18,8 +20,14 @@ import { RunAthleticsFields } from './RunAthleticsEditor'
 // di spuntare "Aggiorna anche la scheda": una variante di un giorno ("oggi 4
 // ripetute invece di 5") non deve riscrivere la ricetta.
 //
-// Il wizard non tocca Firestore: consegna `{ run, workout }` e l'orchestrazione
-// (creare la scheda, aggiornarla, salvare la sessione) sta nella pagina.
+// Il wizard non tocca Firestore: consegna `{ run, workout, fitDetails }` e
+// l'orchestrazione (creare la scheda, aggiornarla, salvare la sessione e i
+// dettagli del file .FIT) sta nella pagina.
+//
+// Col file .FIT di Garmin il passo 1 si compila da solo: la scheda eseguita
+// diventa la struttura della sessione (è ciò che è stato corso davvero), si
+// riconosce in libreria per nome — altrimenti si propone di crearla — e data,
+// intensità (RPE dell'orologio) e dati reali sono già pronti.
 const STEPS = ['Scheda', 'Struttura', 'Sessione']
 
 function initialForm(initial, workouts) {
@@ -36,10 +44,14 @@ function initialForm(initial, workouts) {
     intensity:  initial?.intensity || 'media',
     athletics:  athleticsDraft(initial?.athletics),
     showAthletics: hasAthletics(initial?.athletics),
+    // Import da file .FIT: riassunto applicato (per la conferma a video) e
+    // dettagli pesanti, salvati insieme alla corsa.
+    fitSummary: null,
+    fitDetails: null,
   }
 }
 
-export default function AddRunModal({ initial = null, workouts = [], runs = [], running, onClose, onSave }) {
+export default function AddRunModal({ initial = null, workouts = [], runs = [], running, fitUse = null, onClose, onSave }) {
   const [step, setStep]     = useState(1)
   const [form, setForm]     = useState(() => initialForm(initial, workouts))
   const [saving, setSaving] = useState(false)
@@ -72,17 +84,45 @@ export default function AddRunModal({ initial = null, workouts = [], runs = [], 
     ...f, source: 'new', workoutId: null, name: '', items: starterItems(), updateLibrary: false,
   }))
 
+  // File .FIT → draft del wizard. La scheda del file si cerca in libreria per
+  // nome; senza scheda (corsa libera) la struttura è una sola fase lunga quanto
+  // la corsa.
+  const importFit = (summary) => setForm(f => {
+    const wk = summary.workout
+    const maxHr = summary.athletics.hrBounds?.[5] ?? null
+    const fileName = wk?.name || ''
+    const found = fileName ? workouts.find(w => sameName(w.name, fileName)) : null
+    const converted = wk ? itemsFromWorkout(wk, summary.details.laps, running, maxHr) : null
+    const items = converted && converted.items.length ? converted.items : freeRunItems(summary, running)
+    return {
+      ...f,
+      source: found ? 'library' : 'new',
+      workoutId: found ? found.id : null,
+      name: found ? found.name : (fileName || 'Corsa libera'),
+      items,
+      updateLibrary: false,
+      date: summary.localDate,
+      intensity: intensityFromRpe(summary.rpe) || f.intensity,
+      athletics: athleticsDraft(summary.athletics),
+      showAthletics: true,
+      fitSummary: summary,
+      fitDetails: summary.details,
+    }
+  })
+
   const handleSave = async () => {
     if (!stepValid || saving) return
     setSaving(true)
     const items = normalizeItems(form.items)
+    const athletics = normalizeAthletics(form.athletics)
+    const fitDetails = athletics?.fitId && form.fitDetails?.fitId === athletics.fitId ? form.fitDetails : null
     await onSave({
       run: {
         date:        new Date(form.date).toISOString(),
         workoutName: form.name.trim(),
         items,
         intensity:   form.intensity,
-        athletics:   normalizeAthletics(form.athletics),
+        athletics,
         notes:       initial?.notes || [],
       },
       workout: {
@@ -90,6 +130,7 @@ export default function AddRunModal({ initial = null, workouts = [], runs = [], 
         name: form.name.trim(),
         updateLibrary: form.source === 'library' && modified && form.updateLibrary,
       },
+      fitDetails,
     })
     setSaving(false)
     onClose()
@@ -130,7 +171,8 @@ export default function AddRunModal({ initial = null, workouts = [], runs = [], 
         <div className="overflow-y-auto flex-1 px-6 py-4">
           {step === 1 && (
             <StepWorkout form={form} set={set} workouts={workouts} runs={runs} running={running}
-                         onPick={pickWorkout} onPickNew={pickNew} />
+                         onPick={pickWorkout} onPickNew={pickNew}
+                         fit={{ fitUse, onImport: importFit }} />
           )}
 
           {step === 2 && (
@@ -210,14 +252,33 @@ function StepIndicator({ step }) {
 
 // ── Step 1 — Scheda ────────────────────────────────────────
 
-function StepWorkout({ form, set, workouts, runs, running, onPick, onPickNew }) {
+function StepWorkout({ form, set, workouts, runs, running, onPick, onPickNew, fit }) {
   const sorted = sortWorkoutsByUse(workouts, runs)
   const usage = workoutUsage(runs)
 
   return (
     <div className="space-y-4">
       <StepTitle title="Quale scheda hai corso?"
-                 sub="Scegline una dalla libreria o creane una nuova" />
+                 sub="Scegline una dalla libreria o creane una nuova — oppure importa il file dell'orologio" />
+
+      <FitImport
+        expected="running"
+        imported={form.fitSummary}
+        currentFitId={form.athletics.fitId}
+        hasData={hasAthletics(form.athletics)}
+        fitUse={fit.fitUse}
+        onImport={fit.onImport}
+      />
+
+      {form.fitSummary && (
+        <p className="text-[11px] px-1" style={{ color: 'var(--color-slate)' }}>
+          {form.fitSummary.workout
+            ? form.source === 'library'
+              ? `La scheda "${form.name}" è già in libreria. Il file ha ${countFitSteps(form.items)} fasi: controllale al passo 2.`
+              : `La scheda "${form.name}" non è in libreria: verrà creata. Il file ha ${countFitSteps(form.items)} fasi, da controllare al passo 2.`
+            : 'Il file non contiene una scheda (corsa libera): ho creato una sola fase lunga come la corsa.'}
+        </p>
+      )}
 
       {form.source === 'orphan' && (
         <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-teal)' }}>
@@ -359,6 +420,26 @@ function StepTitle({ title, sub }) {
       {sub && <p className="text-xs mt-0.5" style={{ color: 'var(--color-slate)' }}>{sub}</p>}
     </div>
   )
+}
+
+function sameName(a, b) {
+  const norm = x => String(x || '').trim().toLowerCase().replace(/\s+/g, ' ')
+  return norm(a) === norm(b)
+}
+
+function countFitSteps(items) {
+  return items.reduce((n, it) => n + (it.kind === 'repeat' ? it.steps.length : 1), 0)
+}
+
+// Una corsa senza scheda: una sola fase "corsa" lunga quanto la corsa, con la
+// zona del passo medio se il profilo ha la tabella.
+function freeRunItems(summary, running) {
+  const a = summary.athletics
+  const base = starterItems()[1]
+  const pace = a.distanceKm > 0 && a.durationSec > 0 ? a.durationSec / a.distanceKm : null
+  const zone = zoneForPace(pace, running)
+  const target = zone !== null ? `z${zone}` : base.target
+  return [{ ...base, stepType: 'corsa', target, duration: { type: 'time', sec: a.durationSec || base.duration.sec } }]
 }
 
 function formatShortDate(dateStr) {

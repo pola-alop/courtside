@@ -17,7 +17,7 @@ const MAX_NOTE_LENGTH = 150
 // note. Gli esercizi si modificano riaprendo il wizard (`onEdit`), come per
 // partite, allenamenti e corse.
 export default function GymDetailModal({
-  session, workouts = [], index, onClose, onEdit, onUpdate, onDelete
+  session, workouts = [], index, fitUse = null, onClose, onEdit, onUpdate, onDelete
 }) {
   // view | confirmDelete | editAthletics | addNote | editNote | confirmDeleteNote
   const [mode, setMode]     = useState('view')
@@ -66,10 +66,10 @@ export default function GymDetailModal({
     setSaving(false); setNoteDraft(''); setNoteTarget(null); setMode('view')
   }
 
-  const handleSaveAthletics = async (athletics) => {
+  const handleSaveAthletics = async (athletics, fitDetails) => {
     if (saving) return
     setSaving(true)
-    await onUpdate(session.id, { athletics })
+    await onUpdate(session.id, { athletics }, { details: fitDetails, prevFitId: session.athletics?.fitId || null })
     setSaving(false); setMode('view')
   }
 
@@ -200,6 +200,8 @@ export default function GymDetailModal({
           {mode === 'editAthletics' && (
             <RunAthleticsEditor
               athletics={session.athletics}
+              sessionDate={session.date ? session.date.split('T')[0] : null}
+              fitUse={fitUse}
               saving={saving}
               showDistance={false}
               title="Dati dell'allenamento"

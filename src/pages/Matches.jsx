@@ -10,6 +10,7 @@ import { useGymSessions } from '../hooks/useGymSessions'
 import { useGymWorkouts } from '../hooks/useGymWorkouts'
 import { useGymExercises } from '../hooks/useGymExercises'
 import { useProfile } from '../hooks/useProfile'
+import { useFitDetails } from '../hooks/useFitDetails'
 import OpponentCard from '../components/matches/OpponentCard'
 import AddOpponentModal from '../components/matches/AddOpponentModal'
 import OpponentDetailModal from '../components/matches/OpponentDetailModal'
@@ -79,6 +80,39 @@ export default function Matches() {
   const { profile, loading: profileLoading } = useProfile()
   const running = profile?.running || null
   const runningReady = isRunningReady(running)
+
+  // ── File .FIT importati ──
+  // Il riassunto sta in `athletics` della sessione; i dettagli pesanti (serie,
+  // lap, traccia) in users/{uid}/fitDetails/{fitId}. Si scrivono INSIEME alla
+  // sessione, mai prima: un import annullato non deve lasciare documenti
+  // orfani. Cancellare la sessione cancella anche i suoi dettagli.
+  const { save: saveFitDetails, remove: removeFitDetails } = useFitDetails()
+
+  // `fit` = { details, prevFitId }: i dettagli nuovi (se il file è stato
+  // appena importato) e il file che la sessione aveva prima (da togliere se è
+  // stato sostituito o svuotato).
+  const commitFit = async (fit, athletics) => {
+    if (!fit) return
+    const next = athletics?.fitId || null
+    if (fit.details && fit.details.fitId === next) await saveFitDetails(fit.details)
+    if (fit.prevFitId && fit.prevFitId !== next) await removeFitDetails(fit.prevFitId)
+  }
+  const dropFit = async (athletics) => {
+    if (athletics?.fitId) await removeFitDetails(athletics.fitId)
+  }
+
+  // Un file .FIT appartiene a UNA sessione. `fitUseFor(selfId)` ritorna la
+  // funzione che dice, dato un fitId, quale altra sessione lo ha già (o null).
+  const fitOwners = {}
+  const dayLabel = d => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  matches.forEach(m => { if (m.athletics?.fitId) fitOwners[m.athletics.fitId] = { id: m.id, text: `partita del ${dayLabel(m.date)}` } })
+  trainings.forEach(t => { if (t.athletics?.fitId) fitOwners[t.athletics.fitId] = { id: t.id, text: `allenamento di tennis del ${dayLabel(t.date)}` } })
+  runs.forEach(r => { if (r.athletics?.fitId) fitOwners[r.athletics.fitId] = { id: r.id, text: `corsa del ${dayLabel(r.date)}` } })
+  gymSessions.forEach(g => { if (g.athletics?.fitId) fitOwners[g.athletics.fitId] = { id: g.id, text: `sessione di palestra del ${dayLabel(g.date)}` } })
+  const fitUseFor = (selfId) => (fitId) => {
+    const o = fitOwners[fitId]
+    return o && o.id !== selfId ? o.text : null
+  }
 
   // ── Intenzioni che arrivano dalla Home ──
   // La Home non tiene i wizard né i detail modal: sono di questa pagina, e
@@ -281,7 +315,8 @@ export default function Matches() {
   // si decide se la scheda va creata (nuova), aggiornata (modificata e con la
   // spunta "aggiorna anche la scheda") o lasciata com'è. La sessione porta
   // sempre la propria copia della struttura.
-  const saveRun = async ({ run, workout }) => {
+  const saveRun = async ({ run, workout, fitDetails }) => {
+    await commitFit({ details: fitDetails, prevFitId: editingRun?.athletics?.fitId }, run.athletics)
     let workoutId = workout.id
     if (!workoutId) workoutId = await addWorkout({ name: workout.name, items: run.items })
     else if (workout.updateLibrary) await updateWorkout(workoutId, { items: run.items })
@@ -291,7 +326,8 @@ export default function Matches() {
   }
 
   // Salvataggio di una sessione di palestra: stessa orchestrazione della corsa.
-  const saveGym = async ({ session, workout }) => {
+  const saveGym = async ({ session, workout, fitDetails }) => {
+    await commitFit({ details: fitDetails, prevFitId: editingGym?.athletics?.fitId }, session.athletics)
     let workoutId = workout.id
     if (!workoutId) workoutId = await addGymWorkout({ name: workout.name, items: session.items })
     else if (workout.updateLibrary) await updateGymWorkout(workoutId, { items: session.items })
@@ -604,8 +640,10 @@ export default function Matches() {
           initial={editingMatch}
           opponents={opponents}
           equipment={equipment}
+          fitUse={fitUseFor(editingMatch?.id)}
           onClose={() => { setShowAddMatch(false); setEditingMatch(null) }}
-          onSave={async (data) => {
+          onSave={async (data, fitDetails) => {
+            await commitFit({ details: fitDetails, prevFitId: editingMatch?.athletics?.fitId }, data.athletics)
             if (editingMatch) await updateMatch(editingMatch.id, data)
             else await addMatch(data)
           }}
@@ -618,7 +656,7 @@ export default function Matches() {
           onClose={() => setSelectedMatchId(null)}
           onEdit={() => { setEditingMatch(selectedMatch); setSelectedMatchId(null) }}
           onUpdate={async (id, data) => { await updateMatch(id, data) }}
-          onDelete={async (id) => { await removeMatch(id); setSelectedMatchId(null); setMatchDeleteToast(true) }}
+          onDelete={async (id) => { await dropFit(selectedMatch.athletics); await removeMatch(id); setSelectedMatchId(null); setMatchDeleteToast(true) }}
         />
       )}
 
@@ -640,10 +678,11 @@ export default function Matches() {
         <TrainingDetailModal
           training={selectedTraining}
           equipment={equipment}
+          fitUse={fitUseFor(selectedTraining.id)}
           onClose={() => setSelectedTrainingId(null)}
           onEdit={() => { setEditingTraining(selectedTraining); setSelectedTrainingId(null) }}
-          onUpdate={async (id, data) => { await updateTraining(id, data) }}
-          onDelete={async (id) => { await removeTraining(id); setSelectedTrainingId(null); setTrainingDeleteToast(true) }}
+          onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateTraining(id, data) }}
+          onDelete={async (id) => { await dropFit(selectedTraining.athletics); await removeTraining(id); setSelectedTrainingId(null); setTrainingDeleteToast(true) }}
         />
       )}
 
@@ -669,6 +708,7 @@ export default function Matches() {
             workouts={workouts}
             runs={runs.filter(r => r.id !== editingRun?.id)}
             running={running}
+            fitUse={fitUseFor(editingRun?.id)}
             onClose={() => { setShowAddRun(false); setEditingRun(null) }}
             onSave={saveRun}
           />
@@ -685,10 +725,11 @@ export default function Matches() {
           run={selectedRun}
           workouts={workouts}
           running={running}
+          fitUse={fitUseFor(selectedRun.id)}
           onClose={() => setSelectedRunId(null)}
           onEdit={() => { setEditingRun(selectedRun); setSelectedRunId(null) }}
-          onUpdate={async (id, data) => { await updateRun(id, data) }}
-          onDelete={async (id) => { await removeRun(id); setSelectedRunId(null); setRunDeleteToast(true) }}
+          onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateRun(id, data) }}
+          onDelete={async (id) => { await dropFit(selectedRun.athletics); await removeRun(id); setSelectedRunId(null); setRunDeleteToast(true) }}
         />
       )}
       {(creatingWorkout || editingWorkout) && (
@@ -712,6 +753,7 @@ export default function Matches() {
           workouts={gymWorkouts}
           sessions={gymSessions.filter(g => g.id !== editingGym?.id)}
           exerciseApi={exerciseApi}
+          fitUse={fitUseFor(editingGym?.id)}
           onClose={() => { setShowAddGym(false); setEditingGym(null) }}
           onSave={saveGym}
         />
@@ -721,10 +763,11 @@ export default function Matches() {
           session={selectedGym}
           workouts={gymWorkouts}
           index={exerciseApi.index}
+          fitUse={fitUseFor(selectedGym.id)}
           onClose={() => setSelectedGymId(null)}
           onEdit={() => { setEditingGym(selectedGym); setSelectedGymId(null) }}
-          onUpdate={async (id, data) => { await updateGymSession(id, data) }}
-          onDelete={async (id) => { await removeGymSession(id); setSelectedGymId(null); setGymDeleteToast(true) }}
+          onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateGymSession(id, data) }}
+          onDelete={async (id) => { await dropFit(selectedGym.athletics); await removeGymSession(id); setSelectedGymId(null); setGymDeleteToast(true) }}
         />
       )}
       {(creatingGymWorkout || editingGymWorkout) && (

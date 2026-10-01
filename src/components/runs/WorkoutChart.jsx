@@ -12,7 +12,7 @@ const AXES = [
 // (ripetute srotolate).
 //  · LARGHEZZA proporzionale alla durata stimata — o alla distanza, con il
 //    selettore Tempo/Distanza;
-//  · ALTEZZA in base alla zona (Fermo → Z5): il grafico dice anche quanto è
+//  · ALTEZZA in base alla zona (Fermo → Z6): il grafico dice anche quanto è
 //    intensa ogni fase, non solo quanto dura;
 //  · COLORE in base al tipo di fase (riscaldamento rosso, corsa blu,
 //    defaticamento verde, camminata/recupero/riposo grigio).

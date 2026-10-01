@@ -349,7 +349,7 @@ function RunningZonesForm({ form, setForm, issues, saving, onCancel, onSave }) {
           Zone di corsa
         </p>
         <p className="text-xs mt-1" style={{ color: 'var(--color-slate)' }}>
-          Il passo (min/km) a cui corri in ogni zona, da Z1 (la più lenta) a Z5. Li trovi
+          Il passo (min/km) a cui corri in ogni zona, da Z0 (la più lenta) a Z6, le sette zone del tuo Garmin. Li trovi
           nelle zone di passo o di frequenza cardiaca del tuo orologio.
         </p>
       </div>

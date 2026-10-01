@@ -42,7 +42,7 @@
 // che non ce l'hanno restano fuori dal conteggio.
 
 import { gamesInMatch } from './tennis'
-import { HR_ZONES, hasAthletics, zonesTotalSec, avgSpeedKmh, trainingEffectLabel } from './athletics'
+import { HR_ZONES, hasAthletics, zonesTotalSec, readZones, avgSpeedKmh, trainingEffectLabel } from './athletics'
 import { dayTime } from './stats'
 import { MONTHS_SHORT } from './activity'
 
@@ -70,9 +70,9 @@ export const TREND_MONTHS = 12
 const MIN_ECONOMY_R = 0.35
 
 // Le zone "alte": è lì che si costruisce (o si subisce) la partita. La quota di
-// tempo in Z4+Z5 è l'unico numero delle zone che si confronta davvero tra
+// tempo in Z4+Z5+Z6 è l'unico numero delle zone che si confronta davvero tra
 // partita e allenamento.
-const HIGH_ZONES = [3, 4]   // indici 0-based di Z4 e Z5
+const HIGH_ZONES = [4, 5, 6]   // l'indice nell'array è il numero della zona
 
 // ── Sessioni normalizzate ──────────────────────────────────
 // Partite e allenamenti portano lo stesso oggetto `athletics`, quindi la
@@ -131,7 +131,7 @@ function normalize(base) {
     speed:  avgSpeedKmh(a),
     te:     isNum(a?.trainingEffect) ? a.trainingEffect : null,
     anTe:   isNum(a?.anaerobicTrainingEffect) ? a.anaerobicTrainingEffect : null,
-    zones:  zonesSec > 0 ? a.zones : null,
+    zones:  zonesSec > 0 ? readZones(a.zones) : null,
     zonesSec,
   }
 }
@@ -185,7 +185,7 @@ export function coverage(sessions) {
 // far contare un riscaldamento di 20 minuti quanto una partita di due ore.
 //
 // Il confronto partita vs allenamento è il punto del blocco. Se in partita passi
-// il 40% del tempo in Z4-Z5 e in allenamento il 12%, ti stai allenando a
+// il 40% del tempo in Z4-Z6 e in allenamento il 12%, ti stai allenando a
 // un'intensità che non prepara a quello che poi fai in campo.
 
 export function zoneMix(sessions) {
@@ -609,8 +609,8 @@ export function physicalInsights(r) {
       id: 'zone-gap', target: 'zone', tone: harder ? 'bad' : 'neutral', icon: harder ? '🔥' : '🧊',
       effect: Math.abs(z.highGap), n: z.match.n + z.training.n, weight: 1.2,
       text: harder
-        ? `In partita stai il ${pct(z.match.highShare)} del tempo in Z4-Z5, in allenamento il ${pct(z.training.highShare)}: ti alleni più piano di come giochi.`
-        : `In allenamento stai il ${pct(z.training.highShare)} del tempo in Z4-Z5, in partita il ${pct(z.match.highShare)}: gli allenamenti sono più duri delle partite.`,
+        ? `In partita stai il ${pct(z.match.highShare)} del tempo in Z4-Z6, in allenamento il ${pct(z.training.highShare)}: ti alleni più piano di come giochi.`
+        : `In allenamento stai il ${pct(z.training.highShare)} del tempo in Z4-Z6, in partita il ${pct(z.match.highShare)}: gli allenamenti sono più duri delle partite.`,
     }))
   }
 

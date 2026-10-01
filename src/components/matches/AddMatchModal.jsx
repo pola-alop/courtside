@@ -5,7 +5,7 @@ import {
   isTiebreakSet, isTiebreakValid, RESULT_META, surfaceIcon,
 } from '../../lib/tennis'
 import {
-  HR_ZONES, ATHLETIC_LIMITS, emptyAthletics, normalizeAthletics,
+  HR_ZONES, ATHLETIC_LIMITS, emptyAthletics, athleticsDraft, normalizeAthletics,
   athleticsIssues, hasAthletics, splitDuration, joinDuration, zonesTotalSec,
   trainingEffectLabel, formatDuration,
 } from '../../lib/athletics'
@@ -42,7 +42,7 @@ function initialForm(initial) {
     equipment:  { racchetta: null, scarpa: null, outfit: null, borsone: null, ...(initial?.equipment || {}) },
     // I match registrati prima di questa feature non hanno `athletics`: il
     // draft parte comunque vuoto e resta tale se l'utente non compila nulla.
-    athletics:  { ...emptyAthletics(), ...(initial?.athletics || {}) },
+    athletics:  athleticsDraft(initial?.athletics),
     // Intensità percepita. A differenza del wizard allenamento — che preseleziona
     // "media" — qui il default è null, e la differenza è deliberata: il carico di
     // una partita non dichiarata usa un valore di riferimento più alto di

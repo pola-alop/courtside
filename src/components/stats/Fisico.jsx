@@ -230,7 +230,7 @@ function ZonesCard({ report }) {
       {dominant && (
         <p className="text-[11px] mt-4 leading-relaxed" style={{ color: 'var(--color-white)' }}>
           Passi la maggior parte del tempo in <strong>{dominant.label} · {dominant.name}</strong>, e
-          il {Math.round((z.all.highShare ?? 0) * 100)}% del tempo totale sopra la soglia (Z4-Z5),
+          il {Math.round((z.all.highShare ?? 0) * 100)}% del tempo totale sopra la soglia (Z4-Z6),
           su {formatDuration(z.all.total)} registrati.
         </p>
       )}
@@ -252,8 +252,8 @@ function ZonesCard({ report }) {
                 {Math.abs(z.highGap) < 0.08
                   ? `Sopra soglia stai praticamente lo stesso tempo in partita (${Math.round(z.match.highShare * 100)}%) e in allenamento (${Math.round(z.training.highShare * 100)}%): ti alleni all'intensità a cui giochi.`
                   : z.highGap > 0
-                    ? `In partita stai in Z4-Z5 il ${Math.round(z.match.highShare * 100)}% del tempo, in allenamento il ${Math.round(z.training.highShare * 100)}%: ti alleni più piano di come giochi, e la differenza la paghi nei finali di set.`
-                    : `In allenamento stai in Z4-Z5 il ${Math.round(z.training.highShare * 100)}% del tempo, in partita il ${Math.round(z.match.highShare * 100)}%: gli allenamenti sono più duri delle partite, il che va bene finché arrivi fresco a giocare.`}
+                    ? `In partita stai in Z4-Z6 il ${Math.round(z.match.highShare * 100)}% del tempo, in allenamento il ${Math.round(z.training.highShare * 100)}%: ti alleni più piano di come giochi, e la differenza la paghi nei finali di set.`
+                    : `In allenamento stai in Z4-Z6 il ${Math.round(z.training.highShare * 100)}% del tempo, in partita il ${Math.round(z.match.highShare * 100)}%: gli allenamenti sono più duri delle partite, il che va bene finché arrivi fresco a giocare.`}
               </p>
             )}
           </>
@@ -276,7 +276,7 @@ function ZonesCard({ report }) {
   )
 }
 
-// Barra impilata delle cinque zone. Le zone a 0 non occupano spazio: uno
+// Barra impilata delle sette zone. Le zone a 0 non occupano spazio: uno
 // spicchio da 0px con il suo bordo diventerebbe una riga di colore fantasma.
 function ZoneBar({ shares, height = 10 }) {
   return (
@@ -292,7 +292,7 @@ function ZoneBar({ shares, height = 10 }) {
   )
 }
 
-// Una riga del confronto: etichetta, quota sopra soglia, barra. La quota Z4-Z5
+// Una riga del confronto: etichetta, quota sopra soglia, barra. La quota Z4-Z6
 // è ripetuta in cifre perché è l'unico numero che si confronta davvero tra i due
 // lati — a occhio, due barre impilate simili sono indistinguibili.
 function SideBar({ label, side, className = '' }) {
@@ -308,7 +308,7 @@ function SideBar({ label, side, className = '' }) {
         </span>
         <span className="text-[11px] shrink-0 font-semibold"
               style={{ color: 'var(--color-zone-4)', fontFamily: 'var(--font-mono)' }}>
-          {Math.round((side.highShare ?? 0) * 100)}% Z4-5
+          {Math.round((side.highShare ?? 0) * 100)}% Z4-6
         </span>
       </div>
       <ZoneBar shares={side.shares} height={8} />
@@ -320,14 +320,15 @@ function ZonesInfo() {
   return (
     <>
       <InfoItem>
-        L'orologio divide la frequenza cardiaca in cinque fasce, dalla più leggera alla più dura:
-        <strong> Z1 riscaldamento</strong>, <strong>Z2 facile</strong>, <strong>Z3 aerobica</strong>,
-        <strong> Z4 soglia</strong>, <strong>Z5 massimale</strong>. Questo blocco somma quanto tempo
+        L'orologio divide la frequenza cardiaca in sette fasce, dalla più leggera alla più dura:
+        <strong> Z0 riposo</strong>, <strong>Z1 riscaldamento</strong>, <strong>Z2 facile</strong>,
+        <strong> Z3 aerobica</strong>, <strong>Z4 soglia</strong>, <strong>Z5 massimale</strong> e
+        <strong> Z6 oltre il massimo</strong>. Questo blocco somma quanto tempo
         hai passato in ognuna, su tutte le sessioni del periodo.
       </InfoItem>
       <InfoItem title="Come si legge la barra">
         È la fotografia di che tipo di sforzo è il tennis per il tuo cuore. Molto Z2-Z3 significa
-        uno sforzo continuo e sostenibile; molto Z4-Z5 significa uno sforzo che consuma e da cui
+        uno sforzo continuo e sostenibile; molto Z4-Z6 significa uno sforzo che consuma e da cui
         serve recuperare. Non c'è una distribuzione «giusta»: c'è la tua, ed è quella con cui
         confrontare gli allenamenti.
       </InfoItem>
@@ -336,7 +337,7 @@ function ZonesInfo() {
         minuti peserebbe quanto una partita di due ore. Sommando i secondi, ogni sessione pesa per
         quanto è durata davvero.
       </InfoItem>
-      <InfoItem title="La quota Z4-Z5">
+      <InfoItem title="La quota Z4-Z6">
         Il tempo sopra la soglia, cioè la parte di sforzo che non è sostenibile a lungo. È l'unico
         numero delle zone che si confronta davvero tra partita e allenamento: due barre impilate
         simili a occhio sono indistinguibili, una differenza di 20 punti percentuali sopra soglia

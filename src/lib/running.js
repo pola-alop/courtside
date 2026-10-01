@@ -75,14 +75,16 @@ export const DEFAULT_HR_ESTIMATE_SEC = 120
 // ── Obiettivi di intensità (zone) ──────────────────────────
 // `level` è l'altezza relativa della barra nel grafico (0..1): più la zona è
 // alta, più la barra è alta — il grafico dice anche l'intensità, non solo
-// quanto dura ogni fase. I nomi delle zone sono gli stessi di HR_ZONES, per non
-// avere due vocabolari per le stesse cinque zone nella stessa app.
+// quanto dura ogni fase. Le zone sono le 7 di HR_ZONES (come Garmin: Z0 sotto
+// la Z1, Z1–Z5, Z6 oltre il massimo), per non avere due vocabolari per le
+// stesse zone nella stessa app. Il numero della zona è anche l'indice nella
+// tabella del profilo.
 export const TARGETS = [
   { id: 'fermo',     label: 'Fermo',     name: 'Nessun movimento',  level: 0.16, color: 'var(--color-surface-2)' },
   { id: 'camminata', label: 'Camminata', name: 'Passo di camminata', level: 0.3, color: 'var(--color-slate)' },
   ...HR_ZONES.map((z, i) => ({
     id: `z${z.id}`, label: z.label, name: z.name, zoneIndex: i,
-    level: 0.44 + i * 0.14, color: z.color,
+    level: 0.34 + i * 0.11, color: z.color,
   })),
 ]
 
@@ -94,9 +96,12 @@ export function targetMeta(id) {
 
 // ── Profilo corsa: zone → passo ────────────────────────────
 // Shape persistita in `profile.running`:
-//   { zones: [{ fast, slow } × 5], walk: { fast, slow }, weightKg }
+//   { zones: [{ fast, slow } × 7], walk: { fast, slow }, weightKg }
 // Il passo è in SECONDI AL KM (canonico): `fast` è il passo più veloce del
-// range, cioè il numero più piccolo. Z1 è la zona più lenta, Z5 la più veloce.
+// range, cioè il numero più piccolo. Z0 è la zona più lenta, Z6 la più veloce.
+// L'indice dell'array è il numero della zona. Le tabelle salvate prima delle 7
+// zone avevano 5 posizioni (Z1…Z5): `normalizeRunningProfile` le riporta in
+// forma lasciando Z0 e Z6 vuote, da compilare.
 export const PACE_LIMITS = { min: 120, max: 1200 }       // 2:00 – 20:00 /km, corsa
 export const WALK_PACE_LIMITS = { min: 300, max: 1800 }  // 5:00 – 30:00 /km, camminata
 export const WEIGHT_LIMITS = { min: 30, max: 250 }
@@ -111,6 +116,15 @@ export const DEFAULT_WALK = { fast: 570, slow: 690 }      // 9:30 – 11:30 /km
 // passo normale circa la metà. Serve solo a stimare le fasi a calorie, ed è
 // dichiarato come stima come tutto il resto del grafico.
 export const KCAL_PER_KG_KM = { run: 1.0, walk: 0.5 }
+
+// Riporta alla forma a 7 zone una tabella salvata a 5 (Z1…Z5 → indici 1…5).
+// Le due zone nuove restano vuote: non si inventa un passo che l'utente non ha
+// mai dichiarato, e `runningProfileIssues` le chiede.
+export function normalizeRunningProfile(running) {
+  if (!running || !Array.isArray(running.zones) || running.zones.length !== 5) return running
+  const blank = { fast: null, slow: null }
+  return { ...running, zones: [blank, ...running.zones, blank] }
+}
 
 export function emptyRunningProfile() {
   return {
@@ -127,7 +141,7 @@ export function runningProfileIssues(running) {
   const issues = []
   const zones = running?.zones
   if (!Array.isArray(zones) || zones.length !== HR_ZONES.length) {
-    return ['Compila il passo di tutte e 5 le zone.']
+    return ['Compila il passo di tutte e 7 le zone.']
   }
 
   let missing = false
@@ -140,7 +154,7 @@ export function runningProfileIssues(running) {
       issues.push(`${label}: il passo veloce deve essere minore del passo lento.`)
     }
   })
-  if (missing) issues.unshift('Compila il passo di tutte e 5 le zone.')
+  if (missing) issues.unshift('Compila il passo di tutte e 7 le zone.')
 
   // Ordine: ogni zona dev'essere più veloce della precedente (sul punto medio,
   // così due range che si toccano o si sovrappongono di poco restano validi).
@@ -159,7 +173,7 @@ export function runningProfileIssues(running) {
     issues.push(`Camminata: il passo deve stare tra ${formatPace(WALK_PACE_LIMITS.min)} e ${formatPace(WALK_PACE_LIMITS.max)} /km.`)
   } else if (walk.fast >= walk.slow) {
     issues.push('Camminata: il passo veloce deve essere minore del passo lento.')
-  } else if (!missing && mid(walk) <= mid(zones[0])) {
+  } else if (!missing && mid(walk) <= mid(zones[1])) {
     issues.push('La camminata deve essere più lenta di Z1.')
   }
 

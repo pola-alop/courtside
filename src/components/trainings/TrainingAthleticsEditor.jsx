@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  HR_ZONES, ATHLETIC_LIMITS, emptyAthletics, normalizeAthletics,
+  HR_ZONES, ATHLETIC_LIMITS, emptyAthletics, athleticsDraft, normalizeAthletics,
   athleticsIssues, hasAthletics, zonesTotalSec, trainingEffectLabel,
   formatDuration,
 } from '../../lib/athletics'
@@ -22,7 +22,7 @@ import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 // richiesto di parametrizzare il wizard match per una differenza (la durata)
 // che è concettuale, non cosmetica.
 export default function TrainingAthleticsEditor({ athletics, sessionMinutes, saving, onCancel, onSave }) {
-  const [draft, setDraft] = useState(() => ({ ...emptyAthletics(), ...(athletics || {}), durationSec: null }))
+  const [draft, setDraft] = useState(() => ({ ...athleticsDraft(athletics), durationSec: null }))
   const [showZones, setShowZones] = useState(() => zonesTotalSec(athletics?.zones) > 0)
 
   const sessionSeconds = Math.max(0, Math.round((sessionMinutes || 0) * 60)) || null

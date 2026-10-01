@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuthState } from './useAuth'
 import { getUserProfile, updateUserProfile } from '../firebase/profile'
+import { normalizeRunningProfile } from '../lib/running'
 
 export function useProfile() {
   const { user } = useAuthState()
@@ -13,7 +14,7 @@ export function useProfile() {
     try {
       setLoading(true)
       const data = await getUserProfile(user.uid)
-      setProfile(data)
+      setProfile(data.running ? { ...data, running: normalizeRunningProfile(data.running) } : data)
     } catch (e) {
       setError(e.message)
     } finally {

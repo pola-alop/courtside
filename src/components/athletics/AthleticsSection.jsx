@@ -1,5 +1,5 @@
 import {
-  HR_ZONES, hasAthletics, zonesTotalSec, zonePercents, avgSpeedKmh,
+  HR_ZONES, hasAthletics, zonesTotalSec, zonePercents, readZones, avgSpeedKmh,
   trainingEffectLabel, formatDuration, formatSpeed, formatHr, formatTrainingEffect,
 } from '../../lib/athletics'
 import { avgPaceSec, formatPace } from '../../lib/running'
@@ -193,6 +193,7 @@ function TrainingEffectBar({ value }) {
 
 function ZonesBreakdown({ zones, total }) {
   const percents = zonePercents(zones)
+  const secs = readZones(zones)
 
   return (
     <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--color-surface-2)' }}>
@@ -216,7 +217,7 @@ function ZonesBreakdown({ zones, total }) {
 
       <div className="space-y-1.5">
         {HR_ZONES.map((z, i) => {
-          const sec = zones?.[i] || 0
+          const sec = secs?.[i] || 0
           if (sec <= 0) return null
           return (
             <div key={z.id} className="flex items-center gap-2">

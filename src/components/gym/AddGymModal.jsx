@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { INTENSITIES } from '../../lib/training'
-import { emptyAthletics, normalizeAthletics, athleticsIssues, hasAthletics } from '../../lib/athletics'
+import { athleticsDraft, normalizeAthletics, athleticsIssues, hasAthletics } from '../../lib/athletics'
 import {
   normalizeItems, workoutIssues, sameItems, sortWorkoutsByUse, workoutUsage,
   workoutTotals,
@@ -39,7 +39,7 @@ function initialForm(initial, workouts) {
     updateLibrary: false,
     date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
     intensity:  initial?.intensity || 'media',
-    athletics:  { ...emptyAthletics(), ...(initial?.athletics || {}) },
+    athletics:  athleticsDraft(initial?.athletics),
     showAthletics: hasAthletics(initial?.athletics),
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  HR_ZONES, ATHLETIC_LIMITS, emptyAthletics, normalizeAthletics,
+  HR_ZONES, ATHLETIC_LIMITS, emptyAthletics, athleticsDraft, normalizeAthletics,
   athleticsIssues, hasAthletics, zonesTotalSec, trainingEffectLabel,
   splitDuration, joinDuration, formatDuration,
 } from '../../lib/athletics'
@@ -24,7 +24,7 @@ export default function RunAthleticsEditor({
   athletics, saving, onCancel, onSave,
   showDistance = true, title = 'Dati della corsa', clearLabel = 'Svuota i dati della corsa',
 }) {
-  const [draft, setDraft] = useState(() => ({ ...emptyAthletics(), ...(athletics || {}) }))
+  const [draft, setDraft] = useState(() => athleticsDraft(athletics))
   const issues = athleticsIssues(draft)
   const canSave = issues.length === 0
 

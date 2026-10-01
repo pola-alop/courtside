@@ -31,13 +31,15 @@
   --color-draw: #5b9bd5;
   --color-draw-bg: rgba(91,155,213,0.16);
 
-  /* Zone di frequenza cardiaca (1 → 5), dal riposo al massimale.
-     Riusano le tinte già in palette per restare coerenti. */
+  /* Zone di frequenza cardiaca (0 → 6) come le registra Garmin: sotto la Z1,
+     le cinque zone, sopra la Z5. Le centrali riusano le tinte già in palette. */
+  --color-zone-0: #3d4f6b;
   --color-zone-1: #6B7280;
   --color-zone-2: #5b9bd5;
   --color-zone-3: #45b877;
   --color-zone-4: #f4a300;
   --color-zone-5: #e05a5a;
+  --color-zone-6: #a56bd9;
 
   /* Manichino della palestra: scala assoluta giallo → arancio → rosso.
      `off` è il muscolo non toccato, quasi il colore dello sfondo. */

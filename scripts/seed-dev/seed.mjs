@@ -679,7 +679,7 @@ async function main() {
     profile: {
       dominantHand: 'destro', level: '3.4', birthYear: 1994, playingSince: 2008,
       running: {
-        zones: [[420, 460], [380, 420], [340, 380], [300, 340], [260, 300]].map(([fast, slow]) => ({ fast, slow })),
+        zones: [[480, 540], [420, 460], [380, 420], [340, 380], [300, 340], [260, 300], [220, 260]].map(([fast, slow]) => ({ fast, slow })),
         walk: { fast: 570, slow: 690 },
         weightKg: 74,
       },

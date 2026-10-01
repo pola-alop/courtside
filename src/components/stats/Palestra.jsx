@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, Tile, BarRow, NotEnough, SampleTag, Note, InfoButton, InfoItem } from './StatsUI'
+import { Card, Tile, BarRow, NotEnough, SampleTag, Note, InfoButton, InfoItem, WeekBars, Sparkline } from './StatsUI'
 import BodyMap, { BodyMapLegend } from '../gym/BodyMap'
 import {
   MUSCLES, heatColor, formatVolume, muscleLabel, WEEK_FULL_SETS,
@@ -83,37 +83,10 @@ function VolumeCard({ report, periodLabel }) {
         </p>
       )}
 
-      {v.weekly.length > 1 && <WeeklyBars weeks={v.weekly} />}
+      {v.weekly.length > 1 && (
+        <WeekBars title="Serie a settimana" weeks={v.weekly} value={w => w.sets} format={n => `${Math.round(n)} serie`} />
+      )}
     </Card>
-  )
-}
-
-// Serie per settimana. Le settimane vuote restano visibili come tacca: un buco
-// di due settimane è quello che si vuole vedere.
-function WeeklyBars({ weeks }) {
-  const max = Math.max(1, ...weeks.map(w => w.sets))
-  return (
-    <div className="mt-4">
-      <p className="text-[10px] uppercase tracking-wider mb-2" style={{ color: 'var(--color-slate)' }}>
-        Serie a settimana
-      </p>
-      <div className="flex items-end gap-1 h-20">
-        {weeks.map(w => (
-          <div key={w.start} className="flex-1 flex flex-col justify-end h-full" title={`${shortDay(w.start)}: ${w.sets} serie`}>
-            <div className="w-full rounded-sm"
-                 style={{
-                   height: w.sets ? `${Math.max(6, (w.sets / max) * 100)}%` : 2,
-                   background: w.sets ? 'var(--color-teal-dark)' : 'var(--color-surface-2)',
-                 }} />
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-between mt-1.5 text-[9px]" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
-        <span>{shortDay(weeks[0].start)}</span>
-        <span>picco {max} serie</span>
-        <span>{shortDay(weeks[weeks.length - 1].start)}</span>
-      </div>
-    </div>
   )
 }
 
@@ -336,23 +309,6 @@ function ProgressInfo() {
   )
 }
 
-// Mini-grafico del valore per sessione, senza assi: conta la forma.
-function Sparkline({ points }) {
-  const W = 84, H = 26
-  const vals = points.map(p => p.value)
-  const min = Math.min(...vals), max = Math.max(...vals)
-  const span = max - min || 1
-  const step = W / Math.max(1, points.length - 1)
-  const xy = points.map((p, i) => [i * step, H - 3 - ((p.value - min) / span) * (H - 6)])
-  return (
-    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="shrink-0" aria-hidden="true">
-      <polyline points={xy.map(([x, y]) => `${x},${y}`).join(' ')} fill="none"
-                style={{ stroke: 'var(--color-teal-dark)', strokeWidth: 1.5, strokeLinejoin: 'round', strokeLinecap: 'round' }} />
-      <circle cx={xy[xy.length - 1][0]} cy={xy[xy.length - 1][1]} r={2.5} style={{ fill: 'var(--color-amber)' }} />
-    </svg>
-  )
-}
-
 // ── Blocco 6 — Dall'orologio ───────────────────────────────
 
 function WatchCard({ report }) {
@@ -378,7 +334,3 @@ function WatchCard({ report }) {
 // ── Helpers ────────────────────────────────────────────────
 
 const fmt = (v) => v.toLocaleString('it-IT', { maximumFractionDigits: 1 })
-
-function shortDay(t) {
-  return new Date(t).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
-}

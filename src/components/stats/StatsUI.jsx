@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { HR_ZONES } from '../../lib/athletics'
 
 // Primitive visive condivise dalle sezioni di Stats. Vivono in un file a parte
 // (a differenza degli helper "privati" di un componente, che stanno sotto il
@@ -194,4 +195,77 @@ export function Note({ children }) {
       {children}
     </p>
   )
+}
+
+// Barra impilata delle sette zone FC. Le zone a 0 non occupano spazio: uno
+// spicchio da 0px con il suo bordo diventerebbe una riga di colore fantasma.
+// Condivisa da Fisico, Corsa e Palestra.
+export function ZoneBar({ shares, height = 10 }) {
+  return (
+    <div className="flex w-full rounded-full overflow-hidden"
+         style={{ height, background: 'var(--color-surface-2)' }}>
+      {HR_ZONES.map((z, i) => (
+        shares[i] > 0
+          ? <div key={z.id} title={`${z.label} · ${z.name}: ${Math.round(shares[i] * 100)}%`}
+                 style={{ width: `${shares[i] * 100}%`, background: z.color }} />
+          : null
+      ))}
+    </div>
+  )
+}
+
+// Barre per settimana (lunedì-domenica). Le settimane vuote restano visibili
+// come tacca: un buco di due settimane è quello che si vuole vedere.
+// `weeks` = [{ start, ... }], `value(w)` il numero della barra, `format(v)` il
+// testo del tooltip e del picco.
+export function WeekBars({ title, weeks, value, format, color = 'var(--color-teal-dark)' }) {
+  const max = Math.max(1e-9, ...weeks.map(value))
+  return (
+    <div className="mt-4">
+      <p className="text-[10px] uppercase tracking-wider mb-2" style={{ color: 'var(--color-slate)' }}>
+        {title}
+      </p>
+      <div className="flex items-end gap-1 h-20">
+        {weeks.map(w => {
+          const v = value(w)
+          return (
+            <div key={w.start} className="flex-1 flex flex-col justify-end h-full" title={`${shortDay(w.start)}: ${format(v)}`}>
+              <div className="w-full rounded-sm"
+                   style={{
+                     height: v ? `${Math.max(6, (v / max) * 100)}%` : 2,
+                     background: v ? color : 'var(--color-surface-2)',
+                   }} />
+            </div>
+          )
+        })}
+      </div>
+      <div className="flex justify-between mt-1.5 text-[9px]" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+        <span>{shortDay(weeks[0].start)}</span>
+        <span>picco {format(max)}</span>
+        <span>{shortDay(weeks[weeks.length - 1].start)}</span>
+      </div>
+    </div>
+  )
+}
+
+// Mini-grafico del valore per sessione, senza assi: conta la forma. `points` =
+// [{ value }] in ordine cronologico; l'ultimo punto è evidenziato.
+export function Sparkline({ points }) {
+  const W = 84, H = 26
+  const vals = points.map(p => p.value)
+  const min = Math.min(...vals), max = Math.max(...vals)
+  const span = max - min || 1
+  const step = W / Math.max(1, points.length - 1)
+  const xy = points.map((p, i) => [i * step, H - 3 - ((p.value - min) / span) * (H - 6)])
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="shrink-0" aria-hidden="true">
+      <polyline points={xy.map(([x, y]) => `${x},${y}`).join(' ')} fill="none"
+                style={{ stroke: 'var(--color-teal-dark)', strokeWidth: 1.5, strokeLinejoin: 'round', strokeLinecap: 'round' }} />
+      <circle cx={xy[xy.length - 1][0]} cy={xy[xy.length - 1][1]} r={2.5} style={{ fill: 'var(--color-amber)' }} />
+    </svg>
+  )
+}
+
+function shortDay(t) {
+  return new Date(t).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
 }

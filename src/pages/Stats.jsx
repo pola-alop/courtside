@@ -4,6 +4,8 @@ import { useMatches } from '../hooks/useMatches'
 import { useTrainings } from '../hooks/useTrainings'
 import { useOpponents } from '../hooks/useOpponents'
 import { useEquipment } from '../hooks/useEquipment'
+import { useRuns } from '../hooks/useRuns'
+import { useRunWorkouts } from '../hooks/useRunWorkouts'
 import { useGymSessions } from '../hooks/useGymSessions'
 import { useGymExercises } from '../hooks/useGymExercises'
 import Rendimento from '../components/stats/Rendimento'
@@ -12,6 +14,7 @@ import Tecnica from '../components/stats/Tecnica'
 import Fisico from '../components/stats/Fisico'
 import Setup from '../components/stats/Setup'
 import Palestra from '../components/stats/Palestra'
+import Corsa from '../components/stats/Corsa'
 import InsightList from '../components/stats/InsightList'
 import MatchListModal from '../components/stats/MatchListModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
@@ -23,17 +26,18 @@ import { buildTechnique } from '../lib/technique'
 import { buildPhysical } from '../lib/physical'
 import { buildSetup } from '../lib/setup'
 import { buildGym } from '../lib/gymStats'
+import { buildRun } from '../lib/runStats'
 
 // Pagina Stats — organizzata per DOMANDE, non per dataset.
 //
-// Sei sezioni intitolate a ciò a cui rispondono: raggruppare per dominio
+// Sette sezioni intitolate a ciò a cui rispondono: raggruppare per dominio
 // (matches / trainings / athletics) rispecchierebbe il database e non la testa
 // di chi guarda. Ognuna ha la propria unità di misura e non si sovrappone alle
 // altre: "Rendimento" il game, "Attività" il minuto, "Tecnica" la sessione (il
 // focus è della sessione e non del blocco, quindi il minuto qui non è
 // disponibile), "Fisico" il battito, "Setup" il game giocato con un materiale,
-// "Palestra" la serie (e legge le sole sessioni di palestra, che non entrano in
-// nessuna delle altre sezioni).
+// "Palestra" la serie e "Corsa" il chilometro (leggono le sole sessioni di
+// palestra e di corsa, che non entrano in nessuna delle altre sezioni).
 //
 // ── Perché l'orizzonte è lungo ──
 // La finestra mobile di 30 giorni è già della Panoramica: è il presente e serve
@@ -62,6 +66,7 @@ const TABS = [
   { id: 'fisico',     label: 'Fisico',     icon: '❤️', question: 'Come sto fisicamente, e sto migliorando?' },
   { id: 'setup',      label: 'Setup',      icon: '🎽', question: 'Il materiale cambia qualcosa in campo?' },
   { id: 'palestra',   label: 'Palestra',   icon: '🏋️', question: 'Cosa alleno in palestra, e sto progredendo?' },
+  { id: 'corsa',      label: 'Corsa',      icon: '🏃', question: 'Quanto e come corro, e sto migliorando?' },
 ]
 
 export default function Stats() {
@@ -70,6 +75,8 @@ export default function Stats() {
   const { opponents } = useOpponents()
   const { equipment, loading: equipLoading } = useEquipment()
   const { sessions: gymSessions, loading: gymLoading } = useGymSessions()
+  const { runs, loading: runLoading } = useRuns()
+  const { workouts: runWorkouts } = useRunWorkouts()
   const { index: exerciseIndex, loading: exerciseLoading } = useGymExercises()
 
   // ── Intenzioni che arrivano dalla Home ──
@@ -165,6 +172,19 @@ export default function Stats() {
     })
   }, [gymScoped, gymSessions, exerciseIndex, period, range])
 
+  // Corsa: come Palestra, le corse del periodo e del precedente (per il delta) e
+  // l'intero storico per ciò che è un fatto del presente — giorni dall'ultima
+  // corsa, striscia e record. `runWorkouts` serve solo ai nomi delle schede.
+  const runScoped = useMemo(() => filterPeriod(runs, range), [runs, range])
+  const run = useMemo(() => {
+    const prevRange = periodRange(period, 1)
+    return buildRun({
+      runs: runScoped, allRuns: runs,
+      previousRuns: prevRange ? filterPeriod(runs, prevRange) : [],
+      workouts: runWorkouts, range,
+    })
+  }, [runScoped, runs, runWorkouts, period, range])
+
   // Su "Sempre" non esiste un prima, e se il periodo precedente ha pochi dati il
   // confronto sarebbe rumore: in entrambi i casi il delta non compare.
   const comparison = useMemo(() => {
@@ -178,9 +198,9 @@ export default function Stats() {
   // stare sopra una sul rendimento se è più forte. Ogni frase sa già a quale tab
   // e a quale blocco appartiene, quindi il tap continua a portare al punto giusto.
   const insights = useMemo(
-    () => [...report.insights, ...activity.insights, ...technique.insights, ...physical.insights, ...setup.insights, ...gym.insights]
+    () => [...report.insights, ...activity.insights, ...technique.insights, ...physical.insights, ...setup.insights, ...gym.insights, ...run.insights]
       .sort((a, b) => b.weight - a.weight),
-    [report, activity, technique, physical, setup, gym]
+    [report, activity, technique, physical, setup, gym, run]
   )
 
   // Pattern "selected item derivato": la modale legge sempre il match aggiornato.
@@ -196,7 +216,7 @@ export default function Stats() {
   // L'attrezzatura entra nel gate di caricamento perché la sezione Setup è
   // costruita su di essa: senza, il tab mostrerebbe per un istante "nessun dato"
   // prima di popolarsi, che è il modo più veloce di far credere che sia rotto.
-  const loading = matchLoading || trainLoading || equipLoading || gymLoading || exerciseLoading
+  const loading = matchLoading || trainLoading || equipLoading || gymLoading || exerciseLoading || runLoading
 
   // Lo scroll al blocco aspetta la fine del caricamento: arrivando da un link
   // esterno i dati non ci sono ancora, il blocco non è nel DOM e uno scroll
@@ -225,7 +245,7 @@ export default function Stats() {
 
       {loading ? (
         <Spinner />
-      ) : matches.length === 0 && trainings.length === 0 && gymSessions.length === 0 ? (
+      ) : matches.length === 0 && trainings.length === 0 && gymSessions.length === 0 && runs.length === 0 ? (
         <EmptyState />
       ) : (
         <>
@@ -250,6 +270,7 @@ export default function Stats() {
               {' · '}{scoped.matches.length} {scoped.matches.length === 1 ? 'partita' : 'partite'}
               {' · '}{scoped.trainings.length} {scoped.trainings.length === 1 ? 'allenamento' : 'allenamenti'}
               {gymScoped.length > 0 && <>{' · '}{gymScoped.length} {gymScoped.length === 1 ? 'palestra' : 'palestre'}</>}
+              {runScoped.length > 0 && <>{' · '}{runScoped.length} {runScoped.length === 1 ? 'corsa' : 'corse'}</>}
             </p>
           </div>
 
@@ -291,6 +312,8 @@ export default function Stats() {
               <Fisico report={physical} periodLabel={PERIODS.find(p => p.id === period)?.label} />
             ) : activeTab === 'palestra' ? (
               <Palestra report={gym} periodLabel={PERIODS.find(p => p.id === period)?.label} />
+            ) : activeTab === 'corsa' ? (
+              <Corsa report={run} periodLabel={PERIODS.find(p => p.id === period)?.label} />
             ) : (
               <Setup report={setup} onDrill={openDrill} />
             )}

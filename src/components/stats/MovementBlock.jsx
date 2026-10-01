@@ -291,7 +291,7 @@ function EconomyCard({ report }) {
 // con dieci punti sparsi su un anno, le date vere ammasserebbero tre sessioni
 // in un pixel. L'asse x è l'ordine, e le due linee orizzontali sono le medie
 // delle due metà — è il confronto che il blocco sta facendo, disegnato.
-function EconomyChart({ economy }) {
+export function EconomyChart({ economy }) {
   const pts = economy.points
   if (pts.length < 3) return null
 
@@ -347,8 +347,9 @@ function EconomyChart({ economy }) {
       </svg>
 
       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-        <Legend color="var(--color-amber)" label="Partite" />
-        <Legend color="var(--color-teal)" label="Allenamenti" />
+        {economy.matchN > 0 && <Legend color="var(--color-amber)" label="Partite" />}
+        {economy.trainingN > 0 && <Legend color="var(--color-teal)" label="Allenamenti" />}
+        {economy.matchN + economy.trainingN === 0 && <Legend color="var(--color-teal)" label="Corse" />}
         {h && <Legend color={deltaColor(h.delta)} label="Media delle due metà" dashed />}
       </div>
     </div>

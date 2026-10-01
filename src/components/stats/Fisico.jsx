@@ -1,4 +1,4 @@
-import { Card, Tile, NotEnough, SampleTag, Note, InfoButton, InfoItem } from './StatsUI'
+import { Card, Tile, NotEnough, SampleTag, Note, InfoButton, InfoItem, ZoneBar } from './StatsUI'
 import MovementBlock from './MovementBlock'
 import OutcomeBlock from './OutcomeBlock'
 import { HR_ZONES, formatDuration, formatTrainingEffect, trainingEffectLabel } from '../../lib/athletics'
@@ -273,22 +273,6 @@ function ZonesCard({ report }) {
         l'hai avviato in ritardo.
       </Note>
     </Card>
-  )
-}
-
-// Barra impilata delle sette zone. Le zone a 0 non occupano spazio: uno
-// spicchio da 0px con il suo bordo diventerebbe una riga di colore fantasma.
-function ZoneBar({ shares, height = 10 }) {
-  return (
-    <div className="flex w-full rounded-full overflow-hidden"
-         style={{ height, background: 'var(--color-surface-2)' }}>
-      {HR_ZONES.map((z, i) => (
-        shares[i] > 0
-          ? <div key={z.id} title={`${z.label} · ${z.name}: ${Math.round(shares[i] * 100)}%`}
-                 style={{ width: `${shares[i] * 100}%`, background: z.color }} />
-          : null
-      ))}
-    </div>
   )
 }
 

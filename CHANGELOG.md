@@ -18,6 +18,9 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 - "+ Allenamento" chiede il tipo (Tennis / Corsa / Palestra); la lista Allenamenti mostra tennis, corse e palestra insieme con i filtri Tutti / Tennis / Corsa / Palestra.
 - **Palestra** come nuovo tipo di allenamento: database di 110 esercizi già associati ai muscoli che coinvolgono (principali e secondari), esercizi personalizzati, schede riutilizzabili con serie, ripetizioni e kg (o secondi per gli esercizi a tempo), libreria delle schede.
 - **Manichino** frontale e dorsale dei muscoli allenati, nel dettaglio di ogni sessione e nell'editor della scheda: muscolo non allenato con il colore dello sfondo, poi dal giallo (poco) al rosso (tanto) su una scala assoluta; al tocco mostra gli esercizi che lo hanno lavorato.
+- **Stats › Corsa**: nuovo tab con volume, costanza, passo delle corse continue e confronto della stessa scheda nel tempo, efficienza cardiaca (la FC a parità di velocità), intensità (quanto del tempo è facile e quanto duro), training effect e carico Garmin, potenza e dinamiche di corsa, record. Tutto dai dati dell'orologio, niente è stimato.
+- **Stats › Palestra** ampliata: costanza, esercizi più fatti e fasce di ripetizioni (forza, ipertrofia, resistenza), record battuti nel periodo, e un blocco «Dall'orologio» che distingue le sessioni dal file da quelle a mano e aggiunge zone cardiache, carico Garmin, serie all'ora e riposo medio stimato tra le serie.
+- **Stats › Fisico**: la copertura dice quante sessioni vengono dal file .FIT e quante sono trascritte; le note su velocità ed economia cardiaca dicono per quanti allenamenti la durata è quella misurata dall'orologio.
 - **Stats › Palestra**: volume e serie a settimana, manichino su periodo e ultimi 7 giorni, muscoli trascurati, bilancio spinta/trazione, progressione del massimale stimato per esercizio e medie dei dati dell'orologio, con i relativi insight.
 
 ### Modificato

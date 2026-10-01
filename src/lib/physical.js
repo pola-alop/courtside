@@ -121,6 +121,9 @@ function normalize(base) {
   return {
     ...base,
     has: hasAthletics(a),
+    // Misurato dall'orologio (file .FIT) contro trascritto a mano: per un
+    // allenamento cambia anche il significato della durata (vedi `movement`).
+    measured: a?.source === 'fit',
     hr:     isNum(a?.avgHr) ? a.avgHr : null,
     maxHr:  isNum(a?.maxHr) ? a.maxHr : null,
     km:     isNum(a?.distanceKm) ? a.distanceKm : null,
@@ -157,6 +160,9 @@ export function coverage(sessions) {
       total: list.length,
       n: withData.length,
       share: list.length ? withData.length / list.length : null,
+      // Di quelle con dati, quante vengono dal file .FIT. Le altre sono
+      // trascritte a mano e hanno quasi sempre meno campi.
+      measured: withData.filter(s => s.measured).length,
     }
   }
 
@@ -176,6 +182,7 @@ export function coverage(sessions) {
       share: withData.length ? withData.filter(s => f.pick(s) != null).length / withData.length : null,
     })),
     withData: withData.length,
+    measured: withData.filter(s => s.measured).length,
   }
 }
 
@@ -297,6 +304,10 @@ export function movement(sessions) {
       kmPerHour: hours > 0 ? km / hours : null,
       kmPerSession: ok.length ? km / ok.length : null,
       minutesPerSession: ok.length ? sum(ok, s => s.minutes) / ok.length : null,
+      // Quante di queste sessioni hanno la durata MISURATA dall'orologio. Per un
+      // allenamento senza file la durata è la somma dei blocchi, non il tempo
+      // dell'orologio: la velocità ne risente, e la UI deve dirlo.
+      measuredN: ok.filter(s => s.measured).length,
       sessions: ok,
     }
   }
@@ -408,7 +419,7 @@ export function cardiacEconomy(sessions) {
   const b = corrected ? beta : 0
 
   const points = ok.map(s => ({
-    id: s.id, kind: s.kind, day: s.day, label: s.label,
+    id: s.id, kind: s.kind, day: s.day, label: s.label, measured: s.measured,
     hr: s.hr, speed: s.speed, km: s.km, minutes: s.minutes,
     adjusted: s.hr - b * (s.speed - meanSpeed),
     // Costo cardiaco descrittivo: quanti battiti ti è costato un chilometro.
@@ -433,6 +444,9 @@ export function cardiacEconomy(sessions) {
     n, points, corrected, beta, r, refSpeed: meanSpeed, meanHr,
     matchN:    ok.filter(s => s.kind === 'match').length,
     trainingN: ok.filter(s => s.kind === 'training').length,
+    // Allenamenti la cui velocità poggia sulla durata dell'orologio e non su
+    // quella dei blocchi: sono i soli dove la velocità è esatta.
+    trainingMeasuredN: ok.filter(s => s.kind === 'training' && s.measured).length,
     speedRange: { min: Math.min(...speeds), max: Math.max(...speeds) },
     halves: enoughSides ? {
       first:  { n: first.length,  hr: firstHr,  speed: avg(first.map(p => p.speed)),  from: first[0].day,  to: first[first.length - 1].day },

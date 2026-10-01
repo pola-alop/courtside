@@ -56,8 +56,8 @@ export default function Fisico({ report, periodLabel }) {
       <OutcomeBlock report={report} />
 
       <Note>
-        Tutti i numeri di questa sezione nascono da dati che hai trascritto a mano dall'orologio, e
-        ogni campo è indipendente dagli altri: le medie qui sopra hanno campioni diversi, ed è per
+        Tutti i numeri di questa sezione nascono da dati dell'orologio, importati dal file .FIT o
+        trascritti a mano, e ogni campo è indipendente dagli altri: le medie qui sopra hanno campioni diversi, ed è per
         questo che ogni blocco porta il proprio «su quante sessioni». Le partite senza dati atletici
         non vengono stimate — in Attività la durata di un match si stima dai game, qui no: la stima
         cresce con i game giocati e farebbe apparire da sola una differenza tra vittorie e sconfitte
@@ -106,6 +106,17 @@ function CoverageCard({ report, periodLabel }) {
         <Tile label="Allenamenti" value={`${c.trainings.n}/${c.trainings.total}`} color="var(--color-teal)"
               sub={c.trainings.share != null ? `${Math.round(c.trainings.share * 100)}%` : '—'} />
       </div>
+
+      {/* Misurato (file .FIT) contro trascritto a mano. Le sessioni del file
+          hanno tutti i campi e il tempo esatto dell'orologio: più ce ne sono,
+          più le medie di questa sezione poggiano su dati completi. */}
+      {c.n > 0 && (
+        <p className="text-[11px] mt-3" style={{ color: 'var(--color-slate)' }}>
+          Di queste, <span style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-mono)' }}>{c.measured}</span> dal
+          file .FIT dell'orologio e <span style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-mono)' }}>{c.n - c.measured}</span> trascritte
+          a mano.
+        </p>
+      )}
 
       {/* Quale campo manca, quando trascrivi. È l'unica parte azionabile del
           blocco: dice cosa aggiungere alla routine per sbloccare un blocco. */}
@@ -161,6 +172,12 @@ function CoverageInfo() {
         La copertura separata per i due tipi di sessione. Se trascrivi le partite e non gli
         allenamenti, i confronti «partita contro allenamento» di questa sezione restano chiusi:
         servono almeno {MIN_SIDE} sessioni per lato.
+      </InfoItem>
+      <InfoItem title="Dal file e a mano">
+        Una sessione importata dal file .FIT ha tutti i campi, misurati dall'orologio, e per un
+        allenamento anche il tempo esatto. Una trascritta a mano ne ha solo alcuni, e può avere
+        valori approssimati. Il blocco dice quante delle tue sessioni con dati sono dell'uno e
+        dell'altro tipo.
       </InfoItem>
       <InfoItem title="Campi compilati">
         Anche quando trascrivi, non trascrivi tutto: puoi avere la FC media e non la distanza. Ogni

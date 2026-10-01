@@ -13,8 +13,12 @@
 // ── Struttura (`items`) ──
 // Un array piatto di fasi e ripetute, a un solo livello (niente ripetute dentro
 // ripetute — la stessa scelta dello screenshot Garmin di riferimento):
-//   Step   = { kind: 'step', id, stepType, notes, duration, target }
+//   Step   = { kind: 'step', id, stepType, notes, duration, target, fitStep? }
 //   Repeat = { kind: 'repeat', id, times, skipLastRecovery, steps: [Step] }
+//
+// `fitStep` (facoltativo) c'è solo nelle sessioni importate da un file .FIT: è
+// l'indice dello step del file, e lega la fase ai suoi lap per il confronto
+// pianificato contro reale. Non fa parte della scheda di libreria.
 //
 // `duration` cambia forma in base al tipo, con l'unità canonica a DB e la
 // formattazione solo a display (stessa disciplina di athletics.js):
@@ -254,9 +258,9 @@ export function starterItems() {
 // produrre due elementi con lo stesso id (l'editor li indirizza per id).
 export function cloneItem(item) {
   if (item.kind === 'repeat') {
-    return { ...item, id: newId(), steps: item.steps.map(s => ({ ...s, id: newId(), duration: { ...s.duration } })) }
+    return { ...item, id: newId(), steps: item.steps.map(s => ({ ...withoutFitStep(s), id: newId(), duration: { ...s.duration } })) }
   }
-  return { ...item, id: newId(), duration: { ...item.duration } }
+  return { ...withoutFitStep(item), id: newId(), duration: { ...item.duration } }
 }
 
 // ── Validazione di una fase ────────────────────────────────
@@ -358,14 +362,28 @@ function normalizeStep(step) {
     notes: (step.notes || '').trim().slice(0, MAX_NOTE_LENGTH),
     duration,
     target: TARGETS_BY_ID[step.target] ? step.target : stepTypeMeta(step.stepType).defaultTarget,
+    ...(Number.isInteger(step.fitStep) && step.fitStep >= 0 ? { fitStep: step.fitStep } : {}),
   }
+}
+
+function withoutFitStep(step) {
+  const { fitStep, ...rest } = step   // eslint-disable-line no-unused-vars
+  return rest
+}
+
+// Struttura senza i riferimenti al file .FIT: è ciò che si confronta con la
+// scheda di libreria, che quei riferimenti non li ha.
+function stripFitSteps(items) {
+  return normalizeItems(items).map(it => (it.kind === 'repeat'
+    ? { ...it, steps: it.steps.map(withoutFitStep) }
+    : withoutFitStep(it)))
 }
 
 // Due strutture sono "uguali" se lo sono una volta normalizzate: serve al
 // wizard per capire se la scheda di libreria è stata modificata (e proporre di
 // aggiornarla). Gli id restano nel confronto: sono copiati dalla scheda.
 export function sameItems(a, b) {
-  return JSON.stringify(normalizeItems(a)) === JSON.stringify(normalizeItems(b))
+  return JSON.stringify(stripFitSteps(a)) === JSON.stringify(stripFitSteps(b))
 }
 
 // ── Espansione e stime ─────────────────────────────────────

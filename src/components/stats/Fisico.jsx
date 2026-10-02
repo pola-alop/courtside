@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Card, Tile, NotEnough, SampleTag, Note, InfoButton, InfoItem, ZoneBar } from './StatsUI'
 import MovementBlock from './MovementBlock'
 import OutcomeBlock from './OutcomeBlock'
+import FitGate from './FitGate'
 import { HR_ZONES, formatDuration, formatTrainingEffect, trainingEffectLabel } from '../../lib/athletics'
 import { MIN_SIDE } from '../../lib/physical'
+import { thirdsReport, thirdsVerdict, MIN_DRIFT_N, THIRDS_MIN_SEC, THIRDS_TOLERANCE_BPM } from '../../lib/fitStats'
 
 // Sezione "Fisico" — risponde a "come sto fisicamente, e sto migliorando?".
 //
@@ -15,6 +18,7 @@ import { MIN_SIDE } from '../../lib/physical'
 //   2. Profilo di stimolo  — che allenamento è, per te, il tennis
 //   3. Movimento           — quanto ti muovi, a che ritmo, e come cambia
 //   4. Economia cardiaca   — la metrica di fitness vera
+//   4b. Tenuta in partita  — come cambia il battito dall'inizio alla fine (dal file .FIT)
 //   5. Fisico ↔ risultato  — come sono fatte le partite che perdi
 //
 // ── Perché la copertura sta in TESTA e non in fondo ──
@@ -53,6 +57,7 @@ export default function Fisico({ report, periodLabel }) {
       <ZonesCard report={report} />
       <StimulusCard report={report} />
       <MovementBlock report={report} />
+      <ThirdsCard report={report} />
       <OutcomeBlock report={report} />
 
       <Note>
@@ -539,4 +544,132 @@ function coverageColor(share) {
 function fieldColor(share) {
   if (share == null) return 'var(--color-surface-2)'
   return share >= 0.7 ? 'var(--color-teal-dark)' : share >= 0.35 ? 'var(--color-amber)' : 'var(--color-slate)'
+}
+
+// ── Blocco 3b — Tenuta in partita ──────────────────────────
+// Dalla serie della FC del file, sulle sole partite: il battito medio per terzo
+// di partita. Come gli altri blocchi che leggono `fitDetails`, resta chiuso
+// finché non lo apri (`FitGate`): il resto della sezione nasce dal riassunto.
+
+const THIRDS_WORD = { rises: 'sale', steady: 'resta', falls: 'scende' }
+const SHOWN = 5
+
+function thirdsColor(verdict) {
+  return verdict === 'rises' ? 'var(--color-amber)' : 'var(--color-white)'
+}
+
+function signedBpm(v) {
+  return `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)}`
+}
+
+function ThirdsCard({ report }) {
+  const info = (
+    <InfoButton title="Come si legge la tenuta in partita">
+      <InfoItem title="Cosa misura">
+        La partita è divisa in tre parti uguali per tempo, e per ognuna c'è il battito medio. Dice
+        come cambia il cuore dall'inizio alla fine: se sale molto, o se resta fermo.
+      </InfoItem>
+      <InfoItem title="Come si legge">
+        Entro ±{THIRDS_TOLERANCE_BPM} bpm tra primo e ultimo terzo si dice «resta». Sono soglie di
+        partenza uguali per tutti, non tarate su di te. Un battito che sale è normale, perché il
+        riscaldamento è nel primo terzo: conta quanto.
+      </InfoItem>
+      <InfoItem title="Attenzione">
+        Il file non distingue riscaldamento, pause e game: il battito sale anche per un game
+        combattuto, per il caldo o per l'ansia. È una forma, non una diagnosi di stanchezza.
+        Il recupero tra un punto e l'altro non si legge, perché l'orologio salva un campione ogni
+        5-10 secondi. Solo le partite: negli allenamenti pause ed esercizi diversi rendono le curve
+        non confrontabili. Servono partite di almeno {THIRDS_MIN_SEC / 60} minuti, e la media da {MIN_DRIFT_N}.
+      </InfoItem>
+    </InfoButton>
+  )
+
+  return (
+    <Card id="tenuta-partita" title="Tenuta in partita" titleExtra={info}
+          sub="Il battito medio per terzo di partita, dal file .FIT">
+      <FitGate fit={report.fit} unit="partite">
+        {({ byId }) => <ThirdsBody sessions={report.fit.list} byId={byId} />}
+      </FitGate>
+    </Card>
+  )
+}
+
+function ThirdsBody({ sessions, byId }) {
+  const [all, setAll] = useState(false)
+  const t = thirdsReport(sessions, byId)
+
+  if (t.n === 0) {
+    return (
+      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-slate)' }}>
+        Nessuna partita dura almeno {THIRDS_MIN_SEC / 60} minuti con il battito del file
+        {t.missing > 0 ? ` (${t.missing} senza i dettagli)` : ''}.
+      </p>
+    )
+  }
+
+  const rows = [...t.rows].reverse()
+  const shown = all ? rows : rows.slice(0, SHOWN)
+
+  return (
+    <>
+      {t.thirds ? (
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            <Tile label="1° terzo" value={t.thirds[0]} sub="bpm" />
+            <Tile label="2° terzo" value={t.thirds[1]} sub="bpm" />
+            <Tile label="3° terzo" value={t.thirds[2]} sub="bpm"
+                  color={thirdsColor(thirdsVerdict(t.deltaBpm))} />
+          </div>
+          <div className="flex items-baseline justify-between gap-3 mt-3">
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-white)' }}>
+              Dal primo all'ultimo terzo il battito{' '}
+              <span style={{ color: thirdsColor(thirdsVerdict(t.deltaBpm)), fontFamily: 'var(--font-mono)' }}>
+                {THIRDS_WORD[thirdsVerdict(t.deltaBpm)]} ({signedBpm(t.deltaBpm)} bpm)
+              </span>.
+            </p>
+            <SampleTag n={t.n} unit="partite" />
+          </div>
+        </>
+      ) : (
+        <NotEnough need={MIN_DRIFT_N - t.n} unit="partite" what="Per la curva media" />
+      )}
+
+      <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid var(--color-surface-2)' }}>
+        {shown.map(r => (
+          <div key={r.id}>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[11px] flex-1 min-w-0 truncate"
+                    style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                {r.label}
+              </span>
+              <span className="text-[11px] shrink-0 font-semibold"
+                    style={{ color: thirdsColor(r.verdict), fontFamily: 'var(--font-mono)' }}>
+                {signedBpm(r.deltaBpm)} bpm · {THIRDS_WORD[r.verdict]}
+              </span>
+            </div>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+              {dayLabel(r.day)} · {r.thirds.join(' → ')} bpm · {Math.round(r.durationSec / 60)} min
+            </p>
+          </div>
+        ))}
+        {rows.length > SHOWN && (
+          <button type="button" onClick={() => setAll(v => !v)}
+                  className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-teal)' }}>
+            {all ? 'Mostra meno' : `Mostra altre ${rows.length - SHOWN}`}
+          </button>
+        )}
+      </div>
+
+      {(t.missing > 0 || t.short > 0) && (
+        <Note>
+          {t.short > 0 ? `${t.short} ${t.short === 1 ? 'partita è troppo breve' : 'partite sono troppo brevi'} o senza battito sufficiente. ` : ''}
+          {t.missing > 0 ? `${t.missing} ${t.missing === 1 ? 'è senza' : 'sono senza'} i dettagli del file.` : ''}
+        </Note>
+      )}
+    </>
+  )
+}
+
+function dayLabel(time) {
+  return new Date(time).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' })
 }

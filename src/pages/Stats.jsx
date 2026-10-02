@@ -8,6 +8,7 @@ import { useRuns } from '../hooks/useRuns'
 import { useRunWorkouts } from '../hooks/useRunWorkouts'
 import { useGymSessions } from '../hooks/useGymSessions'
 import { useGymExercises } from '../hooks/useGymExercises'
+import { useProfile } from '../hooks/useProfile'
 import Rendimento from '../components/stats/Rendimento'
 import Attivita from '../components/stats/Attivita'
 import Tecnica from '../components/stats/Tecnica'
@@ -15,6 +16,7 @@ import Fisico from '../components/stats/Fisico'
 import Setup from '../components/stats/Setup'
 import Palestra from '../components/stats/Palestra'
 import Corsa from '../components/stats/Corsa'
+import Incroci from '../components/stats/Incroci'
 import InsightList from '../components/stats/InsightList'
 import MatchListModal from '../components/stats/MatchListModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
@@ -27,17 +29,19 @@ import { buildPhysical } from '../lib/physical'
 import { buildSetup } from '../lib/setup'
 import { buildGym } from '../lib/gymStats'
 import { buildRun } from '../lib/runStats'
+import { buildCross, toLoadSessions } from '../lib/crossStats'
 
 // Pagina Stats — organizzata per DOMANDE, non per dataset.
 //
-// Sette sezioni intitolate a ciò a cui rispondono: raggruppare per dominio
+// Otto sezioni intitolate a ciò a cui rispondono: raggruppare per dominio
 // (matches / trainings / athletics) rispecchierebbe il database e non la testa
 // di chi guarda. Ognuna ha la propria unità di misura e non si sovrappone alle
 // altre: "Rendimento" il game, "Attività" il minuto, "Tecnica" la sessione (il
 // focus è della sessione e non del blocco, quindi il minuto qui non è
 // disponibile), "Fisico" il battito, "Setup" il game giocato con un materiale,
 // "Palestra" la serie e "Corsa" il chilometro (leggono le sole sessioni di
-// palestra e di corsa, che non entrano in nessuna delle altre sezioni).
+// palestra e di corsa, che non entrano in nessuna delle altre sezioni) e
+// "Incroci" la sessione di tennis letta in funzione di cosa c'era prima.
 //
 // ── Perché l'orizzonte è lungo ──
 // La finestra mobile di 30 giorni è già della Panoramica: è il presente e serve
@@ -67,6 +71,7 @@ const TABS = [
   { id: 'setup',      label: 'Setup',      icon: '🎽', question: 'Il materiale cambia qualcosa in campo?' },
   { id: 'palestra',   label: 'Palestra',   icon: '🏋️', question: 'Cosa alleno in palestra, e sto progredendo?' },
   { id: 'corsa',      label: 'Corsa',      icon: '🏃', question: 'Quanto e come corro, e sto migliorando?' },
+  { id: 'incroci',    label: 'Incroci',    icon: '🔀', question: 'Corsa e palestra aiutano o pesano sul mio tennis?' },
 ]
 
 export default function Stats() {
@@ -78,6 +83,9 @@ export default function Stats() {
   const { runs, loading: runLoading } = useRuns()
   const { workouts: runWorkouts } = useRunWorkouts()
   const { index: exerciseIndex, loading: exerciseLoading } = useGymExercises()
+  // Solo per la tabella zone di corsa: serve a stimare la durata di una corsa
+  // senza orologio, quando entra nel carico.
+  const { profile, loading: profileLoading } = useProfile()
 
   // ── Intenzioni che arrivano dalla Home ──
   // Gli avvisi della Home ("picco di carico", "da 47 giorni non lo tocchi")
@@ -120,14 +128,26 @@ export default function Stats() {
   // dall'ultima sessione sono fatti del presente e vanno calcolati su tutto lo
   // storico rispetto a oggi, non sulla finestra scelta — lo stesso motivo per
   // cui gli alert di usura in Panoramica compaiono solo a offset 0.
+  //
+  // Il carico (ACWR e barre) è invece di TUTTO il corpo: tennis, corsa e
+  // palestra nella stessa forma, sull'intero storico. Ore, costanza e mix
+  // restano di tennis.
+  const loadSessions = useMemo(
+    () => toLoadSessions({
+      matches, trainings, runs, gymSessions,
+      index: exerciseIndex, running: profile?.running || null,
+    }),
+    [matches, trainings, runs, gymSessions, exerciseIndex, profile]
+  )
+
   const activity = useMemo(
     () => buildActivity({
       matches: scoped.matches, trainings: scoped.trainings,
       allMatches: matches, allTrainings: trainings,
       previousMatches: previous?.matches || [], previousTrainings: previous?.trainings || [],
-      range,
+      loadSessions, range,
     }),
-    [scoped, matches, trainings, previous, range]
+    [scoped, matches, trainings, previous, loadSessions, range]
   )
 
   // Tecnica riceve gli allenamenti del periodo e, come Attività, anche quelli non
@@ -185,6 +205,14 @@ export default function Stats() {
     })
   }, [runScoped, runs, runWorkouts, period, range])
 
+  // Incroci: partite e allenamenti del periodo, e l'intero storico di tutti i
+  // domini per guardare indietro dall'inizio del periodo e calcolare l'ACWR con
+  // cui si è arrivati a ogni partita.
+  const cross = useMemo(
+    () => buildCross({ matches: scoped.matches, trainings: scoped.trainings, loadSessions, range }),
+    [scoped, loadSessions, range]
+  )
+
   // Su "Sempre" non esiste un prima, e se il periodo precedente ha pochi dati il
   // confronto sarebbe rumore: in entrambi i casi il delta non compare.
   const comparison = useMemo(() => {
@@ -198,9 +226,9 @@ export default function Stats() {
   // stare sopra una sul rendimento se è più forte. Ogni frase sa già a quale tab
   // e a quale blocco appartiene, quindi il tap continua a portare al punto giusto.
   const insights = useMemo(
-    () => [...report.insights, ...activity.insights, ...technique.insights, ...physical.insights, ...setup.insights, ...gym.insights, ...run.insights]
+    () => [...report.insights, ...activity.insights, ...technique.insights, ...physical.insights, ...setup.insights, ...gym.insights, ...run.insights, ...cross.insights]
       .sort((a, b) => b.weight - a.weight),
-    [report, activity, technique, physical, setup, gym, run]
+    [report, activity, technique, physical, setup, gym, run, cross]
   )
 
   // Pattern "selected item derivato": la modale legge sempre il match aggiornato.
@@ -216,7 +244,7 @@ export default function Stats() {
   // L'attrezzatura entra nel gate di caricamento perché la sezione Setup è
   // costruita su di essa: senza, il tab mostrerebbe per un istante "nessun dato"
   // prima di popolarsi, che è il modo più veloce di far credere che sia rotto.
-  const loading = matchLoading || trainLoading || equipLoading || gymLoading || exerciseLoading || runLoading
+  const loading = matchLoading || trainLoading || equipLoading || gymLoading || exerciseLoading || runLoading || profileLoading
 
   // Lo scroll al blocco aspetta la fine del caricamento: arrivando da un link
   // esterno i dati non ci sono ancora, il blocco non è nel DOM e uno scroll
@@ -314,6 +342,8 @@ export default function Stats() {
               <Palestra report={gym} periodLabel={PERIODS.find(p => p.id === period)?.label} />
             ) : activeTab === 'corsa' ? (
               <Corsa report={run} periodLabel={PERIODS.find(p => p.id === period)?.label} />
+            ) : activeTab === 'incroci' ? (
+              <Incroci report={cross} periodLabel={PERIODS.find(p => p.id === period)?.label} />
             ) : (
               <Setup report={setup} onDrill={openDrill} />
             )}

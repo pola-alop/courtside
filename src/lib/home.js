@@ -6,6 +6,7 @@ import {
 } from './activity'
 import { toFocusSessions, neglect, NEGLECT_BAD } from './technique'
 import { computeWear } from './wear'
+import { toLoadSessions } from './crossStats'
 
 // Il report della Home — "adesso", niente altro.
 //
@@ -40,10 +41,16 @@ export const ALERT_TONES = {
   warn: { color: 'var(--color-amber-light)', bg: 'rgba(244,163,0,0.12)' },
 }
 
-export function buildHome({ matches = [], trainings = [], equipment = [] }) {
+// Ritmo e striscia restano di TENNIS (sono «quando sei stato in campo»), ma il
+// carico è di tutto il corpo: corsa e palestra pesano sull'ACWR quanto il
+// tennis, ed è la stessa serie che usa Stats › Attività — una verità sola.
+export function buildHome({
+  matches = [], trainings = [], equipment = [],
+  runs = [], gymSessions = [], index = null, running = null,
+}) {
   const sessions = toSessions(matches, trainings)
   const rhythm   = currentRhythm(sessions)
-  const load     = loadStatus(sessions)
+  const load     = loadStatus(toLoadSessions({ matches, trainings, runs, gymSessions, index, running }))
   const focusSessions = toFocusSessions(trainings)
   const missed   = focusSessions.length ? neglect(focusSessions) : null
 

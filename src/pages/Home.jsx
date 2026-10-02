@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthState } from '../hooks/useAuth'
 import { useMatches } from '../hooks/useMatches'
 import { useTrainings } from '../hooks/useTrainings'
+import { useRuns } from '../hooks/useRuns'
+import { useGymSessions } from '../hooks/useGymSessions'
+import { useGymExercises } from '../hooks/useGymExercises'
 import { useEquipment } from '../hooks/useEquipment'
 import { useProfile } from '../hooks/useProfile'
 import Onboarding from '../components/home/Onboarding'
@@ -50,10 +53,18 @@ export default function Home() {
   const { trainings, loading: trainLoading } = useTrainings()
   const { equipment, loading: equipLoading } = useEquipment()
   const { profile,   loading: profileLoading } = useProfile()
+  // Corse e palestre entrano solo nel carico (ACWR e avviso): servono perché
+  // l'avviso di Home e il blocco di Stats › Attività dicano la stessa cosa.
+  const { runs, loading: runLoading } = useRuns()
+  const { sessions: gymSessions, loading: gymLoading } = useGymSessions()
+  const { index: exerciseIndex, loading: exerciseLoading } = useGymExercises()
 
   const report = useMemo(
-    () => buildHome({ matches, trainings, equipment }),
-    [matches, trainings, equipment]
+    () => buildHome({
+      matches, trainings, equipment, runs, gymSessions,
+      index: exerciseIndex, running: profile?.running || null,
+    }),
+    [matches, trainings, equipment, runs, gymSessions, exerciseIndex, profile]
   )
 
   const rawFirstName = (user?.displayName || '').trim().split(' ')[0] || null
@@ -65,6 +76,7 @@ export default function Home() {
   // un documento, parte in parallelo alle altre tre, e senza di lei il primo
   // passo della checklist si spunterebbe da solo un istante dopo il montaggio.
   const loading = matchLoading || trainLoading || equipLoading || profileLoading
+    || runLoading || gymLoading || exerciseLoading
 
   if (loading) return <Spinner />
 

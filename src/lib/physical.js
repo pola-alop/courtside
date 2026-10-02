@@ -45,6 +45,7 @@ import { gamesInMatch } from './tennis'
 import { HR_ZONES, hasAthletics, zonesTotalSec, readZones, avgSpeedKmh, trainingEffectLabel } from './athletics'
 import { dayTime } from './stats'
 import { MONTHS_SHORT } from './activity'
+import { pickLatest } from './fitStats'
 
 // ── Soglie minime di campione ──────────────────────────────
 // Più basse che altrove, e non per distrazione: qui il campione non è "quante
@@ -124,6 +125,7 @@ function normalize(base) {
     // Misurato dall'orologio (file .FIT) contro trascritto a mano: per un
     // allenamento cambia anche il significato della durata (vedi `movement`).
     measured: a?.source === 'fit',
+    fitId: a?.fitId || null,
     hr:     isNum(a?.avgHr) ? a.avgHr : null,
     maxHr:  isNum(a?.maxHr) ? a.maxHr : null,
     km:     isNum(a?.distanceKm) ? a.distanceKm : null,
@@ -556,6 +558,10 @@ export function buildPhysical({ matches = [], trainings = [] }) {
     movement: movement(withData),
     economy:  cardiacEconomy(withData),
     outcome:  outcomeSplit(withData),
+    // Le partite di cui il blocco «Tenuta in partita» può leggere i dettagli.
+    // Solo partite: negli allenamenti pause ed esercizi diversi rendono la
+    // curva del battito non confrontabile.
+    fit: pickLatest(sessions.filter(s => s.kind === 'match')),
   }
 
   report.insights = report.enough ? physicalInsights(report) : []

@@ -32,10 +32,11 @@
 // periodo scelto. Giorni dall'ultima corsa, striscia e record leggono l'intero
 // storico (stessa logica di ACWR in activity.js).
 //
-// ── Cosa NON c'è (ancora) ──
-// Tutto ciò che richiede i lap o le serie del file (tenuta nelle ripetute,
-// deriva cardiaca): vive in `fitDetails`, un documento per volta, e questo modulo
-// lavora solo sul riassunto già in `athletics`. Vedi il punto aperto in CLAUDE.md.
+// ── Lap e serie del file: altrove ──
+// Tenuta nelle ripetute e deriva cardiaca vivono in `fitDetails`, un documento
+// per volta, e questo modulo lavora solo sul riassunto già in `athletics`. Qui si
+// decide soltanto QUALI sessioni leggere (`report.fit`); le analisi stanno in
+// fitStats.js e il tab le calcola su richiesta, dopo aver letto i documenti.
 
 import { dayTime } from './stats'
 import { hasAthletics, readZones, zonesTotalSec, avgSpeedKmh } from './athletics'
@@ -43,6 +44,7 @@ import { avgPaceSec, runDisplayName } from './running'
 import { weekBuckets, consistency, LOAD_RPE, DEFAULT_RPE } from './activity'
 import { zoneMix, stimulus, cardiacEconomy, MIN_ZONES, MIN_TE } from './physical'
 import { weeksInWindow } from './gymStats'
+import { pickLatest } from './fitStats'
 
 // ── Soglie minime di campione ──────────────────────────────
 export const MIN_RUN         = 3   // corse nel periodo, per aprire la sezione
@@ -81,6 +83,7 @@ export function toRunSessions(runs = [], workouts = []) {
       continuous: !(r.items || []).some(it => it.kind === 'repeat'),
       has: hasAthletics(a),
       measured: a?.source === 'fit',
+      fitId: a?.fitId || null,
       km: isNum(a?.distanceKm) && a.distanceKm > 0 ? a.distanceKm : null,
       durationSec,
       minutes: durationSec ? durationSec / 60 : 0,
@@ -377,6 +380,12 @@ export function buildRun({ runs, allRuns = runs, previousRuns = [], workouts = [
     load: runLoad(sessions, range),
     dynamics: runDynamics(sessions),
     records: runRecords(all, periodIds),
+    // Le sessioni di cui il tab può leggere i dettagli: ripetute per la tenuta,
+    // continue per la deriva cardiaca.
+    fit: {
+      hold: pickLatest(sessions.filter(s => !s.continuous)),
+      drift: pickLatest(continuous),
+    },
   }
   report.insights = report.enough ? runInsights(report) : []
   return report

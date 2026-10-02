@@ -498,6 +498,60 @@ export function intensityFromRpe(rpe) {
   return 'intensa'
 }
 
+// ── Intensità suggerita dall'orologio ──────────────────────
+// Il file di tennis e quello di palestra non portano lo sforzo dichiarato
+// (`workout_rpe` c'è solo nella corsa, e solo se lo si imposta sull'orologio).
+// Quello che c'è è il training effect e il tempo nelle zone alte: se ne ricava
+// un SUGGERIMENTO, mai un valore. La scelta resta dell'utente: lo sforzo
+// percepito è l'unico dato soggettivo dell'app, e se lo ricavassi da FC e
+// training effect in automatico le statistiche incrociate confronterebbero un
+// dato con sé stesso. Per lo stesso motivo il suggerimento si salva solo se
+// l'utente lo conferma.
+//
+// Si usa solo nel tennis: nella palestra la FC lavora poco anche con pesi
+// pesanti (il carico Garmin di una sessione di forza è ~3 contro ~140 di una
+// partita), e un suggerimento sistematicamente «leggera» sarebbe sbagliato.
+//
+// Le soglie sono PROVVISORIE: tarate a occhio su un solo file di tennis. Vanno
+// riviste dopo qualche settimana di partite con il confronto sforzo/orologio di
+// Stats › Incroci, che dice quanto la scala dell'utente segue l'orologio.
+export const SUGGEST_TE = { medium: 2.5, hard: 3.8 }
+export const SUGGEST_HIGH_SHARE = { medium: 0.1, hard: 0.3 }
+export const SUGGEST_MIN_SEC = 600   // sotto i dieci minuti non c'è niente da giudicare
+
+const RANK = ['leggera', 'media', 'intensa']
+
+export function suggestIntensity(a) {
+  if (!a || (isNum(a.durationSec) && a.durationSec < SUGGEST_MIN_SEC)) return null
+
+  const candidates = []
+
+  const te = Math.max(isNum(a.trainingEffect) ? a.trainingEffect : -1, isNum(a.anaerobicTrainingEffect) ? a.anaerobicTrainingEffect : -1)
+  if (te >= 0) {
+    candidates.push({
+      rank: te >= SUGGEST_TE.hard ? 2 : te >= SUGGEST_TE.medium ? 1 : 0,
+      basis: `training effect ${te.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`,
+    })
+  }
+
+  const zones = Array.isArray(a.zones) ? a.zones : null
+  const total = zones ? zones.reduce((sum, v) => sum + (isNum(v) ? v : 0), 0) : 0
+  if (zones && total >= SUGGEST_MIN_SEC) {
+    const share = ((zones[4] || 0) + (zones[5] || 0) + (zones[6] || 0)) / total
+    candidates.push({
+      rank: share >= SUGGEST_HIGH_SHARE.hard ? 2 : share >= SUGGEST_HIGH_SHARE.medium ? 1 : 0,
+      basis: `${Math.round(share * 100)}% del tempo in Z4-Z6`,
+    })
+  }
+
+  if (!candidates.length) return null
+  // Vince il segnale più alto: una partita con un training effect basso ma un
+  // terzo del tempo in zona alta è stata dura, e il training effect da solo la
+  // nasconderebbe.
+  const best = candidates.reduce((b, c) => (c.rank > b.rank ? c : b))
+  return { id: RANK[best.rank], basis: best.basis }
+}
+
 // ── Confronto pianificato contro reale ─────────────────────
 
 // Per ogni fase della sequenza srotolata (ripetute comprese) il lap che la

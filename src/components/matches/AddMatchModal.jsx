@@ -17,6 +17,8 @@ import { INTENSITIES } from '../../lib/training'
 import { levelLabel } from '../../lib/opponents'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 import FitImport from '../athletics/FitImport'
+import IntensitySuggestion from '../athletics/IntensitySuggestion'
+import { intensityFromRpe } from '../../lib/fit'
 
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura', 'Atletica']
 
@@ -68,8 +70,12 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
   const outcome  = computeOutcome(form.sets, form.format, form.retired)
   const athIssues = athleticsIssues(form.athletics)
 
+  // Se l'orologio ha registrato lo sforzo dichiarato (accade solo se lo si
+  // imposta sul profilo dell'attività) diventa l'intensità, come per corsa e
+  // palestra; altrimenti resta quella già scelta.
   const importFit = (summary) => setForm(f => ({
     ...f, athletics: athleticsDraft(summary.athletics), fitSummary: summary, fitDetails: summary.details,
+    intensity: intensityFromRpe(summary.rpe) || f.intensity,
   }))
 
   const stepValid = (() => {
@@ -727,6 +733,7 @@ function StepAthletics({ value, onChange, issues, intensity, onIntensityChange, 
             ? 'Alimenta il carico di allenamento in Stats › Attività. Tocca di nuovo per togliere.'
             : 'Se non la indichi, in Stats la partita viene contata come sforzo alto — che è quello che una partita è di solito.'}
         </p>
+        <IntensitySuggestion athletics={value} current={intensity} onUse={onIntensityChange} />
       </FieldGroup>
 
       <FitImport

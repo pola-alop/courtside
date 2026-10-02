@@ -7,6 +7,7 @@ import {
 import { trainingGameEquivalents } from '../../lib/wear'
 import AthleticsSection from '../athletics/AthleticsSection'
 import TrainingAthleticsEditor from './TrainingAthleticsEditor'
+import IntensitySuggestion from '../athletics/IntensitySuggestion'
 
 const MAX_NOTE_LENGTH = 150
 
@@ -125,6 +126,13 @@ export default function TrainingDetailModal({
               </button>
             )}
           </div>
+
+          {/* L'orologio può suggerire un'intensità diversa da quella segnata: un tap
+              per confermarla, altrimenti resta quella dell'utente. */}
+          {mode === 'view' && (
+            <IntensitySuggestion athletics={training.athletics} current={training.intensity}
+              onUse={async (id) => { if (!saving) { setSaving(true); await onUpdate(training.id, { intensity: id }); setSaving(false) } }} />
+          )}
 
           {/* Blocchi della sessione */}
           <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--color-surface-2)' }}>

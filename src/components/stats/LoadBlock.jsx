@@ -1,4 +1,5 @@
 import { Card, Tile, NotEnough, Note, InfoButton, InfoItem } from './StatsUI'
+import { DOMAINS, DOMAIN_BY_ID } from '../../lib/crossStats'
 import {
   ACWR_MIN, ACWR_MAX, ACWR_HIGH, MONOTONY_HIGH, MIN_ACWR_DAYS, MIN_ACWR_SESS,
   LOAD_RPE, MATCH_RPE, formatDuration,
@@ -18,14 +19,21 @@ import {
 //     alert di usura in Panoramica compaiono solo a offset 0: un rapporto
 //     acuto/cronico riferito a tre mesi fa non dice niente su cosa fare domani.
 //
+// ── Il carico è di tutto il corpo, il volume no ──
+// Qui entrano anche corsa e palestra (`report.loadWeeks`, `report.load`): al
+// corpo non importa dove ha faticato, e un ACWR che ignorasse una settimana di
+// corsa e ghisa direbbe «sei fresco» a chi non lo è. Le ore in campo del resto
+// della sezione restano invece solo di tennis.
+//
 // L'unità del carico è arbitraria (minuti × RPE): conta il confronto tra
 // settimane, non il valore assoluto. La pagina lo dichiara invece di far
 // credere che "1.400" significhi qualcosa in sé.
 export default function LoadBlock({ report }) {
-  const { load, weeks } = report
+  const { load } = report
+  const weeks = report.loadWeeks || report.weeks
 
   return (
-    <Card id="carico" title="Carico e rischio" sub="Le stesse ore lette come dose di allenamento"
+    <Card id="carico" title="Carico e rischio" sub="Tennis, corsa e palestra lette come dose di allenamento"
           titleExtra={<InfoButton title="Carico, ACWR, monotonia"><LoadInfo /></InfoButton>}>
 
       <WeeklyLoadChart weeks={weeks} />
@@ -43,7 +51,8 @@ export default function LoadBlock({ report }) {
         hai segnato sulla sessione: {LOAD_RPE.leggera} se leggera, {LOAD_RPE.media} se media,
         {' '}{LOAD_RPE.intensa} se intensa. Dove il campo è vuoto si usa un valore di riferimento —
         {' '}{LOAD_RPE.media} per un allenamento, {MATCH_RPE} per una partita, che si gioca a punti
-        veri e sta per definizione nella fascia alta.
+        veri e sta per definizione nella fascia alta. Corsa e palestra contano come il tennis; senza
+        i dati dell'orologio la loro durata è quella stimata dalla scheda.
         {load.available && load.declaredShare != null && load.declaredShare < 1 && (
           <> Nelle ultime 4 settimane il <strong>{Math.round(load.declaredShare * 100)}%</strong> dei
           minuti ha uno sforzo dichiarato: il resto è assunto, quindi questi numeri sono un ordine di
@@ -56,13 +65,22 @@ export default function LoadBlock({ report }) {
   )
 }
 
-// Una serie sola (il carico), quindi nessuna legenda: qui il colore porta
-// magnitudine, non identità. La settimana in corso è l'ultima barra ed è
+// Con il solo tennis è una serie sola (il carico), quindi nessuna legenda: il
+// colore porta magnitudine, non identità. Con più domini il colore porta
+// l'identità e la legenda ha il valore accanto. La settimana in corso è l'ultima barra ed è
 // incompleta per costruzione, quindi viene distinta invece di essere letta come
 // un crollo.
 function WeeklyLoadChart({ weeks }) {
   if (weeks.length < 2) return null
   const max = Math.max(1, ...weeks.map(w => w.load))
+  // Con corsa o palestra nel periodo le barre si impilano per dominio e la
+  // legenda porta il valore accanto al colore; con il solo tennis restano a
+  // serie singola e senza legenda, come prima.
+  const stacked = weeks.some(w => w.sessions.some(s => (s.domain || 'tennis') !== 'tennis'))
+  const totals = DOMAINS.map(d => ({
+    ...d, load: weeks.reduce((sum, w) => sum + domainLoad(w, d.id), 0),
+  }))
+  const grand = totals.reduce((sum, d) => sum + d.load, 0)
   const withLoad = weeks.filter(w => w.load > 0)
   const avg = withLoad.length ? withLoad.reduce((s, w) => s + w.load, 0) / weeks.length : 0
 
@@ -84,17 +102,44 @@ function WeeklyLoadChart({ weeks }) {
             non si distingue da una settimana normale in un periodo tranquillo. */}
         <div className="absolute left-0 right-0 h-px pointer-events-none"
              style={{ bottom: `${(avg / max) * 100}%`, background: 'var(--color-white)', opacity: 0.25 }} />
-        {weeks.map((w, i) => (
-          <div key={w.start} className="flex-1 min-w-0 rounded-t-[2px]"
-               title={`${weekLabel(w.start)} · ${w.n} sessioni · ${formatDuration(w.minutes)} · carico ${formatLoad(w.load)}`}
-               style={{
-                 height: `${Math.max(w.load > 0 ? 3 : 1, (w.load / max) * 100)}%`,
-                 background: w.load === 0
-                   ? 'var(--color-surface-2)'
-                   : i === weeks.length - 1 ? 'var(--color-teal-light)' : 'var(--color-teal-dark)',
-               }} />
-        ))}
+        {weeks.map((w, i) => {
+          const title = `${weekLabel(w.start)} · ${w.n} sessioni · ${formatDuration(w.minutes)} · carico ${formatLoad(w.load)}`
+          const height = `${Math.max(w.load > 0 ? 3 : 1, (w.load / max) * 100)}%`
+          if (!stacked || w.load === 0) {
+            return (
+              <div key={w.start} className="flex-1 min-w-0 rounded-t-[2px]" title={title}
+                   style={{
+                     height,
+                     background: w.load === 0
+                       ? 'var(--color-surface-2)'
+                       : i === weeks.length - 1 ? 'var(--color-teal-light)' : 'var(--color-teal-dark)',
+                   }} />
+            )
+          }
+          // La settimana in corso è più chiara perché incompleta, non perché
+          // sia un dominio diverso: l'opacità non tocca i colori dei domini.
+          return (
+            <div key={w.start} className="flex-1 min-w-0 flex flex-col-reverse rounded-t-[2px] overflow-hidden" title={title}
+                 style={{ height, opacity: i === weeks.length - 1 ? 0.6 : 1 }}>
+              {DOMAINS.map(d => {
+                const v = domainLoad(w, d.id)
+                return v > 0 ? <div key={d.id} style={{ height: `${(v / w.load) * 100}%`, background: d.color }} /> : null
+              })}
+            </div>
+          )
+        })}
       </div>
+      {stacked && grand > 0 && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+          {totals.filter(d => d.load > 0).map(d => (
+            <span key={d.id} className="flex items-center gap-1.5 text-[10px]" style={{ color: 'var(--color-slate)' }}>
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: d.color }} />
+              {d.label}
+              <span style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>{Math.round((d.load / grand) * 100)}%</span>
+            </span>
+          ))}
+        </div>
+      )}
       <div className="flex justify-between mt-1">
         <span className="text-[9px]" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
           {weekLabel(weeks[0].start)}
@@ -139,8 +184,31 @@ function AcwrSection({ load }) {
         <Tile label="Strain" value={load.strain == null ? '—' : formatLoad(load.strain)} sub="carico × monotonia" />
       </div>
 
+      <AcuteByDomain byDomain={load.byDomain} />
+
       <DailyLoad daily={load.daily} />
     </>
+  )
+}
+
+// Di chi è il carico degli ultimi 7 giorni. Compare solo se ne hanno prodotto
+// più di un dominio: con il solo tennis sarebbe «tennis 100%», che non dice niente.
+function AcuteByDomain({ byDomain }) {
+  if (!byDomain) return null
+  const parts = DOMAINS.filter(d => byDomain[d.id] > 0)
+  if (parts.length < 2) return null
+  const total = parts.reduce((s, d) => s + byDomain[d.id], 0)
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+      <span className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--color-slate)' }}>Acuto di</span>
+      {parts.map(d => (
+        <span key={d.id} className="flex items-center gap-1.5 text-[10px]" style={{ color: 'var(--color-slate)' }}>
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: DOMAIN_BY_ID[d.id].color }} />
+          {d.label}
+          <span style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>{Math.round((byDomain[d.id] / total) * 100)}%</span>
+        </span>
+      ))}
+    </div>
   )
 }
 
@@ -250,6 +318,13 @@ function LoadInfo() {
         minuti recenti hanno uno sforzo davvero dichiarato: più è alta quella quota, più questi
         numeri sono un dato invece che una stima.
       </InfoItem>
+      <InfoItem title="Tennis, corsa e palestra">
+        Il carico è di <strong>tutto il corpo</strong>: una corsa o una palestra pesano sull'ACWR come
+        una sessione di tennis, con la stessa formula durata × sforzo (l'intensità che segni nel
+        wizard). Le barre sono impilate per dominio, e le ore in campo del resto della sezione
+        restano solo di tennis. Corsa e palestra senza dati dell'orologio entrano con la durata
+        stimata dalla scheda, e il numero sotto le barre dice quanta parte è dichiarata.
+      </InfoItem>
       <InfoItem title="Carico settimanale">
         Una barra per ogni settimana del periodo. La linea orizzontale chiara è la tua media, e
         l'ultima barra è la settimana in corso — è più chiara perché non è ancora finita, e va letta
@@ -310,6 +385,12 @@ function monotonyLabel(m) {
 
 function zoneIcon(id) {
   return { low: '💤', ok: '✅', high: '⚠️', spike: '🚨' }[id] || 'ℹ️'
+}
+
+function domainLoad(week, domainId) {
+  return week.sessions
+    .filter(s => (s.domain || 'tennis') === domainId)
+    .reduce((sum, s) => sum + s.minutes * s.rpe, 0)
 }
 
 function weekLabel(time) {

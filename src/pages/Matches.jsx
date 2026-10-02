@@ -70,7 +70,7 @@ const RESULT_FILTERS = [
 
 export default function Matches() {
   const { opponents, loading: oppLoading, add: addOpponent, update: updateOpponent, remove: removeOpponent } = useOpponents()
-  const { matches,   loading: matchLoading, add: addMatch, update: updateMatch, remove: removeMatch } = useMatches()
+  const { matches,   loading: matchLoading, add: addMatch, update: updateMatch, remove: removeMatch, reload: reloadMatches } = useMatches()
   const { trainings, loading: trainLoading, add: addTraining, update: updateTraining, remove: removeTraining } = useTrainings()
   const { equipment } = useEquipment()
   const { runs, loading: runLoading, add: addRun, update: updateRun, remove: removeRun } = useRuns()
@@ -614,7 +614,11 @@ export default function Matches() {
           matches={matchesVs(selectedOpponent.id)}
           onClose={() => setSelectedOpponentId(null)}
           onSelectMatch={(matchId) => setSelectedMatchId(matchId)}
-          onUpdate={async (id, data) => { await updateOpponent(id, data) }}
+          onUpdate={async (id, data) => {
+            await updateOpponent(id, data)
+            // Le partite portano una copia del nome: dopo una rinomina vanno riallineate.
+            if (data.name !== undefined) await reloadMatches()
+          }}
           onDelete={async (id) => {
             // Guard difensiva: il bottone di eliminazione è già nascosto nel
             // modale quando ci sono match collegati, ma non fidarsi solo della UI.

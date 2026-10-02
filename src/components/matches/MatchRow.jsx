@@ -12,7 +12,7 @@ export default function MatchRow({ match, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-2xl p-3 flex flex-col gap-2 transition-all active:scale-[0.98]"
+      className="w-full text-left rounded-2xl p-3 flex flex-col gap-2 min-w-0 overflow-hidden transition-all active:scale-[0.98]"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}
     >
       {/* Top — data + esito */}
@@ -41,10 +41,10 @@ export default function MatchRow({ match, onClick }) {
           proprio: è l'informazione che dà la posta in gioco della partita
           ("era un quarto di finale") e in coda a superficie ed evento sarebbe
           la prima cosa a essere troncata su uno schermo stretto. */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-1.5 min-w-0">
           <span className="text-xs shrink-0">{surfaceIcon(match.surface)}</span>
-          <span className="text-xs truncate min-w-0" style={{ color: 'var(--color-slate)' }}>
+          <span className="text-xs break-words min-w-0" style={{ color: 'var(--color-slate)' }}>
             {cap(match.surface)} · {typeLabel}{eventSuffix}
           </span>
         </div>

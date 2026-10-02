@@ -16,14 +16,15 @@ export default function TournamentCard({ run, onClick }) {
       className="w-full text-left rounded-2xl p-3 flex flex-col gap-2 overflow-hidden transition-all active:scale-[0.98]"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}
     >
-      {/* Nome + esito */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-sm font-bold truncate"
+      {/* Nome + esito. Nome e date vanno a capo (la card si allunga) e l'esito
+          scende sotto se non c'è spazio: niente più testo che sfora il bordo. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1.5">
+        <div className="min-w-0 flex-1 basis-40">
+          <p className="text-sm font-bold break-words"
              style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
             {run.name}
           </p>
-          <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+          <p className="text-xs mt-0.5 break-words" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
             {formatRange(run.startDate, run.endDate)}
             {run.surfaces.length > 0 && ` · ${run.surfaces.map(surfaceIcon).join(' ')}`}
           </p>

@@ -470,7 +470,7 @@ export function crossInsights(r) {
     const worse = f.gap.diff < 0
     const n = Math.min(f.gap.recent.n, f.gap.none.n)
     out.push(insight({
-      id: `cross-match-${f.id}`, target: 'incroci-partite', tone: worse ? 'bad' : 'good', icon: f.icon,
+      id: `cross-match-${f.id}`, family: 'match', target: 'incroci-partite', tone: worse ? 'bad' : 'good', icon: f.icon,
       effect: f.gap.diff, n,
       text: `Dopo ${f.short} nei due giorni prima vinci il ${pct(f.gap.recent.rate)} dei game, contro il ${pct(f.gap.none.rate)} senza ${f.short} nella settimana (${f.gap.recent.n} contro ${f.gap.none.n} partite): ${pp(f.gap.diff)} punti ${worse ? 'in meno' : 'in più'}.`,
     }))
@@ -479,7 +479,7 @@ export function crossInsights(r) {
   if (r.byLoad.gap && Math.abs(r.byLoad.gap.diff) >= MIN_DELTA_PP) {
     const { diff, high, ok } = r.byLoad.gap
     out.push(insight({
-      id: 'cross-load', target: 'incroci-carico', tone: diff < 0 ? 'bad' : 'good', icon: '📈',
+      id: 'cross-load', family: 'load', target: 'incroci-carico', tone: diff < 0 ? 'bad' : 'good', icon: '📈',
       effect: diff, n: Math.min(high.n, ok.n),
       text: `Quando arrivi alla partita con il carico alto (ACWR sopra ${ACWR_MAX}) vinci il ${pct(high.rate)} dei game, contro il ${pct(ok.rate)} con il carico ottimale (${high.n} contro ${ok.n} partite).`,
     }))
@@ -490,7 +490,7 @@ export function crossInsights(r) {
       if (!f.available || !f.gap || Math.abs(f.gap.diff) < MIN_DELTA_BPM) return
       const n = Math.min(f.gap.recent.n, f.gap.none.n)
       out.push(insight({
-        id: `cross-body-${f.id}`, target: 'incroci-condizione', tone: f.gap.diff > 0 ? 'bad' : 'good', icon: '❤️',
+        id: `cross-body-${f.id}`, family: 'body', target: 'incroci-condizione', tone: f.gap.diff > 0 ? 'bad' : 'good', icon: '❤️',
         effect: f.gap.diff / 10, n,
         text: `Dopo ${f.short} nei due giorni prima il cuore lavora ${bpm(f.gap.diff)} battiti ${f.gap.diff > 0 ? 'in più' : 'in meno'} a parità di velocità (${f.gap.recent.n} contro ${f.gap.none.n} sessioni di tennis con l'orologio).`,
       }))
@@ -498,14 +498,18 @@ export function crossInsights(r) {
     r.body.correlations.forEach(c => {
       if (!c.available || c.r == null || Math.abs(c.r) < MIN_CORR_R) return
       out.push(insight({
-        id: `cross-corr-${c.unit}`, target: 'incroci-condizione', tone: c.r < 0 ? 'good' : 'bad', icon: '🔗',
+        id: `cross-corr-${c.unit}`, family: 'corr', target: 'incroci-condizione', tone: c.r < 0 ? 'good' : 'bad', icon: '🔗',
         effect: c.r, n: c.n,
         text: `Più ${c.unit === 'km' ? 'corri' : 'ti alleni in palestra'}, ${c.r < 0 ? 'più basso' : 'più alto'} è il battito del tennis a parità di velocità (r ${c.r.toFixed(2).replace('.', ',')} su ${c.n} sessioni).`,
       }))
     })
   }
 
-  return out.sort((a, b) => b.weight - a.weight).slice(0, MAX_INSIGHTS)
+  // Una frase per famiglia: «palestra» e «palestra con le gambe» sono la stessa
+  // ipotesi vista da due lati, e dirle entrambe è rumore. Resta la più forte.
+  const best = new Map()
+  out.forEach(i => { if (!best.has(i.family) || best.get(i.family).weight < i.weight) best.set(i.family, i) })
+  return [...best.values()].sort((a, b) => b.weight - a.weight).slice(0, MAX_INSIGHTS)
 }
 
 function isNum(v) {

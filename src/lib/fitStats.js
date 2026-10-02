@@ -154,7 +154,7 @@ export function holdReport(sessions, byId) {
 
   return {
     n: rows.length, rows, missing, noBlocks, schemes,
-    deltaPct: rows.length ? mean(rows.map(r => r.deltaPct)) : null,
+    deltaPct: rows.length ? round1(mean(rows.map(r => r.deltaPct))) : null,
   }
 }
 
@@ -207,7 +207,7 @@ export function driftReport(sessions, byId) {
   })
   return {
     n: rows.length, rows, missing, short,
-    driftPct: rows.length >= MIN_DRIFT_N ? mean(rows.map(r => r.driftPct)) : null,
+    driftPct: rows.length >= MIN_DRIFT_N ? round1(mean(rows.map(r => r.driftPct))) : null,
   }
 }
 
@@ -253,10 +253,11 @@ export function thirdsReport(sessions, byId) {
     rows.push({ id: s.id, day: s.day, label: s.label, ...r })
   })
   const enough = rows.length >= MIN_DRIFT_N
+  const thirds = enough ? [0, 1, 2].map(k => Math.round(mean(rows.map(r => r.thirds[k])))) : null
   return {
     n: rows.length, rows, missing, short,
-    thirds: enough ? [0, 1, 2].map(k => mean(rows.map(r => r.thirds[k]))) : null,
-    deltaBpm: enough ? mean(rows.map(r => r.deltaBpm)) : null,
+    thirds,
+    deltaBpm: thirds ? thirds[2] - thirds[0] : null,
   }
 }
 

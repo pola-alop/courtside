@@ -1,10 +1,16 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, Tile, BarRow, NotEnough, SampleTag, Note, InfoButton, InfoItem, ZoneBar, WeekBars, Sparkline } from './StatsUI'
 import { EconomyChart } from './MovementBlock'
+import FitGate from './FitGate'
 import {
   MIN_RUN, MIN_PACE, MIN_SCHEME, MIN_LOAD, MIN_DYNAMICS, MIN_RECORD_KM,
 } from '../../lib/runStats'
 import { MIN_WEEKS } from '../../lib/activity'
+import {
+  holdReport, driftReport, holdVerdict, driftVerdict, MIN_REPS, MIN_LAP_SEC, MIN_DRIFT_N, HOLD_TOLERANCE_PCT,
+  DRIFT_WARMUP_SEC, DRIFT_MIN_SEC, DRIFT_STABLE_PCT, DRIFT_HIGH_PCT, MIN_SCHEME_SESSIONS,
+} from '../../lib/fitStats'
 import { MIN_ZONES, MIN_TE, formatKmh, formatBpm, formatDelta, formatMinutes } from '../../lib/physical'
 import { HR_ZONES, formatDuration, formatTrainingEffect, trainingEffectLabel } from '../../lib/athletics'
 import { formatPace } from '../../lib/running'
@@ -20,6 +26,7 @@ import { formatPace } from '../../lib/running'
 //   2. Costanza           — settimane attive, striscia, buchi
 //   3. Passo              — le corse continue e «la stessa scheda nel tempo»
 //   4. Efficienza cardiaca — la FC a parità di velocità
+//   4b. Tenuta nelle ripetute e deriva cardiaca — dai lap e dalle serie del file
 //   5. Intensità          — quanto del tempo è facile e quanto duro
 //   6. Stimolo e carico   — training effect e carico Garmin
 //   7. Dinamiche          — potenza, cadenza, passo, oscillazione, contatto
@@ -29,6 +36,11 @@ import { formatPace } from '../../lib/running'
 // Il passo medio di una corsa a ripetute non è confrontabile con quello di una
 // continua. Il trend del passo e l'efficienza guardano solo le continue; per le
 // altre c'è il confronto con se stesse (la stessa scheda).
+//
+// ── Lap e serie: su richiesta ──
+// Tenuta e deriva leggono `fitDetails`, un documento per sessione. Quei due
+// blocchi restano chiusi e leggono solo al tap (`FitGate`); tutto il resto della
+// sezione nasce dal riassunto già scaricato.
 //
 // ── Niente drill-down ──
 // Come Attività, Tecnica, Fisico e Palestra: l'elenco delle corse esiste già nel
@@ -59,6 +71,8 @@ export default function Corsa({ report, periodLabel }) {
       <ConsistencyCard report={report} />
       <PaceCard report={report} />
       <EconomyCard report={report} />
+      <HoldCard report={report} />
+      <DriftCard report={report} />
       <IntensityCard report={report} />
       <LoadCard report={report} />
       <DynamicsCard report={report} />
@@ -448,6 +462,297 @@ function EconomyCard({ report }) {
         {' '}Il confronto divide le corse in due metà cronologiche{h?.dropped ? ' e lascia fuori quella centrale' : ''}.
       </Note>
     </Card>
+  )
+}
+
+// ── Blocco 4b — Tenuta nelle ripetute ──────────────────────
+// Dai lap del file: per ogni gruppo di ripetizioni dello stesso step, il passo
+// della prima contro quello dell'ultima. Positivo = l'ultima è più lenta.
+
+const VERDICT_WORD = { holds: 'regge', fades: 'cala', improves: 'migliora' }
+const SESSIONS_SHOWN = 5
+
+function holdColor(verdict) {
+  if (verdict === 'improves') return 'var(--color-win)'
+  if (verdict === 'fades') return 'var(--color-amber)'
+  return 'var(--color-white)'
+}
+
+function signed(v, digits = 1) {
+  const r = Math.round(v * 10 ** digits) / 10 ** digits
+  return `${r > 0 ? '+' : r < 0 ? '−' : ''}${Math.abs(r).toLocaleString('it-IT', { maximumFractionDigits: digits })}`
+}
+
+function HoldCard({ report }) {
+  const info = (
+    <InfoButton title="Come si legge la tenuta">
+      <InfoItem title="Cosa misura">
+        In una serie di ripetute il passo della prima è quasi sempre il più bello. La tenuta
+        confronta il passo della prima ripetizione con quello dell'ultima, per ogni gruppo di
+        ripetizioni uguali della scheda. Positivo vuol dire che l'ultima è più lenta: la tenuta cala.
+      </InfoItem>
+      <InfoItem title="Quando regge">
+        Entro ±{HOLD_TOLERANCE_PCT}% sul passo si dice «regge»: sotto quella soglia a variare è
+        anche il GPS dell'orologio. Sono valori di partenza, uguali per tutti, non tarati su di te.
+      </InfoItem>
+      <InfoItem title="Cosa entra e cosa no">
+        Solo i gruppi di almeno {MIN_REPS} ripetizioni di lavoro, lunghe almeno {MIN_LAP_SEC} secondi:
+        sotto, la prima parte da ferma e il passo misurato non dice come stai tenendo. Il
+        riscaldamento e gli esercizi non contano.
+      </InfoItem>
+      <InfoItem title="Il battito">
+        La frequenza cardiaca è confrontata dalla seconda ripetizione all'ultima, non dalla prima:
+        la prima parte dal recupero precedente e direbbe solo quanto ti eri riposato. Tenere lo
+        stesso passo con più battiti è fatica che si accumula.
+      </InfoItem>
+      <InfoItem title="La stessa scheda nel tempo">
+        Per una scheda eseguita almeno {MIN_SCHEME_SESSIONS} volte, la tenuta media di ogni
+        esecuzione: la linea sale quando tieni meglio.
+      </InfoItem>
+    </InfoButton>
+  )
+
+  return (
+    <Card id="tenuta" title="Tenuta nelle ripetute" titleExtra={info}
+          sub="La prima ripetizione contro l'ultima, dal file .FIT">
+      <FitGate fit={report.fit.hold} unit="corse a ripetute">
+        {({ byId }) => <HoldBody sessions={report.fit.hold.list} byId={byId} />}
+      </FitGate>
+    </Card>
+  )
+}
+
+function HoldBody({ sessions, byId }) {
+  const [all, setAll] = useState(false)
+  const h = holdReport(sessions, byId)
+
+  if (h.n === 0) {
+    return (
+      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-slate)' }}>
+        Nessuna corsa ha un gruppo di almeno {MIN_REPS} ripetizioni lunghe {MIN_LAP_SEC} secondi o più
+        che si possa leggere{h.missing > 0 ? ` (${h.missing} senza i dettagli del file)` : ''}.
+      </p>
+    )
+  }
+
+  const verdict = holdVerdict(h.deltaPct)
+  const rows = [...h.rows].reverse()
+  const shown = all ? rows : rows.slice(0, SESSIONS_SHOWN)
+
+  return (
+    <>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-4xl font-bold leading-none"
+             style={{ color: holdColor(verdict), fontFamily: 'var(--font-display)' }}>
+            {signed(h.deltaPct)}<span className="text-lg"> %</span>
+          </p>
+          <p className="text-[10px] uppercase tracking-wide mt-1.5" style={{ color: 'var(--color-slate)' }}>
+            Ultima vs prima ripetizione
+          </p>
+        </div>
+        <SampleTag n={h.n} unit={h.n === 1 ? 'corsa' : 'corse'} />
+      </div>
+      <p className="text-[11px] mt-3 leading-relaxed" style={{ color: 'var(--color-white)' }}>
+        {verdict === 'holds'
+          ? `Nelle ripetute il passo dell'ultima è in media entro il ${HOLD_TOLERANCE_PCT}% di quello della prima: la tenuta regge.`
+          : verdict === 'fades'
+            ? `Nelle ripetute l'ultima è in media più lenta del ${Math.abs(Math.round(h.deltaPct * 10) / 10).toLocaleString('it-IT')}% rispetto alla prima: la tenuta cala.`
+            : `Nelle ripetute l'ultima è in media più veloce del ${Math.abs(Math.round(h.deltaPct * 10) / 10).toLocaleString('it-IT')}% rispetto alla prima.`}
+      </p>
+
+      <div className="mt-4 pt-4 space-y-4" style={{ borderTop: '1px solid var(--color-surface-2)' }}>
+        {shown.map(r => (
+          <div key={r.id}>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[11px] flex-1 min-w-0 truncate"
+                    style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                {r.label}
+              </span>
+              <span className="text-[10px] shrink-0" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+                {dayLabel(r.day)}
+              </span>
+            </div>
+            <div className="space-y-2 mt-2">
+              {r.blocks.map(b => (
+                <div key={b.step} className="flex items-center gap-3">
+                  <Sparkline points={b.paces.map(v => ({ value: -v }))} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px]" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
+                      {b.label}
+                      <span className="ml-2" style={{ color: holdColor(b.verdict) }}>
+                        {signed(b.deltaPct)}% · {VERDICT_WORD[b.verdict]}
+                      </span>
+                    </p>
+                    <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+                      {formatPace(b.firstPace)} → {formatPace(b.lastPace)} /km
+                      {b.hrDelta != null && <> · FC {b.hrFrom} → {b.hrTo} bpm</>}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        {rows.length > SESSIONS_SHOWN && (
+          <button type="button" onClick={() => setAll(v => !v)}
+                  className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-teal)' }}>
+            {all ? 'Mostra meno' : `Mostra altre ${rows.length - SESSIONS_SHOWN}`}
+          </button>
+        )}
+      </div>
+
+      {h.schemes.length > 0 && (
+        <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--color-surface-2)' }}>
+          <p className="text-[9px] uppercase tracking-wide mb-2.5" style={{ color: 'var(--color-slate)' }}>
+            La stessa scheda nel tempo
+          </p>
+          <div className="space-y-3">
+            {h.schemes.map(sc => (
+              <div key={sc.key} className="flex items-center gap-3">
+                {/* Il valore è cambiato di segno: la linea sale quando la tenuta migliora. */}
+                <Sparkline points={sc.points.map(pt => ({ value: -pt.value }))} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{sc.name}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+                    {sc.n} esecuzioni · {signed(sc.first)}% → {signed(sc.last)}%
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(h.missing > 0 || h.noBlocks > 0) && (
+        <Note>
+          {h.noBlocks > 0 ? `${h.noBlocks} ${h.noBlocks === 1 ? 'corsa non ha' : 'corse non hanno'} ripetizioni leggibili. ` : ''}
+          {h.missing > 0 ? `${h.missing} ${h.missing === 1 ? 'è senza' : 'sono senza'} i dettagli del file.` : ''}
+        </Note>
+      )}
+    </>
+  )
+}
+
+// ── Blocco 4c — Deriva cardiaca ────────────────────────────
+// Dalle serie del file, sulle sole corse continue: quanto sale il battito a
+// parità di velocità dalla prima alla seconda metà.
+
+const DRIFT_WORD = { stable: 'stabile', moderate: 'moderata', high: 'alta' }
+
+function driftColor(verdict) {
+  if (verdict === 'high') return 'var(--color-loss)'
+  if (verdict === 'moderate') return 'var(--color-amber)'
+  return 'var(--color-win)'
+}
+
+function DriftCard({ report }) {
+  const info = (
+    <InfoButton title="Come si legge la deriva cardiaca">
+      <InfoItem title="Cosa misura">
+        A parità di velocità il cuore dovrebbe lavorare più o meno uguale per tutta la corsa. La
+        deriva è quanto sale il rapporto tra battiti e velocità nella seconda metà rispetto alla
+        prima: è il modo in cui il corpo mostra che si sta stancando, o che non ha ancora la base
+        aerobica per quell'andatura.
+      </InfoItem>
+      <InfoItem title="Come si legge">
+        Sotto il {DRIFT_STABLE_PCT}% è stabile, fino al {DRIFT_HIGH_PCT}% moderata, oltre alta. Un
+        valore negativo vuol dire che hai chiuso con meno battiti per la stessa velocità. Sono
+        soglie di partenza uguali per tutti, prese dalla letteratura: non sono tarate su di te.
+      </InfoItem>
+      <InfoItem title="Cosa entra">
+        Solo le corse continue. I primi {DRIFT_WARMUP_SEC / 60} minuti sono riscaldamento e restano
+        fuori, così come i tratti sotto i 6 km/h (cammino e soste); servono almeno {DRIFT_MIN_SEC / 60}{' '}
+        minuti di corsa vera. Le metà sono di tempo in movimento.
+      </InfoItem>
+      <InfoItem title="Attenzione">
+        Caldo, disidratazione, salite e un'andatura che cambia spostano la deriva da soli: è un
+        indizio sulla condizione, non una misura. La media si calcola da {MIN_DRIFT_N} corse.
+      </InfoItem>
+    </InfoButton>
+  )
+
+  return (
+    <Card id="deriva" title="Deriva cardiaca" titleExtra={info}
+          sub="Il battito a parità di velocità, seconda metà contro prima">
+      <FitGate fit={report.fit.drift} unit="corse continue">
+        {({ byId }) => <DriftBody sessions={report.fit.drift.list} byId={byId} />}
+      </FitGate>
+    </Card>
+  )
+}
+
+function DriftBody({ sessions, byId }) {
+  const [all, setAll] = useState(false)
+  const d = driftReport(sessions, byId)
+
+  if (d.n === 0) {
+    return (
+      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-slate)' }}>
+        Nessuna corsa continua ha almeno {DRIFT_MIN_SEC / 60} minuti di corsa dopo il riscaldamento
+        {d.missing > 0 ? ` (${d.missing} senza i dettagli del file)` : ''}.
+      </p>
+    )
+  }
+
+  const rows = [...d.rows].reverse()
+  const shown = all ? rows : rows.slice(0, SESSIONS_SHOWN)
+
+  return (
+    <>
+      {d.driftPct != null ? (
+        <>
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-4xl font-bold leading-none"
+                 style={{ color: driftColor(driftVerdict(d.driftPct)), fontFamily: 'var(--font-display)' }}>
+                {signed(d.driftPct)}<span className="text-lg"> %</span>
+              </p>
+              <p className="text-[10px] uppercase tracking-wide mt-1.5" style={{ color: 'var(--color-slate)' }}>
+                Deriva media · {DRIFT_WORD[driftVerdict(d.driftPct)]}
+              </p>
+            </div>
+            <SampleTag n={d.n} unit="corse continue" />
+          </div>
+        </>
+      ) : (
+        <NotEnough need={MIN_DRIFT_N - d.n} unit="corse continue" what="Per la deriva media" />
+      )}
+
+      <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid var(--color-surface-2)' }}>
+        {shown.map(r => (
+          <div key={r.id}>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[11px] flex-1 min-w-0 truncate"
+                    style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                {r.label}
+              </span>
+              <span className="text-[11px] shrink-0 font-semibold"
+                    style={{ color: driftColor(r.verdict), fontFamily: 'var(--font-mono)' }}>
+                {signed(r.driftPct)}% · {DRIFT_WORD[r.verdict]}
+              </span>
+            </div>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+              {dayLabel(r.day)} · FC {Math.round(r.first.hr)} → {Math.round(r.second.hr)} bpm
+              {' · '}{fmt(r.first.kmh)} → {fmt(r.second.kmh)} km/h
+            </p>
+          </div>
+        ))}
+        {rows.length > SESSIONS_SHOWN && (
+          <button type="button" onClick={() => setAll(v => !v)}
+                  className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-teal)' }}>
+            {all ? 'Mostra meno' : `Mostra altre ${rows.length - SESSIONS_SHOWN}`}
+          </button>
+        )}
+      </div>
+
+      {(d.missing > 0 || d.short > 0) && (
+        <Note>
+          {d.short > 0 ? `${d.short} ${d.short === 1 ? 'corsa è troppo breve' : 'corse sono troppo brevi'} per misurarla (servono ${DRIFT_MIN_SEC / 60} minuti dopo il riscaldamento). ` : ''}
+          {d.missing > 0 ? `${d.missing} ${d.missing === 1 ? 'è senza' : 'sono senza'} i dettagli del file.` : ''}
+        </Note>
+      )}
+    </>
   )
 }
 

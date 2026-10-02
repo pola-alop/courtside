@@ -5,6 +5,8 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 ## [Unreleased]
 
 ### Aggiunto
+- **Stats › Incroci**: nuovo tab che mette in relazione corsa e palestra con il tennis. Per ogni partita e allenamento guarda cosa hai fatto nei 7 giorni prima (ieri o l'altro ieri, da 3 a 7 giorni, niente) e lo legge nei game vinti, nel voto ai colpi e nella frequenza cardiaca a parità di velocità; si può scegliere se confrontare palestra, palestra con le gambe, corsa o corsa dura. Aggiunge il rendimento per fascia di ACWR con cui si arriva alla partita, la relazione tra km corsi (o palestre) delle ultime 4 settimane e il cuore in campo, e il confronto tra l'intensità dichiarata e il carico Garmin. Ogni gruppo dichiara il campione e sotto soglia non parla.
+- **Intensità suggerita dall'orologio** per partite e allenamenti di tennis: dal training effect e dal tempo nelle zone alte compare «Dall'orologio sembra intensa» con un tap per confermare; non viene salvata se non la confermi. Se l'orologio ha registrato lo sforzo dichiarato, l'import lo usa per la partita come già per corsa e palestra.
 - **Import dei file Garmin (.fit o .zip)** per partite, allenamenti di tennis, corse e palestra: si sceglie il file scaricato da Garmin Connect ("Esporta originale") e l'app precompila durata, distanza, calorie, frequenza cardiaca, training effect e zone. Il file si legge sul telefono, non viene caricato né conservato.
 - Dal file arrivano anche il **carico Garmin**, la velocità massima, il dislivello e, per la corsa, potenza, cadenza e dinamiche di corsa (lunghezza del passo, oscillazione verticale, contatto al suolo).
 - **Curva della frequenza cardiaca** con le zone colorate nel dettaglio di ogni sessione importata; per la corsa anche passo, altitudine, potenza e percorso.
@@ -24,6 +26,7 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 - **Stats › Palestra**: volume e serie a settimana, manichino su periodo e ultimi 7 giorni, muscoli trascurati, bilancio spinta/trazione, progressione del massimale stimato per esercizio e medie dei dati dell'orologio, con i relativi insight.
 
 ### Modificato
+- **Il carico è di tutto il corpo**: ACWR, monotonia e strain di Stats › Attività e l'avviso di carico in Home contano ora anche corsa e palestra (durata × intensità, durata stimata dalla scheda quando manca l'orologio). Le barre del carico settimanale sono impilate per dominio. Ore in campo, costanza e mix restano solo di tennis.
 - **Zone cardiache a 7 fasce come Garmin** (Z0 riposo, Z1–Z5, Z6 oltre il massimo) in tutta l'app: dati atletici, tabella **Zone di corsa** del Profilo, zone delle fasi di corsa e statistiche Fisico. I dati salvati con 5 zone restano validi; per correre serve ora compilare anche il passo di Z0 e Z6.
 - Le ore del mese nella lista Allenamenti sommano anche le sessioni di palestra.
 - Le card degli allenamenti di tennis mostrano la 🎾 davanti al titolo, come la 🏃 delle corse, per riconoscere il tipo a colpo d'occhio.

@@ -209,14 +209,14 @@ function MatchesCard({ report, factor }) {
           </div>
           <Gap gap={factor.gap} unit="pp" threshold={MIN_DELTA_PP}
                missing={`Nessun confronto leggibile: servono almeno ${MIN_BRIDGE} partite sia in «${factor.buckets[0].label.toLowerCase()}» sia in «${factor.buckets[2].label.toLowerCase()}».`} />
+          <Note>
+            La tacca verticale è il tuo GW% del periodo. «{factor.buckets[0].label}» è la finestra della
+            stanchezza ({RECENT_DAYS} giorni), «{factor.buckets[1].label.toLowerCase()}» quella del lavoro
+            che si assorbe: se la prima va peggio e la seconda meglio della media, il carico si paga
+            subito e rende dopo.
+          </Note>
         </>
       )}
-      <Note>
-        La tacca verticale è il tuo GW% del periodo. «{factor.buckets[0].label}» è la finestra della
-        stanchezza ({RECENT_DAYS} giorni), «{factor.buckets[1].label.toLowerCase()}» quella del lavoro
-        che si assorbe: se la prima va peggio e la seconda meglio della media, il carico si paga
-        subito e rende dopo.
-      </Note>
     </Card>
   )
 }

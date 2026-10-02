@@ -34,6 +34,7 @@ import { TRAINED_POINTS } from './gymStats'
 import { toAthleticSessions, cardiacEconomy, MIN_SIDE } from './physical'
 import { readZones, zonesTotalSec } from './athletics'
 import { INTENSITIES } from './training'
+import { calibrateIntensity } from './fit'
 
 // ── Soglie minime di campione ──────────────────────────────
 export const MIN_TENNIS     = 5   // sessioni di tennis nel periodo, per aprire la sezione
@@ -399,8 +400,9 @@ function perceivedVsWatch(sessions) {
 // ── Report completo ────────────────────────────────────────
 // `matches` e `trainings` sono quelli del PERIODO; `loadSessions` è l'intero
 // storico di tutti i domini (serve a guardare indietro dall'inizio del periodo
-// e a calcolare l'ACWR di ogni partita).
-export function buildCross({ matches = [], trainings = [], loadSessions = [], range = null }) {
+// e a calcolare l'ACWR di ogni partita); `allMatches` è l'intero storico delle
+// partite, per la calibrazione dell'intensità suggerita.
+export function buildCross({ matches = [], trainings = [], loadSessions = [], allMatches = null, range = null }) {
   const offAll = loadSessions.filter(s => s.domain !== 'tennis')
   const offByDay = byDayMap(offAll)
   const factorTotals = Object.fromEntries(FACTORS.map(f => [f.id, offAll.filter(f.test).length]))
@@ -436,6 +438,10 @@ export function buildCross({ matches = [], trainings = [], loadSessions = [], ra
   report.trainings = trainingsAfter(trainings, offByDay, factorTotals)
   report.body      = conditionAfter(athletic, offByDay, factorTotals, offAll)
   report.perceived = perceivedVsWatch(periodLoad)
+  // La calibrazione dell'intensità suggerita legge TUTTE le partite, non il
+  // periodo: serve il campione più ampio possibile, e le soglie sono le stesse
+  // che vede il wizard.
+  report.calibration = calibrateIntensity(allMatches || matches)
   report.insights  = crossInsights(report)
   return report
 }

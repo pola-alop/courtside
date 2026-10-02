@@ -7,6 +7,8 @@ import {
 import { MIN_BRIDGE, formatPct } from '../../lib/stats'
 import { MIN_SIDE, formatDelta } from '../../lib/physical'
 import { ACWR_MIN, ACWR_MAX } from '../../lib/activity'
+import { CALIB_MIN_PER_LEVEL, DEFAULT_THRESHOLDS } from '../../lib/fit'
+import { intensityMeta } from '../../lib/training'
 
 // Sezione "Incroci" — risponde a "corsa e palestra aiutano o pesano sul mio
 // tennis?". Unisce i tre domini: ogni sessione di tennis si legge in funzione di
@@ -19,6 +21,8 @@ import { ACWR_MIN, ACWR_MAX } from '../../lib/activity'
 //   4. Gli allenamenti di tennis — il voto che dai ai colpi, per cosa c'era prima
 //   5. Il cuore in campo        — la FC a parità di velocità, e i km corsi
 //   6. Sforzo e orologio        — l'intensità dichiarata contro il carico Garmin
+//   7. Le tue intensità         — cosa dice l'orologio di leggera, media e intensa,
+//                                 e le soglie del suggerimento che ne derivano
 //
 // ── Un solo selettore per tre blocchi ──
 // I blocchi 2, 4 e 5 rispondono alla stessa domanda su tre esiti diversi
@@ -48,6 +52,7 @@ export default function Incroci({ report, periodLabel }) {
       <TrainingsCard report={report} factor={pick(report.trainings)} />
       <BodyCard report={report} factor={report.body.available ? pick(report.body) : null} />
       <PerceivedCard report={report} />
+      <CalibrationCard report={report} />
 
       <Note>
         Tutto qui è <strong>correlazione, non causa</strong>. Nei periodi in cui ti alleni di più
@@ -578,6 +583,141 @@ function PerceivedInfo() {
       <InfoItem title="Attenzione">
         In corsa e palestra il wizard preseleziona «media»: una media dichiarata può essere
         semplicemente il valore che non hai toccato.
+      </InfoItem>
+    </>
+  )
+}
+
+// ── Blocco 7 — Le tue intensità ─────────────────────────────
+// Il blocco che rende leggibile il suggerimento «quanto è stata dura»: per ogni
+// intensità che hai SCELTO sulle partite, cosa ha registrato l'orologio. Le
+// soglie del suggerimento sono i punti a metà tra una riga e la successiva
+// (sfumati verso i valori predefiniti finché i campioni sono pochi).
+
+function CalibrationCard({ report }) {
+  const c = report.calibration
+  const info = <InfoButton title="Le tue intensità"><CalibrationInfo /></InfoButton>
+
+  return (
+    <Card id="incroci-intensita" title="Le tue intensità" titleExtra={info}
+          sub="Cosa dice l'orologio di leggera, media e intensa · partite, tutto lo storico"
+          right={<SampleTag n={c.n} unit="partite" />}>
+      {c.n === 0 ? (
+        <NotEnough need={CALIB_MIN_PER_LEVEL} unit="partite per livello con l'intensità scelta da te e i dati dell'orologio"
+                   what="Per imparare la tua scala" />
+      ) : (
+        <>
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-2 items-baseline">
+            <span />
+            <span className="text-[9px] uppercase tracking-wide text-right" style={{ color: 'var(--color-slate)' }}>Partite</span>
+            <span className="text-[9px] uppercase tracking-wide text-right" style={{ color: 'var(--color-slate)' }}>Training eff.</span>
+            <span className="text-[9px] uppercase tracking-wide text-right" style={{ color: 'var(--color-slate)' }}>Tempo Z4-Z6</span>
+            {c.levels.map(l => {
+              const meta = intensityMeta(l.id)
+              return [
+                <span key={l.id} className="text-[11px] font-medium" style={{ color: meta.color, fontFamily: 'var(--font-display)' }}>{meta.label}</span>,
+                <span key={l.id + 'n'} className="text-[11px] text-right" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>{l.n}</span>,
+                <span key={l.id + 'te'} className="text-[11px] text-right" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
+                  {l.te.mean == null ? '—' : l.te.mean.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                  <span style={{ color: 'var(--color-slate)' }}> ({l.te.n})</span>
+                </span>,
+                <span key={l.id + 'sh'} className="text-[11px] text-right" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
+                  {l.share.mean == null ? '—' : formatPct(l.share.mean)}
+                  <span style={{ color: 'var(--color-slate)' }}> ({l.share.n})</span>
+                </span>,
+              ]
+            })}
+          </div>
+          <p className="text-[9px] mt-1.5" style={{ color: 'var(--color-slate)' }}>
+            Tra parentesi, su quante partite c'è quel segnale: ogni media ha il suo campione.
+          </p>
+
+          <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid var(--color-surface-2)' }}>
+            <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--color-slate)' }}>
+              Soglie del suggerimento
+            </p>
+            <ThresholdRow label="Training effect" signal={c.te} defaults={DEFAULT_THRESHOLDS.te}
+                          format={v => v.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} />
+            <ThresholdRow label="Tempo in Z4-Z6" signal={c.share} defaults={DEFAULT_THRESHOLDS.share} format={formatPct} />
+          </div>
+
+          {c.n > 0 && (
+            <p className="text-[11px] mt-4 leading-relaxed" style={{ color: 'var(--color-white)' }}>
+              Con queste soglie il suggerimento avrebbe indovinato{' '}
+              <strong style={{ fontFamily: 'var(--font-mono)' }}>{c.hits.calibrated} partite su {c.n}</strong>
+              {c.isCalibrated ? <> (con quelle predefinite, {c.hits.defaults})</> : null}.
+              <span style={{ color: 'var(--color-slate)' }}> È calcolato sulle stesse partite da cui si impara, quindi è un po' ottimista.</span>
+            </p>
+          )}
+        </>
+      )}
+      <Note>
+        Entrano solo le <strong>partite</strong> con un'intensità scelta da te: nel wizard
+        allenamento l'intensità parte su «media» e un «media» lasciato lì non si distingue da uno
+        scelto. Le partite in cui hai confermato un suggerimento con «Usa» restano fuori: altrimenti
+        le soglie si rafforzerebbero da sole. Niente è salvato: si ricalcola a ogni apertura.
+      </Note>
+    </Card>
+  )
+}
+
+// Una riga per segnale: i due confini, ognuno dichiarato calibrato (su quante
+// partite) o predefinito (e perché).
+function ThresholdRow({ label, signal, defaults, format }) {
+  return (
+    <div>
+      <p className="text-[11px]" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{label}</p>
+      <div className="grid grid-cols-2 gap-2 mt-1.5">
+        <Boundary title="Leggera → media" b={signal.medium} def={defaults.medium} format={format} />
+        <Boundary title="Media → intensa" b={signal.hard} def={defaults.hard} format={format} />
+      </div>
+    </div>
+  )
+}
+
+function Boundary({ title, b, def, format }) {
+  const why = b.calibrated
+    ? `calibrata su ${b.n} partite · predefinita ${format(def)}`
+    : b.inverted
+      ? 'la tua scala non sale con questo segnale: predefinita'
+      : b.unordered
+        ? 'i due confini si sovrapporrebbero: predefinita'
+        : `predefinita · servono ${CALIB_MIN_PER_LEVEL} partite per livello`
+  return (
+    <div className="rounded-xl px-2.5 py-2" style={{ background: 'var(--color-surface-2)' }}>
+      <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--color-slate)' }}>{title}</p>
+      <p className="text-sm font-bold mt-0.5" style={{ color: b.calibrated ? 'var(--color-teal)' : 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        da {format(b.value)}
+      </p>
+      <p className="text-[9px] mt-0.5 leading-snug" style={{ color: 'var(--color-slate)' }}>{why}</p>
+    </div>
+  )
+}
+
+function CalibrationInfo() {
+  return (
+    <>
+      <InfoItem>
+        Quando importi un file, l'app ti suggerisce «Dall'orologio sembra intensa». Per farlo deve
+        sapere da che training effect (o da che quota di tempo in zone alte) <em>per te</em>{' '}
+        una partita è «media» o «intensa». Questo blocco mostra da dove vengono quei confini.
+      </InfoItem>
+      <InfoItem title="Come si calcolano">
+        Per ogni intensità che hai scelto sulle partite si fa la media del training effect e della
+        quota in Z4-Z6. Il confine tra due livelli sta a metà tra le loro medie. Finché hai poche
+        partite il confine si sposta poco dal valore predefinito, e solo con almeno {CALIB_MIN_PER_LEVEL}{' '}
+        partite in entrambi i livelli; con tante comanda la tua scala. Non si salva nulla: ogni
+        apertura ricalcola da zero.
+      </InfoItem>
+      <InfoItem title="Se la scala non sale">
+        Se le tue «intensa» hanno in media meno training effect delle «media», non c'è un confine
+        da imparare: l'orologio e la tua sensazione non vanno insieme su quel segnale, e restano
+        i valori predefiniti. Non è un errore tuo: la sensazione e la fisiologia misurano cose
+        diverse.
+      </InfoItem>
+      <InfoItem title="«Indovinato»">
+        Quante partite il suggerimento avrebbe classificato come le hai classificate tu. È
+        ottimista perché le soglie sono imparate proprio da quelle partite.
       </InfoItem>
     </>
   )

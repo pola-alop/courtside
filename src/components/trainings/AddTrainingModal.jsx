@@ -81,6 +81,8 @@ export default function AddTrainingModal({ initial = null, opponents = [], equip
       // scartando quelle rimaste orfane se un colpo è stato tolto dal focus.
       ratings:   normalizeRatings(initial?.ratings, form.focus),
       intensity: form.intensity,
+      // Cambiare l'intensità a mano toglie il marchio di «suggerita dall'orologio».
+      intensitySource: form.intensity === initial?.intensity ? (initial?.intensitySource ?? null) : null,
       withWhom:  label ? { label, opponentId: form.withWhomOpponentId } : null,
       brokeStrings: form.brokeStrings,
       equipment: form.equipment,

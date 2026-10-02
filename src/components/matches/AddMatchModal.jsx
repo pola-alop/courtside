@@ -53,6 +53,10 @@ function initialForm(initial) {
     // significherebbe far dichiarare all'utente uno sforzo che non ha scelto e
     // abbassargli il carico senza che se ne accorga.
     intensity:  initial?.intensity || null,
+    // «suggested» se l'intensità è stata confermata con il tap sul suggerimento
+    // dell'orologio: quelle partite non alimentano la calibrazione delle soglie,
+    // altrimenti il suggerimento si rafforzerebbe da solo.
+    intensitySource: initial?.intensitySource || null,
     // Import da file .FIT: il riassunto già applicato (per la conferma a video)
     // e i dettagli pesanti, che si salvano insieme alla partita e non prima.
     fitSummary: null,
@@ -60,7 +64,7 @@ function initialForm(initial) {
   }
 }
 
-export default function AddMatchModal({ initial = null, opponents = [], equipment = [], fitUse = null, onClose, onSave }) {
+export default function AddMatchModal({ initial = null, opponents = [], equipment = [], fitUse = null, intensityCalibration = null, onClose, onSave }) {
   const [step, setStep]   = useState(1)
   const [form, setForm]   = useState(() => initialForm(initial))
   const [saving, setSaving] = useState(false)
@@ -76,6 +80,7 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
   const importFit = (summary) => setForm(f => ({
     ...f, athletics: athleticsDraft(summary.athletics), fitSummary: summary, fitDetails: summary.details,
     intensity: intensityFromRpe(summary.rpe) || f.intensity,
+    intensitySource: intensityFromRpe(summary.rpe) ? null : f.intensitySource,
   }))
 
   const stepValid = (() => {
@@ -142,6 +147,7 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
       setsOpp:      out.setsOpp,
       equipment:    form.equipment,
       intensity:    form.intensity || null,
+      intensitySource: form.intensity && form.intensitySource === 'suggested' ? 'suggested' : null,
       athletics,
       notes:        initial?.notes || [],
     }, fitDetails)
@@ -195,7 +201,9 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
           {step === 6 && <StepEquipment equipment={equipment} value={form.equipment} onChange={v => set('equipment', v)} />}
           {step === 7 && (
             <StepAthletics value={form.athletics} onChange={v => set('athletics', v)} issues={athIssues}
-                           intensity={form.intensity} onIntensityChange={v => set('intensity', v)}
+                           intensity={form.intensity} calibration={intensityCalibration}
+                           onIntensityChange={v => setForm(f => ({ ...f, intensity: v, intensitySource: null }))}
+                           onIntensitySuggested={v => setForm(f => ({ ...f, intensity: v, intensitySource: 'suggested' }))}
                            fit={{ summary: form.fitSummary, date: form.date, fitUse, onImport: importFit, onUseDate: d => set('date', d) }} />
           )}
         </div>
@@ -674,7 +682,7 @@ function StepEquipment({ equipment, value, onChange }) {
 
 // ── Step 7 — Atletica ──────────────────────────────────────
 
-function StepAthletics({ value, onChange, issues, intensity, onIntensityChange, fit }) {
+function StepAthletics({ value, onChange, issues, intensity, calibration, onIntensityChange, onIntensitySuggested, fit }) {
   // Le zone partono aperte solo se ci sono già dati: sono 5 righe, e sul
   // mobile appesantiscono lo step per chi non le usa.
   const [showZones, setShowZones] = useState(() => zonesTotalSec(value.zones) > 0)
@@ -733,7 +741,7 @@ function StepAthletics({ value, onChange, issues, intensity, onIntensityChange, 
             ? 'Alimenta il carico di allenamento in Stats › Attività. Tocca di nuovo per togliere.'
             : 'Se non la indichi, in Stats la partita viene contata come sforzo alto — che è quello che una partita è di solito.'}
         </p>
-        <IntensitySuggestion athletics={value} current={intensity} onUse={onIntensityChange} />
+        <IntensitySuggestion athletics={value} current={intensity} calibration={calibration} onUse={onIntensitySuggested} />
       </FieldGroup>
 
       <FitImport

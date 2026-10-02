@@ -209,8 +209,8 @@ export default function Stats() {
   // domini per guardare indietro dall'inizio del periodo e calcolare l'ACWR con
   // cui si è arrivati a ogni partita.
   const cross = useMemo(
-    () => buildCross({ matches: scoped.matches, trainings: scoped.trainings, loadSessions, range }),
-    [scoped, loadSessions, range]
+    () => buildCross({ matches: scoped.matches, trainings: scoped.trainings, loadSessions, allMatches: matches, range }),
+    [scoped, loadSessions, matches, range]
   )
 
   // Su "Sempre" non esiste un prima, e se il periodo precedente ha pochi dati il

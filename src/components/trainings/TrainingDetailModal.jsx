@@ -19,7 +19,7 @@ const EQUIP_TYPES = [
 ]
 
 export default function TrainingDetailModal({
-  training, equipment = [], fitUse = null, onClose, onEdit, onUpdate, onDelete
+  training, equipment = [], fitUse = null, intensityCalibration = null, onClose, onEdit, onUpdate, onDelete
 }) {
   // view | confirmDelete | editAthletics | addNote | editNote | confirmDeleteNote
   const [mode, setMode]     = useState('view')
@@ -131,7 +131,8 @@ export default function TrainingDetailModal({
               per confermarla, altrimenti resta quella dell'utente. */}
           {mode === 'view' && (
             <IntensitySuggestion athletics={training.athletics} current={training.intensity}
-              onUse={async (id) => { if (!saving) { setSaving(true); await onUpdate(training.id, { intensity: id }); setSaving(false) } }} />
+              calibration={intensityCalibration}
+              onUse={async (id) => { if (!saving) { setSaving(true); await onUpdate(training.id, { intensity: id, intensitySource: 'suggested' }); setSaving(false) } }} />
           )}
 
           {/* Blocchi della sessione */}

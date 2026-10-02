@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useOpponents } from '../hooks/useOpponents'
 import { useMatches } from '../hooks/useMatches'
@@ -37,6 +37,7 @@ import GymWorkoutLibrary from '../components/gym/GymWorkoutLibrary'
 import GymWorkoutEditModal from '../components/gym/GymWorkoutEditModal'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
+import { calibrateIntensity } from '../lib/fit'
 import {
   TRAINING_KINDS, INTENSITIES, FOCUS_CATEGORIES, FOCUS_BY_ID,
   totalMinutes, formatHours,
@@ -78,6 +79,11 @@ export default function Matches() {
   const { workouts: gymWorkouts, add: addGymWorkout, update: updateGymWorkout, remove: removeGymWorkout } = useGymWorkouts()
   const exerciseApi = useGymExercises()
   const { profile, loading: profileLoading } = useProfile()
+
+  // Soglie del suggerimento «quanto è stata dura», imparate dalle partite con
+  // un'intensità scelta dall'utente. Si ricalcolano a ogni cambio delle partite:
+  // niente è salvato, quindi non può invecchiare.
+  const intensityCalibration = useMemo(() => calibrateIntensity(matches), [matches])
   const running = profile?.running || null
   const runningReady = isRunningReady(running)
 
@@ -641,6 +647,7 @@ export default function Matches() {
           opponents={opponents}
           equipment={equipment}
           fitUse={fitUseFor(editingMatch?.id)}
+          intensityCalibration={intensityCalibration}
           onClose={() => { setShowAddMatch(false); setEditingMatch(null) }}
           onSave={async (data, fitDetails) => {
             await commitFit({ details: fitDetails, prevFitId: editingMatch?.athletics?.fitId }, data.athletics)
@@ -679,6 +686,7 @@ export default function Matches() {
           training={selectedTraining}
           equipment={equipment}
           fitUse={fitUseFor(selectedTraining.id)}
+          intensityCalibration={intensityCalibration}
           onClose={() => setSelectedTrainingId(null)}
           onEdit={() => { setEditingTraining(selectedTraining); setSelectedTrainingId(null) }}
           onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateTraining(id, data) }}

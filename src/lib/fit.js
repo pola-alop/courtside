@@ -506,40 +506,65 @@ export function intensityFromRpe(rpe) {
 // percepito è l'unico dato soggettivo dell'app, e se lo ricavassi da FC e
 // training effect in automatico le statistiche incrociate confronterebbero un
 // dato con sé stesso. Per lo stesso motivo il suggerimento si salva solo se
-// l'utente lo conferma.
+// l'utente lo conferma (e la conferma è marcata `intensitySource: 'suggested'`).
 //
 // Si usa solo nel tennis: nella palestra la FC lavora poco anche con pesi
 // pesanti (il carico Garmin di una sessione di forza è ~3 contro ~140 di una
 // partita), e un suggerimento sistematicamente «leggera» sarebbe sbagliato.
 //
-// Le soglie sono PROVVISORIE: tarate a occhio su un solo file di tennis. Vanno
-// riviste dopo qualche settimana di partite con il confronto sforzo/orologio di
-// Stats › Incroci, che dice quanto la scala dell'utente segue l'orologio.
+// ── Le soglie si imparano dalle PARTITE dell'utente ──
+// I valori predefiniti sotto sono tarati a occhio su un solo file di tennis. Da
+// lì `calibrateIntensity` li sposta verso la scala vera di chi usa l'app: il
+// confine tra due livelli sta a metà tra le medie dei due livelli, calcolate
+// sulle partite con un'intensità SCELTA dall'utente. Si ricalcola a ogni
+// apertura (niente è salvato, quindi non può invecchiare).
 export const SUGGEST_TE = { medium: 2.5, hard: 3.8 }
 export const SUGGEST_HIGH_SHARE = { medium: 0.1, hard: 0.3 }
 export const SUGGEST_MIN_SEC = 600   // sotto i dieci minuti non c'è niente da giudicare
 
+export const DEFAULT_THRESHOLDS = {
+  te:    { ...SUGGEST_TE },
+  share: { ...SUGGEST_HIGH_SHARE },
+}
+
 const RANK = ['leggera', 'media', 'intensa']
+export const INTENSITY_LEVELS = RANK
 
-export function suggestIntensity(a) {
-  if (!a || (isNum(a.durationSec) && a.durationSec < SUGGEST_MIN_SEC)) return null
+// Calibrazione: un confine si sposta solo con almeno `CALIB_MIN_PER_LEVEL`
+// partite in entrambi i livelli che separa, e gradualmente: il valore
+// predefinito pesa come `CALIB_PRIOR_WEIGHT` sessioni, quindi con poche partite
+// il confine si muove poco e con molte comanda la scala dell'utente.
+export const CALIB_MIN_PER_LEVEL = 3
+export const CALIB_PRIOR_WEIGHT = 6
+const CALIB_BOUNDS = { te: [1.0, 4.8], share: [0.02, 0.6] }
 
+// I due segnali di una sessione: il training effect più alto tra aerobico e
+// anaerobico, e la quota di tempo in Z4-Z6. Ognuno può mancare.
+export function intensitySignals(a) {
+  if (!a || (isNum(a.durationSec) && a.durationSec < SUGGEST_MIN_SEC)) return { te: null, share: null }
+
+  const teMax = Math.max(isNum(a.trainingEffect) ? a.trainingEffect : -1, isNum(a.anaerobicTrainingEffect) ? a.anaerobicTrainingEffect : -1)
+  const zones = Array.isArray(a.zones) ? a.zones : null
+  const total = zones ? zones.reduce((sum, v) => sum + (isNum(v) ? v : 0), 0) : 0
+  return {
+    te: teMax >= 0 ? teMax : null,
+    share: zones && total >= SUGGEST_MIN_SEC ? ((zones[4] || 0) + (zones[5] || 0) + (zones[6] || 0)) / total : null,
+  }
+}
+
+export function suggestIntensity(a, thresholds = DEFAULT_THRESHOLDS) {
+  const { te, share } = intensitySignals(a)
   const candidates = []
 
-  const te = Math.max(isNum(a.trainingEffect) ? a.trainingEffect : -1, isNum(a.anaerobicTrainingEffect) ? a.anaerobicTrainingEffect : -1)
-  if (te >= 0) {
+  if (te != null) {
     candidates.push({
-      rank: te >= SUGGEST_TE.hard ? 2 : te >= SUGGEST_TE.medium ? 1 : 0,
+      rank: te >= thresholds.te.hard ? 2 : te >= thresholds.te.medium ? 1 : 0,
       basis: `training effect ${te.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`,
     })
   }
-
-  const zones = Array.isArray(a.zones) ? a.zones : null
-  const total = zones ? zones.reduce((sum, v) => sum + (isNum(v) ? v : 0), 0) : 0
-  if (zones && total >= SUGGEST_MIN_SEC) {
-    const share = ((zones[4] || 0) + (zones[5] || 0) + (zones[6] || 0)) / total
+  if (share != null) {
     candidates.push({
-      rank: share >= SUGGEST_HIGH_SHARE.hard ? 2 : share >= SUGGEST_HIGH_SHARE.medium ? 1 : 0,
+      rank: share >= thresholds.share.hard ? 2 : share >= thresholds.share.medium ? 1 : 0,
       basis: `${Math.round(share * 100)}% del tempo in Z4-Z6`,
     })
   }
@@ -550,6 +575,90 @@ export function suggestIntensity(a) {
   // nasconderebbe.
   const best = candidates.reduce((b, c) => (c.rank > b.rank ? c : b))
   return { id: RANK[best.rank], basis: best.basis }
+}
+
+// Le partite che possono insegnare qualcosa: un'intensità SCELTA (non il «Usa»
+// di un suggerimento, che altrimenti si rafforzerebbe da solo) e almeno un
+// segnale dall'orologio. Solo partite: nel wizard allenamento l'intensità parte
+// preselezionata su «media» e un «media» lasciato lì non si distingue da uno
+// scelto, il che sporcherebbe il confine.
+export function calibrationSessions(matches = []) {
+  return matches
+    .filter(m => RANK.includes(m.intensity) && m.intensitySource !== 'suggested')
+    .map(m => ({ id: m.id, level: m.intensity, ...intensitySignals(m.athletics) }))
+    .filter(x => x.te != null || x.share != null)
+}
+
+// Calibra un segnale: per ogni livello n e media, poi i due confini.
+function calibrateSignal(sessions, key, defaults, bounds) {
+  const rows = RANK.map(id => {
+    const vals = sessions.filter(x => x.level === id && x[key] != null).map(x => x[key])
+    return { id, n: vals.length, mean: vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null }
+  })
+
+  const boundary = (lower, upper, fallback) => {
+    if (lower.n < CALIB_MIN_PER_LEVEL || upper.n < CALIB_MIN_PER_LEVEL) {
+      return { value: fallback, calibrated: false, inverted: false, n: lower.n + upper.n }
+    }
+    // I livelli devono salire con il segnale: se la scala dell'utente non lo
+    // segue (le sue «intensa» hanno meno training effect delle «media») non c'è
+    // un confine da imparare e si tengono i valori predefiniti.
+    if (lower.mean >= upper.mean) {
+      return { value: fallback, calibrated: false, inverted: true, n: lower.n + upper.n }
+    }
+    const n = lower.n + upper.n
+    const mid = (lower.mean + upper.mean) / 2
+    const blended = (n * mid + CALIB_PRIOR_WEIGHT * fallback) / (n + CALIB_PRIOR_WEIGHT)
+    return { value: Math.min(bounds[1], Math.max(bounds[0], blended)), calibrated: true, inverted: false, n }
+  }
+
+  let medium = boundary(rows[0], rows[1], defaults.medium)
+  let hard = boundary(rows[1], rows[2], defaults.hard)
+  // Due confini fuori ordine non separano più tre livelli: si torna ai predefiniti.
+  if (medium.value >= hard.value) {
+    medium = { ...medium, value: defaults.medium, calibrated: false, unordered: true }
+    hard = { ...hard, value: defaults.hard, calibrated: false, unordered: true }
+  }
+  return { rows, medium, hard, thresholds: { medium: medium.value, hard: hard.value } }
+}
+
+// Calibrazione completa dalle partite dell'utente. `thresholds` è ciò che usa
+// `suggestIntensity`; il resto serve alla tabella di Stats › Incroci, per far
+// vedere da dove vengono i numeri.
+export function calibrateIntensity(matches = []) {
+  const sessions = calibrationSessions(matches)
+  const te = calibrateSignal(sessions, 'te', DEFAULT_THRESHOLDS.te, CALIB_BOUNDS.te)
+  const share = calibrateSignal(sessions, 'share', DEFAULT_THRESHOLDS.share, CALIB_BOUNDS.share)
+  const thresholds = { te: te.thresholds, share: share.thresholds }
+
+  const isCalibrated = [te.medium, te.hard, share.medium, share.hard].some(b => b.calibrated)
+
+  // Quante delle partite usate il suggerimento avrebbe indovinato, con le
+  // soglie imparate e con quelle predefinite. È calcolato SULLE STESSE partite
+  // da cui si impara, quindi è ottimista: dice se i confini separano bene i
+  // livelli, non come andrà con le prossime.
+  const hitsWith = (th) => sessions.filter(x => suggestFromSignals(x, th) === x.level).length
+
+  return {
+    n: sessions.length,
+    isCalibrated,
+    thresholds,
+    te, share,
+    levels: RANK.map((id, i) => ({
+      id, n: sessions.filter(x => x.level === id).length,
+      te: te.rows[i], share: share.rows[i],
+    })),
+    hits: { calibrated: hitsWith(thresholds), defaults: hitsWith(DEFAULT_THRESHOLDS) },
+  }
+}
+
+// Il livello suggerito a partire dai due segnali già estratti (quando non si ha
+// più il documento `athletics` ma solo i numeri).
+function suggestFromSignals({ te, share }, thresholds) {
+  const ranks = []
+  if (te != null) ranks.push(te >= thresholds.te.hard ? 2 : te >= thresholds.te.medium ? 1 : 0)
+  if (share != null) ranks.push(share >= thresholds.share.hard ? 2 : share >= thresholds.share.medium ? 1 : 0)
+  return ranks.length ? RANK[Math.max(...ranks)] : null
 }
 
 // ── Confronto pianificato contro reale ─────────────────────

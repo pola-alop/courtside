@@ -131,11 +131,15 @@ function PlanDot({ plan, showTime, onClick }) {
   )
 }
 
+// Cerchio (22px) e orario (~27px) affiancati con 2px di spazio: a 360px la
+// card di oggi ha 53px di contenuto e ci stanno (con 4px il wrap scattava
+// già). Sotto (320px: 43px), o con un font più largo, l'orario va a capo
+// sotto il cerchio invece di uscire dalla card.
 function DotButton({ onClick, label, children }) {
   return (
     <button type="button" aria-label={label}
             onClick={e => { e.stopPropagation(); onClick() }}
-            className="flex items-center justify-center gap-1 max-w-full transition-all active:scale-90">
+            className="flex flex-wrap items-center justify-center gap-x-0.5 gap-y-0.5 max-w-full transition-all active:scale-90">
       {children}
     </button>
   )

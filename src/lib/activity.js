@@ -146,7 +146,7 @@ export function todayTime() {
   return d.getTime()
 }
 
-function addDays(time, n) {
+export function addDays(time, n) {
   const d = new Date(time)
   d.setDate(d.getDate() + n)
   d.setHours(0, 0, 0, 0)
@@ -329,8 +329,10 @@ export function consistency(sessions, range, allSessions = sessions) {
 // È esportata perché la Home ha bisogno esattamente di questo — e di nient'altro
 // di `consistency`, che richiederebbe un periodo che la Home non ha: lì il ritmo
 // attuale è il dato di apertura, non un sotto-blocco dell'analisi di un periodo.
-export function currentRhythm(allSessions) {
-  const today = todayTime()
+//
+// `today` è un parametro perché il calendario della Home (`calendar.js`) lo
+// riceve dall'esterno, così si collauda su date fisse; il default è oggi.
+export function currentRhythm(allSessions, today = todayTime()) {
   if (!allSessions.length) return { streakWeeks: 0, sinceLast: null, lastDay: null }
 
   const activeWeeks = new Set(allSessions.map(s => startOfWeek(s.day)))

@@ -29,6 +29,10 @@ const EQUIP_TYPES = [
 const MINUTE_STEP = 15
 const MAX_BLOCK_MINUTES = 300
 
+// `initial` è l'allenamento da modificare; per uno nuovo può arrivare invece
+// `prefill` ("Registra" da un programma del calendario: data, superficie,
+// focus, con chi, un blocco della durata prevista), con gli stessi nomi di
+// campo. Solo `initial` vuol dire modifica.
 function initialForm(initial) {
   return {
     date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -43,9 +47,9 @@ function initialForm(initial) {
   }
 }
 
-export default function AddTrainingModal({ initial = null, opponents = [], equipment = [], trainings = [], onClose, onSave }) {
+export default function AddTrainingModal({ initial = null, prefill = null, opponents = [], equipment = [], trainings = [], onClose, onSave }) {
   const [step, setStep]     = useState(1)
-  const [form, setForm]     = useState(() => initialForm(initial))
+  const [form, setForm]     = useState(() => initialForm(initial || prefill))
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))

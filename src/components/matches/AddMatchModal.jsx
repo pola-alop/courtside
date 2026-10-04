@@ -29,6 +29,10 @@ const EQUIP_TYPES = [
   { id: 'borsone',   label: 'Borsone',   icon: '🎒' },
 ]
 
+// `initial` è la partita da modificare; per una partita nuova può arrivare
+// invece `prefill` ("Registra" da un programma del calendario: data,
+// avversario, tipo, superficie), con gli stessi nomi di campo. Si leggono allo
+// stesso modo, ma solo `initial` vuol dire modifica (titolo, note conservate).
 function initialForm(initial) {
   return {
     date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -64,9 +68,9 @@ function initialForm(initial) {
   }
 }
 
-export default function AddMatchModal({ initial = null, opponents = [], equipment = [], fitUse = null, intensityCalibration = null, onClose, onSave }) {
+export default function AddMatchModal({ initial = null, prefill = null, opponents = [], equipment = [], fitUse = null, intensityCalibration = null, onClose, onSave }) {
   const [step, setStep]   = useState(1)
-  const [form, setForm]   = useState(() => initialForm(initial))
+  const [form, setForm]   = useState(() => initialForm(initial || prefill))
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))

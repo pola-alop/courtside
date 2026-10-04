@@ -11,6 +11,7 @@ import { useGymWorkouts } from '../hooks/useGymWorkouts'
 import { useGymExercises } from '../hooks/useGymExercises'
 import { useProfile } from '../hooks/useProfile'
 import { useFitDetails } from '../hooks/useFitDetails'
+import { usePlans } from '../hooks/usePlans'
 import OpponentCard from '../components/matches/OpponentCard'
 import AddOpponentModal from '../components/matches/AddOpponentModal'
 import OpponentDetailModal from '../components/matches/OpponentDetailModal'
@@ -44,6 +45,7 @@ import {
 } from '../lib/training'
 import { isRunningReady, runMinutes, workoutUsage, sortWorkoutsByUse } from '../lib/running'
 import { gymMinutes, workoutUsage as gymWorkoutUsage, sortWorkoutsByUse as sortGymWorkoutsByUse } from '../lib/gym'
+import { planPrefill, keyToDay } from '../lib/calendar'
 
 const TABS = [
   { id: 'panoramica',  label: 'Panoramica',  icon: '🗂' },
@@ -74,9 +76,9 @@ export default function Matches() {
   const { trainings, loading: trainLoading, add: addTraining, update: updateTraining, remove: removeTraining } = useTrainings()
   const { equipment } = useEquipment()
   const { runs, loading: runLoading, add: addRun, update: updateRun, remove: removeRun } = useRuns()
-  const { workouts, add: addWorkout, update: updateWorkout, remove: removeWorkout } = useRunWorkouts()
+  const { workouts, loading: workoutLoading, add: addWorkout, update: updateWorkout, remove: removeWorkout } = useRunWorkouts()
   const { sessions: gymSessions, loading: gymLoading, add: addGymSession, update: updateGymSession, remove: removeGymSession } = useGymSessions()
-  const { workouts: gymWorkouts, add: addGymWorkout, update: updateGymWorkout, remove: removeGymWorkout } = useGymWorkouts()
+  const { workouts: gymWorkouts, loading: gymWorkoutLoading, add: addGymWorkout, update: updateGymWorkout, remove: removeGymWorkout } = useGymWorkouts()
   const exerciseApi = useGymExercises()
   const { profile, loading: profileLoading } = useProfile()
 
@@ -137,6 +139,30 @@ export default function Matches() {
   const [searchParams] = useSearchParams()
   const intent = searchParams.get('add')
 
+  // ── "Registra" dal calendario della Home ──
+  // `&plan=<id>` apre il wizard di `add` precompilato con ciò che il programma
+  // sapeva (`planPrefill`); `&date=YYYY-MM-DD` (un giorno passato vuoto) solo
+  // con la data. È una prop distinta da `initial`, che vuol dire modifica.
+  // Il wizard legge il suo stato una volta sola, al montaggio: con un
+  // programma deve quindi aspettare il programma stesso, l'anagrafica e le
+  // schede, altrimenti partirebbe vuoto. I programmi si leggono sempre (sono
+  // pochi), come fa la Home.
+  // La precompilazione vale per il PRIMO wizard di quel tipo: chiuso quello,
+  // un "+" qualsiasi riparte da zero (`prefillFor` torna null).
+  const { plans, loading: planLoading } = usePlans()
+  const planId = searchParams.get('plan')
+  const dateParam = keyToDay(searchParams.get('date')) != null ? searchParams.get('date') : null
+  const [prefillFor, setPrefillFor] = useState(() => (
+    (planId || dateParam) && ['match', 'training', 'run', 'gym'].includes(intent) ? intent : null
+  ))
+  const prefillPlan = planId ? plans.find(p => p.id === planId && p.kind === intent) || null : null
+  const prefill = prefillFor == null ? null
+    : planId ? planPrefill(prefillPlan, { opponents, runWorkouts: workouts, gymWorkouts })
+    : { date: dateParam }
+  const waitPrefill = prefillFor != null && Boolean(planId)
+    && (planLoading || oppLoading || workoutLoading || gymWorkoutLoading)
+  const prefillOf = (kind) => (prefillFor === kind ? prefill : null)
+
   const [activeTab, setActiveTab] = useState(() => initialTab(searchParams))
 
   // Avversari
@@ -162,8 +188,9 @@ export default function Matches() {
   const [selectedTournamentId, setSelectedTournamentId] = useState(null)
 
   // Allenamenti — "+ Allenamento" apre prima la scelta del tipo (tennis/corsa)
-  const [showTypePicker, setShowTypePicker] = useState(intent === 'training')
-  const [showAddTraining, setShowAddTraining] = useState(false)
+  // Con una precompilazione il tipo è già deciso (tennis): niente scelta.
+  const [showTypePicker, setShowTypePicker] = useState(intent === 'training' && prefillFor == null)
+  const [showAddTraining, setShowAddTraining] = useState(intent === 'training' && prefillFor != null)
   const [editingTraining, setEditingTraining] = useState(null)
   const [selectedTrainingId, setSelectedTrainingId] = useState(() => searchParams.get('training'))
   const [trainingDeleteToast, setTrainingDeleteToast] = useState(false)
@@ -678,14 +705,15 @@ export default function Matches() {
       )}
 
       {/* ── Modali Partite ── */}
-      {(showAddMatch || editingMatch) && (
+      {(showAddMatch || editingMatch) && !waitPrefill && (
         <AddMatchModal
           initial={editingMatch}
+          prefill={editingMatch ? null : prefillOf('match')}
           opponents={opponents}
           equipment={equipment}
           fitUse={fitUseFor(editingMatch?.id)}
           intensityCalibration={intensityCalibration}
-          onClose={closing(() => { setShowAddMatch(false); setEditingMatch(null) })}
+          onClose={closing(() => { setShowAddMatch(false); setEditingMatch(null); setPrefillFor(null) })}
           onSave={async (data, fitDetails) => {
             await commitFit({ details: fitDetails, prevFitId: editingMatch?.athletics?.fitId }, data.athletics)
             if (editingMatch) await updateMatch(editingMatch.id, data)
@@ -705,13 +733,14 @@ export default function Matches() {
       )}
 
       {/* ── Modali Allenamenti ── */}
-      {(showAddTraining || editingTraining) && (
+      {(showAddTraining || editingTraining) && !waitPrefill && (
         <AddTrainingModal
           initial={editingTraining}
+          prefill={editingTraining ? null : prefillOf('training')}
           opponents={opponents}
           equipment={equipment}
           trainings={trainings}
-          onClose={closing(() => { setShowAddTraining(false); setEditingTraining(null) })}
+          onClose={closing(() => { setShowAddTraining(false); setEditingTraining(null); setPrefillFor(null) })}
           onSave={async (data) => {
             if (editingTraining) await updateTraining(editingTraining.id, data)
             else await addTraining(data)
@@ -746,15 +775,16 @@ export default function Matches() {
           stimare, e da `?add=run` si può arrivare prima che siano caricate.
           Con il profilo incompleto si mostra la scelta del tipo, che dice
           perché la corsa è bloccata e dove sbloccarla. */}
-      {(showAddRun || editingRun) && !profileLoading && (
+      {(showAddRun || editingRun) && !profileLoading && !waitPrefill && (
         runningReady ? (
           <AddRunModal
             initial={editingRun}
+            prefill={editingRun ? null : prefillOf('run')}
             workouts={workouts}
             runs={runs.filter(r => r.id !== editingRun?.id)}
             running={running}
             fitUse={fitUseFor(editingRun?.id)}
-            onClose={closing(() => { setShowAddRun(false); setEditingRun(null) })}
+            onClose={closing(() => { setShowAddRun(false); setEditingRun(null); setPrefillFor(null) })}
             onSave={saveRun}
           />
         ) : (
@@ -792,14 +822,15 @@ export default function Matches() {
       )}
 
       {/* ── Modali Palestra ── */}
-      {(showAddGym || editingGym) && (
+      {(showAddGym || editingGym) && !waitPrefill && (
         <AddGymModal
           initial={editingGym}
+          prefill={editingGym ? null : prefillOf('gym')}
           workouts={gymWorkouts}
           sessions={gymSessions.filter(g => g.id !== editingGym?.id)}
           exerciseApi={exerciseApi}
           fitUse={fitUseFor(editingGym?.id)}
-          onClose={closing(() => { setShowAddGym(false); setEditingGym(null) })}
+          onClose={closing(() => { setShowAddGym(false); setEditingGym(null); setPrefillFor(null) })}
           onSave={saveGym}
         />
       )}

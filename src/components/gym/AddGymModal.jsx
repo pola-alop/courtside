@@ -28,18 +28,23 @@ import FitImport from '../athletics/FitImport'
 // nella pagina.
 const STEPS = ['Scheda', 'Esercizi', 'Sessione']
 
-function initialForm(initial, workouts) {
-  const linked = initial?.workoutId ? workouts.find(w => w.id === initial.workoutId) : null
+// `initial` è la sessione da modificare; per una nuova può arrivare invece
+// `prefill` ("Registra" da un programma del calendario: data e scheda). Con la
+// scheda ancora in libreria si parte come se l'utente l'avesse appena scelta;
+// solo `initial` vuol dire modifica.
+function initialForm(initial, workouts, prefill = null) {
+  const base = initial || prefill
+  const linked = base?.workoutId ? workouts.find(w => w.id === base.workoutId) : null
   return {
     // 'library' = scheda esistente, 'new' = scheda da creare, 'orphan' =
     // sessione in modifica la cui scheda è stata eliminata (si salva senza
     // toccare la libreria)
-    source:     initial ? (linked ? 'library' : 'orphan') : null,
-    workoutId:  initial?.workoutId || null,
+    source:     initial ? (linked ? 'library' : 'orphan') : linked ? 'library' : null,
+    workoutId:  initial ? initial.workoutId || null : linked?.id || null,
     name:       linked?.name || initial?.workoutName || '',
-    items:      initial?.items ? structuredClone(initial.items) : [],
+    items:      initial ? structuredClone(initial.items || []) : structuredClone(linked?.items || []),
     updateLibrary: false,
-    date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
+    date:       base?.date ? base.date.split('T')[0] : new Date().toISOString().split('T')[0],
     intensity:  initial?.intensity || 'media',
     athletics:  athleticsDraft(initial?.athletics),
     showAthletics: hasAthletics(initial?.athletics),
@@ -50,9 +55,9 @@ function initialForm(initial, workouts) {
   }
 }
 
-export default function AddGymModal({ initial = null, workouts = [], sessions = [], exerciseApi, fitUse = null, onClose, onSave }) {
+export default function AddGymModal({ initial = null, prefill = null, workouts = [], sessions = [], exerciseApi, fitUse = null, onClose, onSave }) {
   const [step, setStep]     = useState(1)
-  const [form, setForm]     = useState(() => initialForm(initial, workouts))
+  const [form, setForm]     = useState(() => initialForm(initial, workouts, prefill))
   const [saving, setSaving] = useState(false)
 
   const { index } = exerciseApi

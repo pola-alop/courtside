@@ -3,9 +3,11 @@
 //
 // Riusa i moduli puri dell'app (src/lib/tennis.js, athletics.js) per calcolare
 // risultati/normalizzazioni esattamente come farebbe l'app. Cancella TUTTI i
-// dati esistenti (equipment/opponents/matches/trainings/runs/runWorkouts +
-// profilo) dell'utente
-// target e li ricrea da zero — pensato solo per il progetto dev.
+// dati esistenti (equipment/opponents/matches/trainings/runs/runWorkouts/
+// gymWorkouts/gymSessions/gymExercises/plans + profilo) dell'utente target e
+// li ricrea da zero — pensato solo per il progetto dev. Quasi tutte le date
+// sono fisse; quelle del calendario della Home (sessioni recenti e programmi)
+// partono dal giorno in cui si lancia lo script.
 
 import { readFileSync } from 'fs'
 import { pathToFileURL, fileURLToPath } from 'url'
@@ -96,7 +98,7 @@ async function main() {
   console.log(`Utente target: ${user.email} (uid=${uid})`)
 
   // ── Pulizia ──────────────────────────────────────────────
-  for (const col of ['equipment', 'opponents', 'matches', 'trainings', 'runs', 'runWorkouts', 'gymWorkouts', 'gymSessions', 'gymExercises']) {
+  for (const col of ['equipment', 'opponents', 'matches', 'trainings', 'runs', 'runWorkouts', 'gymWorkouts', 'gymSessions', 'gymExercises', 'plans']) {
     const n = await wipeSubcollection(uid, col)
     console.log(`Eliminati ${n} doc esistenti in ${col}`)
   }
@@ -672,6 +674,130 @@ async function main() {
     await b.commit()
   }
   console.log(`Sessioni di palestra create: ${gymSeed.length} (3 schede in uso, una mai fatta, 1 esercizio personalizzato)`)
+
+  // ── Calendario della Home: sessioni recenti e programmi ──
+  // Tutto il resto del seed ha date fisse; queste partono dal giorno in cui
+  // si lancia lo script, altrimenti il mese corrente del calendario sarebbe
+  // vuoto (niente fiammella, niente programmi fatti o non svolti). I giorni
+  // sono quelli LOCALI della macchina, come li legge l'app.
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const dayAt = offset => new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset)
+  const keyOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const dow = (today.getDay() + 6) % 7          // 0 = lunedì
+  const monday = -dow                            // offset del lunedì della settimana corrente
+
+  const calBatch = db.batch()
+  const recent = { match: 0, training: 0, run: 0, gym: 0 }
+  const calMatch = (offset, opp, sets, extra = {}) => {
+    const date = keyOf(dayAt(offset))
+    const outcome = computeOutcome(sets, 'atp', null)
+    calBatch.set(matchesCol.doc(), {
+      date: iso(date), opponentId: opp.id, opponentName: oppNames[opp.id],
+      type: 'amichevole', eventName: null, round: null, surface: 'terra', format: 'atp',
+      sets, retired: null, result: outcome.result, completed: outcome.completed,
+      setsMe: outcome.setsMe, setsOpp: outcome.setsOpp,
+      equipment: { racchetta: racchettaA.id, scarpa: scarpaTerra.id, outfit: outfit.id, borsone: null },
+      intensity: 'media', athletics: null, notes: [], createdAt: ts(date), ...extra,
+    })
+    recent.match++
+  }
+  const calTraining = (offset, blocks, focus = []) => {
+    const date = keyOf(dayAt(offset))
+    calBatch.set(trainingsCol.doc(), {
+      date: iso(date), blocks, surface: 'terra', focus, ratings: {}, intensity: 'media',
+      withWhom: null, brokeStrings: false,
+      equipment: { racchetta: racchettaA.id, scarpa: scarpaTerra.id, outfit: outfit.id, borsone: null },
+      athletics: null, notes: [], createdAt: ts(date),
+    })
+    recent.training++
+  }
+  const calRun = (offset, w, name, items, ath) => {
+    const date = keyOf(dayAt(offset))
+    calBatch.set(runsCol.doc(), {
+      date: iso(date), workoutId: w.id, workoutName: name, items, intensity: ath[2],
+      athletics: runAthletics(...ath), notes: [], createdAt: ts(date),
+    })
+    recent.run++
+  }
+  const calGym = (offset, w, name, items) => {
+    const date = keyOf(dayAt(offset))
+    calBatch.set(gymCol.doc(), {
+      date: iso(date), workoutId: w.id, workoutName: name, items, intensity: 'media',
+      athletics: null, notes: [], createdAt: ts(date),
+    })
+    recent.gym++
+  }
+
+  // Le tre settimane prima di questa, tutte attive: la fiammella parte accesa.
+  calMatch(monday - 20, oMarco, [S(6, 4), S(4, 6), S(6, 3)])
+  calGym(monday - 18, gPush, 'Push', pushItems(100))
+  calTraining(monday - 14, [{ kind: 'lezione', minutes: 60 }], ['dritto', 'rovescio'])
+  calRun(monday - 12, wLento, 'Lento 8 km', lentoItems, [8.0, 390, 'media'])
+  calGym(monday - 10, gLegs, 'Gambe', legsItems(120))
+  calTraining(monday - 6, [{ kind: 'sparring', minutes: 90 }], ['servizio-kick'])
+  calRun(monday - 4, wRipetute, 'Ripetute 1000', ripetuteItems, [7.6, 380, 'intensa'])
+  calMatch(monday - 2, oLuca, [S(3, 6), S(6, 7, 4, 7)])
+
+  const plansCol = userRef.collection('plans')
+  const planDays = new Map() // chiave del giorno → tipi già programmati
+  let planCount = 0
+  // Rispetta la regola di `planConflict`: il riposo non convive con altro.
+  const plan = (offset, kind, time = null, details = {}, notes = null) => {
+    const date = keyOf(typeof offset === 'number' ? dayAt(offset) : offset)
+    const kinds = planDays.get(date) || []
+    if (kinds.includes('rest') || (kind === 'rest' && kinds.length)) return
+    planDays.set(date, [...kinds, kind])
+    calBatch.set(plansCol.doc(), { date, time: kind === 'rest' ? null : time, kind, details, notes, createdAt: ts(date) })
+    planCount++
+  }
+  const workoutPlan = (w, name) => ({ workoutId: w.id, workoutName: name })
+  const trainingPlan = (minutes, surface, focus = [], withWhom = null) => ({ minutes, surface, withWhom, focus })
+
+  // Un programma passato fuori dalla settimana corrente: resta a DB ma la
+  // griglia non lo mostra (il passato mostra solo il fatto).
+  plan(monday - 9, 'gym', '07:30', workoutPlan(gPull, 'Pull'))
+
+  // I giorni già passati della settimana corrente, uno per stato. Quanti se
+  // ne vedono dipende dal giorno in cui si lancia il seed: di lunedì nessuno.
+  const pastScenarios = [
+    // Fatto: il programma e la sessione dello stesso tipo.
+    d => { plan(d, 'training', '18:00', trainingPlan(90, 'terra', ['dritto'])); calTraining(d, [{ kind: 'sparring', minutes: 90 }], ['dritto']) },
+    // Non svolto: corsa programmata e mai fatta.
+    d => plan(d, 'run', '07:00', workoutPlan(wLento, 'Lento 8 km'), 'Prima del lavoro'),
+    // Riposo rispettato: nessuna sessione.
+    d => plan(d, 'rest'),
+    // Fatto, palestra.
+    d => { plan(d, 'gym', null, workoutPlan(gLegs, 'Gambe')); calGym(d, gLegs, 'Gambe', legsItems(122)) },
+    // Abbinamento uno a uno: due allenamenti programmati, uno solo svolto.
+    d => { plan(d, 'training', '09:00', trainingPlan(60, 'cemento')); plan(d, 'training', '19:00', trainingPlan(60, 'cemento')); calTraining(d, [{ kind: 'servizio', minutes: 45 }]) },
+    // Una sessione senza programma: il calendario la mostra comunque.
+    d => calRun(d, wHiit, 'HIIT brevi distanze', hiitItems, [6.8, 450, 'intensa']),
+  ]
+  for (let d = monday; d < 0; d++) pastScenarios[d - monday]?.(d)
+
+  // Oggi: una corsa programmata e già fatta, e il tennis della sera da fare
+  // ("Registra" nella PlanModal).
+  plan(0, 'run', '07:00', workoutPlan(wRipetute, 'Ripetute 1000'))
+  calRun(0, wRipetute, 'Ripetute 1000', ripetuteItems, [7.7, 378, 'intensa'])
+  plan(0, 'training', '18:30', trainingPlan(90, 'terra', ['servizio-kick', 'dritto'], { label: oppNames[oSimone.id], opponentId: oSimone.id }), 'Portare le palline nuove')
+
+  // I prossimi giorni: palestra, un giorno con due programmi (corsa + partita
+  // di torneo), un riposo e una partita con l'avversario ancora da definire.
+  plan(1, 'gym', '07:30', workoutPlan(gPush, 'Push'))
+  plan(2, 'training', '19:00', trainingPlan(60, 'cemento', ['volee-dritto']))
+  plan(3, 'run', '07:00', workoutPlan(wLento, 'Lento 8 km'))
+  plan(3, 'match', '18:00', { opponentId: oLuca.id, opponentName: oppNames[oLuca.id], surface: 'terra', type: 'torneo', eventName: 'Torneo d\'Autunno' })
+  plan(5, 'rest')
+  plan(6, 'match', '10:00', { opponentId: null, opponentName: null, surface: 'terra', type: 'torneo', eventName: 'Torneo d\'Autunno' }, 'Tabellone non ancora uscito')
+
+  // Se l'ultima riga della griglia arriva nel mese dopo, un programma lì.
+  const lastOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  const firstNext = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+  if (lastOfMonth.getDay() !== 0 && firstNext > today) plan(firstNext, 'gym', null, workoutPlan(gLegs, 'Gambe'))
+
+  await calBatch.commit()
+  console.log(`Calendario: ${recent.match} partite, ${recent.training} allenamenti, ${recent.run} corse, ${recent.gym} palestre recenti · ${planCount} programmi (oggi = ${keyOf(today)})`)
 
   // ── Profilo ──────────────────────────────────────────────
   // `running` è la tabella zone → passo (s/km) che sblocca la corsa.

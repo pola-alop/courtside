@@ -4,10 +4,33 @@ Popola il progetto Firebase **dev** (`courtside-dev-a2ca6`) con un set di dati
 sintetici — attrezzatura, avversari, partite (inclusi tornei con turni,
 campionati, ritiri, pareggi), allenamenti, schede e sessioni di corsa (con la
 tabella zone → passo nel profilo), schede e sessioni di palestra (con un esercizio
-personalizzato) — sotto l'utente Google già loggato in dev.
+personalizzato), e i programmi del calendario della Home — sotto l'utente
+Google già loggato in dev.
 **Cancella prima tutti i dati esistenti** di quell'utente (equipment,
 opponents, matches, trainings, runs, runWorkouts, gymWorkouts, gymSessions,
-gymExercises, profilo) e li ricrea da zero.
+gymExercises, plans, profilo) e li ricrea da zero. I dettagli dei file .FIT
+(`fitDetails`) non vengono toccati: dopo il seed restano senza sessione.
+
+## Date fisse e date relative
+
+Quasi tutto il dataset ha date fisse (settembre 2025 – settembre 2026). Il
+blocco del **calendario** parte invece dal giorno in cui si lancia lo script,
+altrimenti il mese corrente sarebbe vuoto:
+
+- una sessione o due a settimana nelle tre settimane prima di questa, così la
+  fiammella è accesa;
+- nei giorni già passati della settimana corrente, uno stato per giorno a
+  partire dal lunedì: allenamento fatto, corsa non svolta, riposo rispettato,
+  palestra fatta, due allenamenti programmati con uno solo svolto, una corsa
+  senza programma (di lunedì non se ne vede nessuno, di domenica tutti);
+- oggi una corsa programmata e fatta e il tennis della sera da fare (con
+  "Registra");
+- nei giorni dopo palestra, allenamento, un giorno con corsa e partita di
+  torneo, un riposo e una partita con l'avversario da definire;
+- un programma il 1° del mese dopo se l'ultima riga della griglia ci arriva, e
+  uno passato fuori dalla settimana corrente (a DB ma non visibile).
+
+Per rivedere il calendario "di oggi" basta rilanciare il seed.
 
 Bypassa le regole di sicurezza di Firestore usando `firebase-admin`, quindi
 serve una service account key del progetto dev (mai quella di produzione —

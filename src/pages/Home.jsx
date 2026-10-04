@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthState } from '../hooks/useAuth'
 import { useMatches } from '../hooks/useMatches'
@@ -10,8 +10,11 @@ import { useRunWorkouts } from '../hooks/useRunWorkouts'
 import { useGymWorkouts } from '../hooks/useGymWorkouts'
 import { useEquipment } from '../hooks/useEquipment'
 import { useProfile } from '../hooks/useProfile'
+import { useOpponents } from '../hooks/useOpponents'
+import { usePlans } from '../hooks/usePlans'
 import Onboarding from '../components/home/Onboarding'
 import Calendar from '../components/home/Calendar'
+import PlanModal from '../components/home/PlanModal'
 import MatchRow from '../components/matches/MatchRow'
 import TrainingRow from '../components/trainings/TrainingRow'
 import { buildHome, ALERT_TONES, IDLE_BAD } from '../lib/home'
@@ -38,6 +41,9 @@ import { formatDaysAgo } from '../lib/technique'
 // destinazione la leggono e aprono da sole il wizard, il tab o la modale giusta.
 // I dettagli delle sessioni si aprono con `from=home`, che li fa tornare qui
 // alla chiusura invece di lasciare l'utente in Matches.
+// L'unica modale di proprietà di questa pagina è quella dei programmi
+// (`PlanModal`): i programmi esistono solo qui, quindi non c'è un'altra pagina
+// a cui mandare l'intenzione.
 // L'alternativa — sollevare le modali in App.jsx — avrebbe richiesto uno stato
 // globale che il progetto non ha e che nessun'altra parte dell'app chiede.
 
@@ -60,6 +66,12 @@ export default function Home() {
   const { index: exerciseIndex, loading: exerciseLoading } = useGymExercises()
   const { workouts: runWorkouts, loading: runWorkoutLoading } = useRunWorkouts()
   const { workouts: gymWorkouts, loading: gymWorkoutLoading } = useGymWorkouts()
+  // I programmi del calendario, e l'anagrafica per i nomi degli avversari che
+  // mostrano (derivati, non copiati) e per sceglierli nella modale.
+  const { plans, loading: planLoading, add: addPlan, update: updatePlan, remove: removePlan } = usePlans()
+  const { opponents, loading: opponentLoading } = useOpponents()
+  // { date: 'YYYY-MM-DD', plan?: programma da vedere/modificare } o null.
+  const [planTarget, setPlanTarget] = useState(null)
 
   const report = useMemo(
     () => buildHome({
@@ -70,12 +82,17 @@ export default function Home() {
   )
 
   const calendar = useMemo(
-    () => buildCalendar({ matches, trainings, runs, gymSessions }),
-    [matches, trainings, runs, gymSessions]
+    () => buildCalendar({ matches, trainings, runs, gymSessions, plans }),
+    [matches, trainings, runs, gymSessions, plans]
   )
 
   // `kind` è già il nome del parametro del deep link (match|training|run|gym).
   const openSession = (s) => navigate(`/matches?${s.kind}=${s.id}&from=home`)
+
+  const savePlan = async (data, id) => {
+    if (id) await updatePlan(id, data)
+    else await addPlan(data)
+  }
 
   const rawFirstName = (user?.displayName || '').trim().split(' ')[0] || null
   const firstName = rawFirstName
@@ -87,8 +104,17 @@ export default function Home() {
   // passo della checklist si spunterebbe da solo un istante dopo il montaggio.
   const loading = matchLoading || trainLoading || equipLoading || profileLoading
     || runLoading || gymLoading || exerciseLoading || runWorkoutLoading || gymWorkoutLoading
+    || planLoading || opponentLoading
 
-  if (loading) return <Spinner />
+  // Lo spinner vale solo per il PRIMO caricamento. La Home ora scrive (i
+  // programmi), e ogni mutazione ricarica con `loading` di nuovo a true: senza
+  // questo, salvare un programma farebbe sparire la pagina per un istante e
+  // chiuderebbe il foglio del giorno da cui era partito. Stato aggiustato
+  // durante il render, non in un effect (vedi "selected item derivato").
+  const [ready, setReady] = useState(false)
+  if (!loading && !ready) setReady(true)
+
+  if (!ready) return <Spinner />
 
   if (matches.length === 0 && trainings.length === 0) {
     return (
@@ -148,9 +174,11 @@ export default function Home() {
           calendar={calendar}
           runWorkouts={runWorkouts}
           gymWorkouts={gymWorkouts}
+          opponents={opponents}
           index={exerciseIndex}
           running={profile?.running || null}
           onOpen={openSession}
+          onPlan={setPlanTarget}
         />
       </div>
 
@@ -192,6 +220,26 @@ export default function Home() {
           {careerText(career)}
         </p>
       </div>
+
+      {/* Dopo il calendario nel DOM: aperta dal foglio di un giorno, ci sta
+          sopra, e chiudendola si torna al foglio aggiornato. */}
+      {planTarget && (
+        <PlanModal
+          key={planTarget.plan?.id || planTarget.date}
+          date={planTarget.date}
+          plan={planTarget.plan || null}
+          plans={plans}
+          opponents={opponents}
+          runWorkouts={runWorkouts}
+          gymWorkouts={gymWorkouts}
+          trainings={trainings}
+          runs={runs}
+          gymSessions={gymSessions}
+          onSave={savePlan}
+          onDelete={removePlan}
+          onClose={() => setPlanTarget(null)}
+        />
+      )}
     </div>
   )
 }

@@ -15,11 +15,18 @@ import CalendarDaySheet from './CalendarDaySheet'
 // attenuata se la serie viene dalla settimana scorsa e aspetta ancora questa,
 // spenta a zero.
 //
-// Il tap su un giorno con una sessione va dritto al dettaglio; con più sessioni
-// apre il foglio con l'elenco. La navigazione la decide la pagina (`onOpen`).
+// Il tap:
+//  · giorno passato: con una sessione dritto al dettaglio, con più sessioni il
+//    foglio con l'elenco; vuoto non risponde;
+//  · giorno programmabile (da oggi in avanti) vuoto: dritto al nuovo programma;
+//  · giorno programmabile con qualcosa (sessioni o programmi): SEMPRE il foglio,
+//    perché è lì che si aggiunge un altro programma — anche oggi con una sola
+//    sessione, che quindi non apre più il dettaglio al primo tocco.
+// La navigazione e la modale dei programmi le decide la pagina (`onOpen`,
+// `onPlan`).
 const FLAME_COL = 22
 
-export default function Calendar({ calendar, runWorkouts, gymWorkouts, index, running, onOpen }) {
+export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents, index, running, onOpen, onPlan }) {
   const [openKey, setOpenKey] = useState(null)
   const { weeks, streak } = calendar
 
@@ -28,7 +35,9 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, index, ru
     : null
 
   const tapDay = (day) => {
-    if (day.sessions.length === 1) onOpen(day.sessions[0])
+    const busy = day.sessions.length > 0 || day.plans.length > 0
+    if (day.plannable && !busy) onPlan({ date: day.key })
+    else if (!day.plannable && day.sessions.length === 1) onOpen(day.sessions[0])
     else setOpenKey(day.key)
   }
 
@@ -71,9 +80,11 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, index, ru
           day={openDay}
           runWorkouts={runWorkouts}
           gymWorkouts={gymWorkouts}
+          opponents={opponents}
           index={index}
           running={running}
           onOpen={onOpen}
+          onPlan={onPlan}
           onClose={() => setOpenKey(null)}
         />
       )}

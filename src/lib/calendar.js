@@ -223,6 +223,44 @@ export function planConflict(plansOfDay = [], kind, editingId = null) {
   return null
 }
 
+// I programmi (grezzi, come arrivano da Firestore) di un giorno qualsiasi, anche
+// fuori dalla griglia: servono a `planConflict` quando un programma si sposta.
+export function plansOnDay(plans = [], key) {
+  const day = keyToDay(key)
+  if (day == null) return []
+  return (plans || []).filter(p => keyToDay(p?.date) === day)
+}
+
+// Etichetta dello stato ricavato. Il riposo non si "fa": si rispetta o no.
+export function planStatusLabel(plan) {
+  if (plan?.kind === 'rest') {
+    return { todo: 'In programma', done: 'Rispettato', missed: 'Non rispettato' }[plan.status] || 'In programma'
+  }
+  return { todo: 'Da fare', done: 'Fatto', missed: 'Non svolto' }[plan?.status] || 'Da fare'
+}
+
+// Il "chi" o il "cosa" di un programma: l'avversario, il compagno
+// d'allenamento, la scheda. Nomi DERIVATI, non denormalizzati (regola nata dal
+// bug della rinomina degli avversari): vince il nome attuale dell'anagrafica o
+// della scheda, la copia salvata è solo il ripiego se quella non c'è più.
+// null se il programma non ne ha uno (riposo, corsa senza scheda...).
+export function planSubject(plan, { opponents = [], runWorkouts = [], gymWorkouts = [] } = {}) {
+  const d = plan?.details || {}
+  const byId = (list, id) => (id ? (list || []).find(x => x.id === id) : null)
+  switch (plan?.kind) {
+    case 'match':
+      return byId(opponents, d.opponentId)?.name || d.opponentName || null
+    case 'training':
+      return byId(opponents, d.withWhom?.opponentId)?.name || d.withWhom?.label || null
+    case 'run':
+      return byId(runWorkouts, d.workoutId)?.name || d.workoutName || null
+    case 'gym':
+      return byId(gymWorkouts, d.workoutId)?.name || d.workoutName || null
+    default:
+      return null
+  }
+}
+
 // ── Giorni ─────────────────────────────────────────────────
 // La griglia del passato mostra solo ciò che è stato fatto: i programmi si
 // vedono dalla settimana corrente in avanti. Quelli più vecchi restano a DB (un

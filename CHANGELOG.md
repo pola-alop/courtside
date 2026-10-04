@@ -4,6 +4,8 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-04
+
 ### Aggiunto
 - **Calendario nella Home**: il mese corrente, dal lunedì alla domenica, con le attività di ogni giorno in miniatura (🎾 tennis con il bordo ambra per la partita, 🏃 corsa, 🏋️ palestra) e "+N" quando sono più d'una. Tocca un giorno per aprire la sessione, o l'elenco del giorno se ce n'è più d'una; i giorni del mese prima e dopo sono attenuati.
 - **Fiammella delle settimane attive**: a destra del calendario, quante settimane di fila hai fatto almeno un'attività di qualsiasi tipo. La settimana in corso non azzera la serie finché non è finita.

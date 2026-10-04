@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { WEEKDAY_INITIALS } from '../../lib/calendar'
 import CalendarDay from './CalendarDay'
 import CalendarDaySheet from './CalendarDaySheet'
+import CalendarWeek from './CalendarWeek'
 
 // Il calendario della Home: il mese corrente, una riga per settimana (lunedì →
 // domenica), e a destra la fiammella delle settimane di fila con almeno
@@ -15,18 +16,23 @@ import CalendarDaySheet from './CalendarDaySheet'
 // attenuata se la serie viene dalla settimana scorsa e aspetta ancora questa,
 // spenta a zero.
 //
-// Il tap:
-//  · giorno passato: con una sessione dritto al dettaglio, con più sessioni il
-//    foglio con l'elenco; vuoto non risponde;
+// La settimana corrente non è una riga di cerchi ma sette card con il fatto e
+// il programmato (`CalendarWeek`), dentro la stessa griglia.
+//
+// Il tap su un giorno (cerchio della griglia o sfondo della card):
+//  · giorno passato: con una sola sessione e nessun programma dritto al
+//    dettaglio; altrimenti il foglio — anche da vuoto, perché è lì che c'è
+//    "Registra" con la scelta del tipo;
 //  · giorno programmabile (da oggi in avanti) vuoto: dritto al nuovo programma;
 //  · giorno programmabile con qualcosa (sessioni o programmi): SEMPRE il foglio,
 //    perché è lì che si aggiunge un altro programma — anche oggi con una sola
 //    sessione, che quindi non apre più il dettaglio al primo tocco.
 // La navigazione e la modale dei programmi le decide la pagina (`onOpen`,
-// `onPlan`).
+// `onPlan`, `onRegister`).
 const FLAME_COL = 22
+const COLUMN_GAP = 3
 
-export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents, index, running, onOpen, onPlan }) {
+export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents, index, running, onOpen, onPlan, onRegister }) {
   const [openKey, setOpenKey] = useState(null)
   const { weeks, streak } = calendar
 
@@ -37,7 +43,7 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
   const tapDay = (day) => {
     const busy = day.sessions.length > 0 || day.plans.length > 0
     if (day.plannable && !busy) onPlan({ date: day.key })
-    else if (!day.plannable && day.sessions.length === 1) onOpen(day.sessions[0])
+    else if (!day.plannable && day.sessions.length === 1 && day.plans.length === 0) onOpen(day.sessions[0])
     else setOpenKey(day.key)
   }
 
@@ -51,7 +57,7 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
         {calendar.title}
       </p>
 
-      <div className="mb-1 px-1" style={{ display: 'grid', gridTemplateColumns: columns, columnGap: 3 }}>
+      <div className="mb-1 px-1" style={{ display: 'grid', gridTemplateColumns: columns, columnGap: COLUMN_GAP }}>
         {WEEKDAY_INITIALS.map((d, i) => (
           <span key={i} className="text-[10px] text-center font-semibold"
                 style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
@@ -62,17 +68,26 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
       </div>
 
       {weeks.map((week, i) => (
-        <div key={week.index}
-             className="rounded-xl"
-             style={{
-               display: 'grid', gridTemplateColumns: columns, columnGap: 3, padding: '3px 4px',
-               background: week.isCurrent ? 'var(--color-week-bg)' : 'transparent',
-             }}>
-          {week.days.map(day => (
-            <CalendarDay key={day.key} day={day} onClick={() => tapDay(day)} />
-          ))}
-          <FlameCell row={i} streak={streak} />
-        </div>
+        week.isCurrent ? (
+          <CalendarWeek key={week.index}
+            week={week}
+            label={calendar.currentWeek.label}
+            columnGap={COLUMN_GAP}
+            flameCol={FLAME_COL}
+            flame={<FlameCell row={i} streak={streak} />}
+            onDay={tapDay}
+            onOpen={onOpen}
+            onPlan={onPlan}
+          />
+        ) : (
+          <div key={week.index}
+               style={{ display: 'grid', gridTemplateColumns: columns, columnGap: COLUMN_GAP, padding: '3px 4px' }}>
+            {week.days.map(day => (
+              <CalendarDay key={day.key} day={day} onClick={() => tapDay(day)} />
+            ))}
+            <FlameCell row={i} streak={streak} />
+          </div>
+        )
       ))}
 
       {openDay && (
@@ -85,6 +100,7 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
           running={running}
           onOpen={onOpen}
           onPlan={onPlan}
+          onRegister={onRegister}
           onClose={() => setOpenKey(null)}
         />
       )}

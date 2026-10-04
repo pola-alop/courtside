@@ -15,25 +15,23 @@ import { KIND_META } from '../../lib/calendar'
 //    attenuati; da vuoti resta solo il numero, senza cerchio;
 //  · oggi: anello teal, che convive con il bordo ambra della partita.
 //
-// Si toccano i giorni con attività e quelli programmabili (da oggi in avanti):
-// cosa succede al tap lo decide il calendario. I giorni passati vuoti restano
-// fermi finché "Registra" non saprà aprire il wizard con la data giusta.
+// Si tocca ogni giorno: cosa succede lo decide il calendario (dettaglio,
+// foglio, nuovo programma; un giorno passato vuoto offre "Registra").
 export default function CalendarDay({ day, onClick }) {
   const has = day.sessions.length > 0
   const other = day.otherMonth != null
 
   const planned = !has && day.plannable && day.plans.length > 0
-  const Cell = has || day.plannable ? TapCell : StillCell
 
   if (!has && !planned && other) {
     return (
-      <Cell day={day} onClick={onClick}>
+      <TapCell day={day} onClick={onClick}>
         <span className="flex items-center justify-center" style={{ width: '100%', maxWidth: 34, aspectRatio: '1' }}>
           <span className="text-[10px]" style={{ color: 'var(--color-slate)', opacity: 0.6, fontFamily: 'var(--font-mono)' }}>
             {day.dayOfMonth}
           </span>
         </span>
-      </Cell>
+      </TapCell>
     )
   }
 
@@ -42,7 +40,7 @@ export default function CalendarDay({ day, onClick }) {
   if (planned) {
     const extra = day.plans.length - 1
     return (
-      <Cell day={day} onClick={onClick}>
+      <TapCell day={day} onClick={onClick}>
         <span className="relative flex items-center justify-center rounded-full"
               style={{
                 width: '100%', maxWidth: 34, aspectRatio: '1',
@@ -66,13 +64,13 @@ export default function CalendarDay({ day, onClick }) {
             </span>
           )}
         </span>
-      </Cell>
+      </TapCell>
     )
   }
 
   if (!has) {
     return (
-      <Cell day={day} onClick={onClick}>
+      <TapCell day={day} onClick={onClick}>
         <span className="flex items-center justify-center rounded-full"
               style={{
                 width: '100%', maxWidth: 34, aspectRatio: '1',
@@ -83,12 +81,12 @@ export default function CalendarDay({ day, onClick }) {
             {day.dayOfMonth}
           </span>
         </span>
-      </Cell>
+      </TapCell>
     )
   }
 
   return (
-    <Cell day={day} onClick={onClick}>
+    <TapCell day={day} onClick={onClick}>
       <span className="relative flex items-center justify-center rounded-full"
             style={{
               width: '100%', maxWidth: 34, aspectRatio: '1',
@@ -112,7 +110,7 @@ export default function CalendarDay({ day, onClick }) {
           </span>
         )}
       </span>
-    </Cell>
+    </TapCell>
   )
 }
 
@@ -126,10 +124,6 @@ function TapCell({ day, onClick, children }) {
       {children}
     </button>
   )
-}
-
-function StillCell({ children }) {
-  return <div className="flex items-center justify-center">{children}</div>
 }
 
 // ── Helpers ────────────────────────────────────────────────
@@ -146,5 +140,5 @@ function ariaLabel(day) {
   const planned = day.plannable ? day.plans.map(p => `${KIND_META[p.kind].label.toLowerCase()} in programma`) : []
   const what = [...done, ...planned].join(', ')
   if (what) return `${date}: ${what}`
-  return day.plannable ? `${date}: programma un'attività` : date
+  return day.plannable ? `${date}: programma un'attività` : `${date}: registra un'attività`
 }

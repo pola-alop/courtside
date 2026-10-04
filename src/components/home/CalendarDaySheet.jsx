@@ -2,18 +2,22 @@ import MatchRow from '../matches/MatchRow'
 import TrainingRow from '../trainings/TrainingRow'
 import RunRow from '../runs/RunRow'
 import GymRow from '../gym/GymRow'
-import { KIND_META, planStatusLabel, planSubject } from '../../lib/calendar'
+import { KIND_META, KIND_PRIORITY, planStatusLabel, planSubject } from '../../lib/calendar'
 
 // Il foglio di un giorno: le sessioni con le stesse righe delle liste di
 // Matches (come "Ultima sessione"), nell'ordine del calendario — partita prima,
-// poi per orario — e, da oggi in avanti, i programmi del giorno con il loro
-// stato e il bottone per aggiungerne un altro. Il tap su una sessione porta al
-// suo dettaglio, quello su un programma alla `PlanModal`.
+// poi per orario — e i programmi del giorno con il loro stato. Il tap su una
+// sessione porta al suo dettaglio, quello su un programma alla `PlanModal`
+// (che ha "Registra" per i non ancora fatti di oggi e dei giorni passati).
 //
-// I programmi dei giorni passati non compaiono qui: i non svolti della
-// settimana corrente arrivano con le card della settimana, insieme a "Registra".
-export default function CalendarDaySheet({ day, runWorkouts, gymWorkouts, opponents, index, running, onOpen, onPlan, onClose }) {
-  const plans = day.plannable ? day.plans : []
+// I programmi arrivano solo dalla settimana corrente in avanti (`buildDay`):
+// quelli dei giorni passati di questa settimana compaiono qui come "Non
+// svolto", i più vecchi no.
+//
+// In fondo, da oggi in avanti, "+ Programma"; nei giorni passati "Registra"
+// con i quattro tipi, che apre il wizard già sulla data del giorno.
+export default function CalendarDaySheet({ day, runWorkouts, gymWorkouts, opponents, index, running, onOpen, onPlan, onRegister, onClose }) {
+  const plans = day.plans
   const names = { opponents, runWorkouts, gymWorkouts }
 
   return (
@@ -30,7 +34,7 @@ export default function CalendarDaySheet({ day, runWorkouts, gymWorkouts, oppone
               {dayTitle(day.time)}
             </h2>
             <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
-              {countsText(day.sessions.length, plans.length)}
+              {countsText(day.sessions.length, plans.length, day.plannable)}
             </p>
           </div>
           <button onClick={onClose}
@@ -69,6 +73,26 @@ export default function CalendarDaySheet({ day, runWorkouts, gymWorkouts, oppone
             style={{ background: 'var(--color-surface-2)', color: 'var(--color-teal)', border: '1px dashed var(--color-teal-dark)', fontFamily: 'var(--font-display)' }}>
             + Programma
           </button>
+        )}
+
+        {!day.plannable && (
+          <div className="space-y-2">
+            <SheetTitle>Registra</SheetTitle>
+            <div className="grid grid-cols-2 gap-2">
+              {KIND_PRIORITY.map(kind => (
+                <button key={kind} onClick={() => onRegister({ kind, date: day.key })}
+                  className="py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                  style={{
+                    background: 'var(--color-surface-2)', color: 'var(--color-white)',
+                    border: `1px solid ${kind === 'match' ? 'var(--color-amber)' : 'transparent'}`,
+                    fontFamily: 'var(--font-display)',
+                  }}>
+                  <span>{KIND_META[kind].icon}</span>
+                  <span>{KIND_META[kind].label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -128,9 +152,9 @@ function dayTitle(time) {
   return new Date(time).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-function countsText(sessions, plans) {
+function countsText(sessions, plans, plannable) {
   const parts = []
   if (sessions) parts.push(sessions === 1 ? '1 sessione' : `${sessions} sessioni`)
   if (plans) parts.push(plans === 1 ? '1 in programma' : `${plans} in programma`)
-  return parts.join(' · ') || 'Niente in programma'
+  return parts.join(' · ') || (plannable ? 'Niente in programma' : 'Niente registrato')
 }

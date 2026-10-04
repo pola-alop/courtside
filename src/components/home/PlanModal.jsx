@@ -18,8 +18,10 @@ import OpponentSearchField from '../matches/OpponentSearchField'
 //    schermata sola — un programma è un promemoria, non una sessione da
 //    registrare, e un wizard a passi costerebbe più di quanto vale;
 //  · programma esistente: vista con lo stato ricavato (fatto / da fare / non
-//    svolto), Modifica ed Elimina con conferma. "Registra" arriva con le card
-//    della settimana corrente.
+//    svolto), Registra, Modifica ed Elimina con conferma. "Registra" c'è solo
+//    per ciò che non è ancora fatto, oggi o in un giorno passato
+//    (`plan.registrable`): apre il wizard della sessione precompilato, che è
+//    di Matches — la pagina decide dove portare (`onRegister`).
 //
 // Obbligatori sono solo il tipo, il giorno (da oggi in avanti) e, per il
 // tennis, l'orario d'inizio: il campo e la lezione si prenotano a un'ora, la
@@ -65,7 +67,7 @@ function initialForm(date, plan) {
 
 export default function PlanModal({
   date, plan = null, plans = [], opponents = [], runWorkouts = [], gymWorkouts = [],
-  trainings = [], runs = [], gymSessions = [], onSave, onDelete, onClose,
+  trainings = [], runs = [], gymSessions = [], onSave, onDelete, onRegister, onClose,
 }) {
   // view | form | confirmDelete
   const [mode, setMode]     = useState(plan ? 'view' : 'form')
@@ -139,6 +141,15 @@ export default function PlanModal({
         <div className="overflow-y-auto flex-1 px-6 py-4">
           {mode === 'view' && (
             <>
+              {plan.registrable && onRegister && (
+                <button
+                  onClick={() => onRegister(plan)}
+                  className="w-full mb-2 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+                  style={{ background: 'var(--color-amber)', color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}>
+                  ✅ Registra {KIND_META[plan.kind]?.label.toLowerCase()}
+                </button>
+              )}
+
               <button
                 onClick={() => setMode('form')}
                 className="w-full mb-4 py-2.5 rounded-2xl text-xs font-semibold transition-all"

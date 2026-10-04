@@ -40,7 +40,10 @@ import { formatDaysAgo } from '../lib/technique'
 // `/stats?tab=attivita&focus=carico`, `/equipment?item=<id>`): le pagine di
 // destinazione la leggono e aprono da sole il wizard, il tab o la modale giusta.
 // I dettagli delle sessioni si aprono con `from=home`, che li fa tornare qui
-// alla chiusura invece di lasciare l'utente in Matches.
+// alla chiusura invece di lasciare l'utente in Matches. Lo stesso vale per
+// "Registra" (da un programma o da un giorno passato vuoto): il wizard si apre
+// in Matches già precompilato (`&plan=<id>` o `&date=YYYY-MM-DD`) e salvando
+// si torna qui, dove il programma risulta fatto da solo.
 // L'unica modale di proprietà di questa pagina è quella dei programmi
 // (`PlanModal`): i programmi esistono solo qui, quindi non c'è un'altra pagina
 // a cui mandare l'intenzione.
@@ -88,6 +91,12 @@ export default function Home() {
 
   // `kind` è già il nome del parametro del deep link (match|training|run|gym).
   const openSession = (s) => navigate(`/matches?${s.kind}=${s.id}&from=home`)
+
+  // "Registra": da un programma (`PlanModal`) il wizard parte da ciò che il
+  // programma sapeva, da un giorno passato vuoto (foglio del giorno) dalla
+  // sola data. `kind` è anche qui il valore di `add`.
+  const registerPlan = (plan) => navigate(`/matches?add=${plan.kind}&plan=${plan.id}&from=home`)
+  const registerDay = ({ kind, date }) => navigate(`/matches?add=${kind}&date=${date}&from=home`)
 
   const savePlan = async (data, id) => {
     if (id) await updatePlan(id, data)
@@ -179,6 +188,7 @@ export default function Home() {
           running={profile?.running || null}
           onOpen={openSession}
           onPlan={setPlanTarget}
+          onRegister={registerDay}
         />
       </div>
 
@@ -237,6 +247,7 @@ export default function Home() {
           gymSessions={gymSessions}
           onSave={savePlan}
           onDelete={removePlan}
+          onRegister={registerPlan}
           onClose={() => setPlanTarget(null)}
         />
       )}

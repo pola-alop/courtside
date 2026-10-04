@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useMemo, useRef } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useOpponents } from '../hooks/useOpponents'
 import { useMatches } from '../hooks/useMatches'
 import { useTrainings } from '../hooks/useTrainings'
@@ -194,6 +194,39 @@ export default function Matches() {
   const [gymDeleteToast, setGymDeleteToast] = useState(false)
   const [editingGymWorkoutId, setEditingGymWorkoutId] = useState(null)
   const [creatingGymWorkout, setCreatingGymWorkout] = useState(false)
+
+  // ── Ritorno in Home (`from=home`) ──
+  // Il calendario della Home apre i dettagli qui, ma l'utente stava guardando
+  // la Home: chiudere il dettaglio, o il wizard di modifica aperto da lì, lo
+  // riporta indietro invece di lasciarlo in Matches. `navigate(-1)` quando c'è
+  // una pagina precedente dell'app, così Indietro non trova la Home due volte;
+  // altrimenti (link aperto a freddo) si sostituisce la voce con la Home.
+  //
+  // L'eliminazione è il caso delicato: i dettagli chiamano `onDelete(id)` e
+  // subito `onClose()` senza aspettare. Tornare in Home dal `onClose` vorrebbe
+  // dire ricaricare i dati mentre la sessione esiste ancora, e il giorno del
+  // calendario resterebbe pieno. Per questo durante un'eliminazione la chiusura
+  // non naviga, e si torna in Home solo a cancellazione finita (senza toast:
+  // il giorno che si svuota è già la conferma).
+  const navigate = useNavigate()
+  const fromHome = searchParams.get('from') === 'home'
+  const deletingRef = useRef(false)
+  const backHome = () => {
+    if (window.history.state?.idx > 0) navigate(-1)
+    else navigate('/', { replace: true })
+  }
+  const closing = (clear) => () => {
+    clear()
+    if (fromHome && !deletingRef.current) backHome()
+  }
+  const deleting = (remove) => async (id) => {
+    if (fromHome) deletingRef.current = true
+    try {
+      await remove(id)
+    } finally {
+      if (fromHome) backHome()
+    }
+  }
 
   // I tornei non sono documenti: sono la lettura delle partite di tipo torneo
   // raggruppate per evento ed edizione. Si ricostruiscono qui, una volta sola,
@@ -652,7 +685,7 @@ export default function Matches() {
           equipment={equipment}
           fitUse={fitUseFor(editingMatch?.id)}
           intensityCalibration={intensityCalibration}
-          onClose={() => { setShowAddMatch(false); setEditingMatch(null) }}
+          onClose={closing(() => { setShowAddMatch(false); setEditingMatch(null) })}
           onSave={async (data, fitDetails) => {
             await commitFit({ details: fitDetails, prevFitId: editingMatch?.athletics?.fitId }, data.athletics)
             if (editingMatch) await updateMatch(editingMatch.id, data)
@@ -664,10 +697,10 @@ export default function Matches() {
         <MatchDetailModal
           match={selectedMatch}
           equipment={equipment}
-          onClose={() => setSelectedMatchId(null)}
+          onClose={closing(() => setSelectedMatchId(null))}
           onEdit={() => { setEditingMatch(selectedMatch); setSelectedMatchId(null) }}
           onUpdate={async (id, data) => { await updateMatch(id, data) }}
-          onDelete={async (id) => { await dropFit(selectedMatch.athletics); await removeMatch(id); setSelectedMatchId(null); setMatchDeleteToast(true) }}
+          onDelete={deleting(async (id) => { await dropFit(selectedMatch.athletics); await removeMatch(id); setSelectedMatchId(null); setMatchDeleteToast(true) })}
         />
       )}
 
@@ -678,7 +711,7 @@ export default function Matches() {
           opponents={opponents}
           equipment={equipment}
           trainings={trainings}
-          onClose={() => { setShowAddTraining(false); setEditingTraining(null) }}
+          onClose={closing(() => { setShowAddTraining(false); setEditingTraining(null) })}
           onSave={async (data) => {
             if (editingTraining) await updateTraining(editingTraining.id, data)
             else await addTraining(data)
@@ -691,10 +724,10 @@ export default function Matches() {
           equipment={equipment}
           fitUse={fitUseFor(selectedTraining.id)}
           intensityCalibration={intensityCalibration}
-          onClose={() => setSelectedTrainingId(null)}
+          onClose={closing(() => setSelectedTrainingId(null))}
           onEdit={() => { setEditingTraining(selectedTraining); setSelectedTrainingId(null) }}
           onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateTraining(id, data) }}
-          onDelete={async (id) => { await dropFit(selectedTraining.athletics); await removeTraining(id); setSelectedTrainingId(null); setTrainingDeleteToast(true) }}
+          onDelete={deleting(async (id) => { await dropFit(selectedTraining.athletics); await removeTraining(id); setSelectedTrainingId(null); setTrainingDeleteToast(true) })}
         />
       )}
 
@@ -721,14 +754,14 @@ export default function Matches() {
             runs={runs.filter(r => r.id !== editingRun?.id)}
             running={running}
             fitUse={fitUseFor(editingRun?.id)}
-            onClose={() => { setShowAddRun(false); setEditingRun(null) }}
+            onClose={closing(() => { setShowAddRun(false); setEditingRun(null) })}
             onSave={saveRun}
           />
         ) : (
           <SessionTypePicker
             runningReady={false}
             onPick={pickSessionType}
-            onClose={() => { setShowAddRun(false); setEditingRun(null) }}
+            onClose={closing(() => { setShowAddRun(false); setEditingRun(null) })}
           />
         )
       )}
@@ -738,10 +771,10 @@ export default function Matches() {
           workouts={workouts}
           running={running}
           fitUse={fitUseFor(selectedRun.id)}
-          onClose={() => setSelectedRunId(null)}
+          onClose={closing(() => setSelectedRunId(null))}
           onEdit={() => { setEditingRun(selectedRun); setSelectedRunId(null) }}
           onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateRun(id, data) }}
-          onDelete={async (id) => { await dropFit(selectedRun.athletics); await removeRun(id); setSelectedRunId(null); setRunDeleteToast(true) }}
+          onDelete={deleting(async (id) => { await dropFit(selectedRun.athletics); await removeRun(id); setSelectedRunId(null); setRunDeleteToast(true) })}
         />
       )}
       {(creatingWorkout || editingWorkout) && (
@@ -766,7 +799,7 @@ export default function Matches() {
           sessions={gymSessions.filter(g => g.id !== editingGym?.id)}
           exerciseApi={exerciseApi}
           fitUse={fitUseFor(editingGym?.id)}
-          onClose={() => { setShowAddGym(false); setEditingGym(null) }}
+          onClose={closing(() => { setShowAddGym(false); setEditingGym(null) })}
           onSave={saveGym}
         />
       )}
@@ -776,10 +809,10 @@ export default function Matches() {
           workouts={gymWorkouts}
           index={exerciseApi.index}
           fitUse={fitUseFor(selectedGym.id)}
-          onClose={() => setSelectedGymId(null)}
+          onClose={closing(() => setSelectedGymId(null))}
           onEdit={() => { setEditingGym(selectedGym); setSelectedGymId(null) }}
           onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateGymSession(id, data) }}
-          onDelete={async (id) => { await dropFit(selectedGym.athletics); await removeGymSession(id); setSelectedGymId(null); setGymDeleteToast(true) }}
+          onDelete={deleting(async (id) => { await dropFit(selectedGym.athletics); await removeGymSession(id); setSelectedGymId(null); setGymDeleteToast(true) })}
         />
       )}
       {(creatingGymWorkout || editingGymWorkout) && (

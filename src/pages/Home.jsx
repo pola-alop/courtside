@@ -125,7 +125,9 @@ export default function Home() {
 
   if (!ready) return <Spinner />
 
-  if (matches.length === 0 && trainings.length === 0) {
+  // Una sessione di qualsiasi dominio basta: chi ha solo corse o palestra deve
+  // vedere il calendario. I programmi no — l'onboarding chiede di registrare.
+  if (matches.length + trainings.length + runs.length + gymSessions.length === 0) {
     return (
       <Onboarding
         name={firstName}
@@ -223,12 +225,16 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── Carriera: i totali di sempre, una riga sola ── */}
+      {/* ── Carriera: i totali di sempre, una riga sola ──
+          Sono di tennis: con sole corse o palestra la riga è vuota e non c'è.
+          Il padding in fondo resta, perché è lo spazio della bottom nav. */}
       <div className="px-6 pb-32">
-        <p className="text-[11px] text-center leading-relaxed"
-           style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
-          {careerText(career)}
-        </p>
+        {careerText(career) && (
+          <p className="text-[11px] text-center leading-relaxed"
+             style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+            {careerText(career)}
+          </p>
+        )}
       </div>
 
       {/* Dopo il calendario nel DOM: aperta dal foglio di un giorno, ci sta
@@ -339,8 +345,10 @@ function todayLabel() {
 
 // Sotto la settimana è una constatazione, sopra è un fatto da guardare in
 // faccia: cambia la frase, non solo il colore.
+// Il ritmo è di tennis, e la Home si apre anche con sole corse o palestra
+// (gate dell'onboarding): senza tennis va detto quale sessione manca.
 function idleText(sinceLast) {
-  if (sinceLast == null) return 'Nessuna sessione registrata.'
+  if (sinceLast == null) return 'Nessuna sessione di tennis registrata.'
   if (sinceLast === 0) return 'Hai giocato oggi.'
   if (sinceLast === 1) return 'Hai giocato ieri.'
   if (sinceLast >= IDLE_BAD) return `Sei fermo da ${sinceLast} giorni.`

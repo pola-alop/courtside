@@ -48,6 +48,11 @@
   --color-muscle-mid: #f4a300;
   --color-muscle-high: #e0373a;
 
+  /* Calendario della Home: la tinta che marca la settimana corrente nella
+     griglia e il colore della fiammella (barra accesa e numero della serie). */
+  --color-week-bg: rgba(118,195,194,0.08);
+  --color-flame: #f47b20;
+
   /* Font */
   --font-display: 'DM Sans', sans-serif;
   --font-body: 'Inter', sans-serif;

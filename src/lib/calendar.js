@@ -275,12 +275,26 @@ function monthRows(year, month) {
 //
 // `row` è la riga della settimana corrente: la barra scende fin lì e riparte
 // dall'alto a ogni mese, mentre il numero continua.
+//
+// `fromRow`–`toRow` sono le righe del mese che fanno parte della serie, le sole
+// da colorare: con una serie di 2 settimane su 5 righe, una barra tutta accesa
+// direbbe il falso. Se la settimana in corso non ha ancora un'attività la serie
+// finisce alla riga prima; se finisce prima del mese (o è zero) sono null.
+// Contano solo le sessioni fino a oggi, come per `activeThisWeek`: una data
+// futura per errore non accende la fiamma e non sposta le righe.
 function buildStreak(sessions, today, row) {
   const thisWeek = startOfWeek(today)
+  const done = sessions.filter(s => s.day <= today)
+  const weeks = currentRhythm(done, today).streakWeeks
+  const activeThisWeek = done.some(s => s.day >= thisWeek)
+  const toRow = activeThisWeek ? row : row - 1
+  const lit = weeks > 0 && toRow >= 0
   return {
-    weeks: currentRhythm(sessions, today).streakWeeks,
+    weeks,
     row,
-    activeThisWeek: sessions.some(s => s.day >= thisWeek && s.day <= today),
+    activeThisWeek,
+    fromRow: lit ? Math.max(0, toRow - weeks + 1) : null,
+    toRow: lit ? toRow : null,
   }
 }
 

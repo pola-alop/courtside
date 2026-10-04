@@ -6,12 +6,16 @@ import { useTrainings } from '../hooks/useTrainings'
 import { useRuns } from '../hooks/useRuns'
 import { useGymSessions } from '../hooks/useGymSessions'
 import { useGymExercises } from '../hooks/useGymExercises'
+import { useRunWorkouts } from '../hooks/useRunWorkouts'
+import { useGymWorkouts } from '../hooks/useGymWorkouts'
 import { useEquipment } from '../hooks/useEquipment'
 import { useProfile } from '../hooks/useProfile'
 import Onboarding from '../components/home/Onboarding'
+import Calendar from '../components/home/Calendar'
 import MatchRow from '../components/matches/MatchRow'
 import TrainingRow from '../components/trainings/TrainingRow'
-import { buildHome, ALERT_TONES, STRIP_DAYS, IDLE_BAD } from '../lib/home'
+import { buildHome, ALERT_TONES, IDLE_BAD } from '../lib/home'
+import { buildCalendar } from '../lib/calendar'
 import { formatDaysAgo } from '../lib/technique'
 
 // Home — "adesso".
@@ -32,19 +36,13 @@ import { formatDaysAgo } from '../lib/technique'
 // I link portano l'intenzione nell'URL (`/matches?add=match`,
 // `/stats?tab=attivita&focus=carico`, `/equipment?item=<id>`): le pagine di
 // destinazione la leggono e aprono da sole il wizard, il tab o la modale giusta.
+// I dettagli delle sessioni si aprono con `from=home`, che li fa tornare qui
+// alla chiusura invece di lasciare l'utente in Matches.
 // L'alternativa — sollevare le modali in App.jsx — avrebbe richiesto uno stato
 // globale che il progetto non ha e che nessun'altra parte dell'app chiede.
 
 const ADD_MATCH_TO    = '/matches?add=match'
 const ADD_TRAINING_TO = '/matches?add=training'
-
-// Stessa grammatica della striscia di densità della Panoramica
-// (`ActivityTimeline`): ambra = partita, teal = allenamento, gradiente =
-// entrambi. Due strisce con due codici colore diversi nella stessa app
-// costringerebbero a impararli tutti e due.
-const COLOR_MATCH    = 'var(--color-amber)'
-const COLOR_TRAINING = 'var(--color-teal-dark)'
-const COLOR_EMPTY    = 'var(--color-surface-2)'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -53,11 +51,15 @@ export default function Home() {
   const { trainings, loading: trainLoading } = useTrainings()
   const { equipment, loading: equipLoading } = useEquipment()
   const { profile,   loading: profileLoading } = useProfile()
-  // Corse e palestre entrano solo nel carico (ACWR e avviso): servono perché
-  // l'avviso di Home e il blocco di Stats › Attività dicano la stessa cosa.
+  // Corse e palestre entrano nel carico (ACWR e avviso: l'avviso di Home e il
+  // blocco di Stats › Attività devono dire la stessa cosa) e nel calendario.
+  // Le schede servono alle righe del foglio di un giorno con più sessioni, che
+  // sono le stesse delle liste di Matches.
   const { runs, loading: runLoading } = useRuns()
   const { sessions: gymSessions, loading: gymLoading } = useGymSessions()
   const { index: exerciseIndex, loading: exerciseLoading } = useGymExercises()
+  const { workouts: runWorkouts, loading: runWorkoutLoading } = useRunWorkouts()
+  const { workouts: gymWorkouts, loading: gymWorkoutLoading } = useGymWorkouts()
 
   const report = useMemo(
     () => buildHome({
@@ -66,6 +68,14 @@ export default function Home() {
     }),
     [matches, trainings, equipment, runs, gymSessions, exerciseIndex, profile]
   )
+
+  const calendar = useMemo(
+    () => buildCalendar({ matches, trainings, runs, gymSessions }),
+    [matches, trainings, runs, gymSessions]
+  )
+
+  // `kind` è già il nome del parametro del deep link (match|training|run|gym).
+  const openSession = (s) => navigate(`/matches?${s.kind}=${s.id}&from=home`)
 
   const rawFirstName = (user?.displayName || '').trim().split(' ')[0] || null
   const firstName = rawFirstName
@@ -76,7 +86,7 @@ export default function Home() {
   // un documento, parte in parallelo alle altre tre, e senza di lei il primo
   // passo della checklist si spunterebbe da solo un istante dopo il montaggio.
   const loading = matchLoading || trainLoading || equipLoading || profileLoading
-    || runLoading || gymLoading || exerciseLoading
+    || runLoading || gymLoading || exerciseLoading || runWorkoutLoading || gymWorkoutLoading
 
   if (loading) return <Spinner />
 
@@ -92,7 +102,7 @@ export default function Home() {
     )
   }
 
-  const { rhythm, idle, alerts, checks, last, strip, career } = report
+  const { rhythm, idle, alerts, checks, last, career } = report
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
@@ -129,6 +139,21 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── Calendario: il mese corrente, il fatto e la serie di settimane ──
+          Ha preso il posto della striscia di continuità: dice la stessa cosa
+          meglio, e la serie conta tutti i domini, non solo il tennis. */}
+      <div className="px-6 pb-6">
+        <SectionTitle>Calendario</SectionTitle>
+        <Calendar
+          calendar={calendar}
+          runWorkouts={runWorkouts}
+          gymWorkouts={gymWorkouts}
+          index={exerciseIndex}
+          running={profile?.running || null}
+          onOpen={openSession}
+        />
+      </div>
+
       {/* ── Da sistemare ── */}
       <div className="px-6 pb-6">
         <SectionTitle>Da sistemare</SectionTitle>
@@ -153,38 +178,12 @@ export default function Home() {
             </span>
           </div>
           {last.kind === 'match' ? (
-            <MatchRow match={last.item} onClick={() => navigate(`/matches?match=${last.item.id}`)} />
+            <MatchRow match={last.item} onClick={() => navigate(`/matches?match=${last.item.id}&from=home`)} />
           ) : (
-            <TrainingRow training={last.item} onClick={() => navigate(`/matches?training=${last.item.id}`)} />
+            <TrainingRow training={last.item} onClick={() => navigate(`/matches?training=${last.item.id}&from=home`)} />
           )}
         </div>
       )}
-
-      {/* ── Striscia di continuità ── */}
-      <div className="px-6 pb-6">
-        <SectionTitle>Continuità</SectionTitle>
-        <div className="rounded-2xl p-4"
-             style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${STRIP_DAYS}, 1fr)`, gap: 3 }}>
-            {strip.map(d => (
-              <div key={d.day}
-                   title={`${cellTitle(d)}`}
-                   style={{ aspectRatio: '1', borderRadius: 3, background: cellColor(d.match, d.training) }} />
-            ))}
-          </div>
-          <div className="flex justify-between mt-1.5">
-            <span className="text-[9px]" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-              {STRIP_DAYS} giorni fa
-            </span>
-            <span className="text-[9px]" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-              Oggi
-            </span>
-          </div>
-          <p className="text-xs mt-3" style={{ color: 'var(--color-white)' }}>
-            {streakText(rhythm.streakWeeks)}
-          </p>
-        </div>
-      </div>
 
       {/* ── Carriera: i totali di sempre, una riga sola ── */}
       <div className="px-6 pb-32">
@@ -289,12 +288,6 @@ function idleText(sinceLast) {
   return `${sinceLast} giorni dall'ultima sessione.`
 }
 
-function streakText(weeks) {
-  if (!weeks) return 'Striscia interrotta: nessuna sessione nelle ultime due settimane.'
-  if (weeks === 1) return '1 settimana di fila con almeno una sessione.'
-  return `${weeks} settimane di fila con almeno una sessione.`
-}
-
 function careerText(c) {
   const parts = []
   if (c.matches)   parts.push(`${c.matches} ${c.matches === 1 ? 'partita' : 'partite'}`)
@@ -302,22 +295,6 @@ function careerText(c) {
   if (c.minutes)   parts.push(`${c.estimated ? '~' : ''}${Math.round(c.minutes / 60)} h in campo`)
   if (c.matches)   parts.push(`${c.wins}V · ${c.draws}P · ${c.losses}S`)
   return parts.join(' · ')
-}
-
-function cellColor(match, training) {
-  if (match && training) return `linear-gradient(135deg, ${COLOR_MATCH} 50%, ${COLOR_TRAINING} 50%)`
-  if (match)    return COLOR_MATCH
-  if (training) return COLOR_TRAINING
-  return COLOR_EMPTY
-}
-
-function cellTitle(d) {
-  const label = new Date(d.day).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
-  const what = d.match && d.training ? 'partita e allenamento'
-    : d.match ? 'partita'
-    : d.training ? 'allenamento'
-    : 'niente'
-  return `${label} — ${what}`
 }
 
 function joinList(items) {

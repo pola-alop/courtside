@@ -25,6 +25,7 @@
 
 import { dayTime } from './stats'
 import { todayTime, startOfWeek, addDays, currentRhythm, MONTHS_SHORT } from './activity'
+import { emptyBlock } from './training'
 
 export const WEEKDAY_INITIALS = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
 export const MONTHS = [
@@ -160,7 +161,8 @@ function bySessionOrder(a, b) {
 //    oggi c'è ancora tempo.
 //
 // `sessionId` è la sessione che ha "chiuso" il programma: dal programma fatto
-// si arriva al suo dettaglio.
+// si arriva al suo dettaglio. `registrable` dice se il programma offre
+// "Registra" (non fatto, non riposo, di oggi o di un giorno passato).
 function planStatuses(plans, sessionsByDay, today) {
   const byDay = new Map()
   ;(plans || []).forEach(plan => {
@@ -181,6 +183,7 @@ function planStatuses(plans, sessionsByDay, today) {
       if (plan.kind === 'rest') {
         plan.status = daySessions.length ? 'missed' : day < today ? 'done' : 'todo'
         plan.sessionId = null
+        plan.registrable = false
         return
       }
       const match = daySessions.find(s => s.kind === plan.kind && !used.has(s))
@@ -192,6 +195,9 @@ function planStatuses(plans, sessionsByDay, today) {
         plan.status = day < today ? 'missed' : 'todo'
         plan.sessionId = null
       }
+      // "Registra" ha senso per ciò che non è ancora stato fatto, e solo da
+      // oggi indietro: una sessione futura non si registra.
+      plan.registrable = plan.status !== 'done' && day <= today
     })
   })
 
@@ -261,6 +267,55 @@ export function planSubject(plan, { opponents = [], runWorkouts = [], gymWorkout
   }
 }
 
+// ── Precompilazione dei wizard ─────────────────────────────
+// "Registra" apre il wizard della sessione già riempito con ciò che il
+// programma sapeva. Il risultato ha la forma di un pezzo di sessione (stessi
+// nomi di campo dei documenti di Matches), così i wizard lo leggono come
+// leggono `initial` — ma resta una prop distinta, perché `initial` vuol dire
+// "modifica".
+//
+// Avversario e scheda passano solo se esistono ancora: un id che non trova
+// niente lascerebbe il wizard con una selezione invisibile. Non passano la nota
+// (nel programma è una stringa, nella sessione un elenco datato) né l'orario
+// (le sessioni non lo salvano). Dell'allenamento si sa la durata, non il tipo
+// di lavoro: diventa un blocco solo, del tipo di partenza del wizard.
+export function planPrefill(plan, { opponents = [], runWorkouts = [], gymWorkouts = [] } = {}) {
+  if (!plan || keyToDay(plan.date) == null) return null
+  const d = plan.details || {}
+  const exists = (list, id) => (id && (list || []).some(x => x.id === id) ? id : null)
+  const date = dayKey(keyToDay(plan.date))
+
+  switch (plan.kind) {
+    case 'match':
+      return {
+        date,
+        opponentId: exists(opponents, d.opponentId),
+        type:       d.type || null,
+        eventName:  d.eventName || '',
+        surface:    d.surface || null,
+      }
+    case 'training': {
+      const opponentId = exists(opponents, d.withWhom?.opponentId)
+      const label = opponentId
+        ? opponents.find(o => o.id === opponentId).name
+        : d.withWhom?.label || ''
+      return {
+        date,
+        surface:  d.surface || null,
+        focus:    Array.isArray(d.focus) ? [...d.focus] : [],
+        withWhom: label ? { label, opponentId } : null,
+        blocks:   [d.minutes ? { ...emptyBlock(), minutes: d.minutes } : emptyBlock()],
+      }
+    }
+    case 'run':
+      return { date, workoutId: exists(runWorkouts, d.workoutId) }
+    case 'gym':
+      return { date, workoutId: exists(gymWorkouts, d.workoutId) }
+    default:
+      return null
+  }
+}
+
 // ── Giorni ─────────────────────────────────────────────────
 // La griglia del passato mostra solo ciò che è stato fatto: i programmi si
 // vedono dalla settimana corrente in avanti. Quelli più vecchi restano a DB (un
@@ -286,6 +341,11 @@ function buildDay({ time, month, monthStart, today, thisWeek, sessionsByDay, pla
     main: sessions[0]?.kind ?? null,
     extra: Math.max(0, sessions.length - 1),
     plans,
+    // I programmi ancora "aperti", quelli che la card della settimana disegna
+    // accanto alle sessioni: un programma fatto lo rappresenta già la sessione
+    // che lo chiude, e mostrarlo di nuovo lo conterebbe due volte. Il riposo
+    // resta sempre, perché non ha una sessione che lo chiuda.
+    openPlans: plans.filter(p => p.kind === 'rest' || p.status !== 'done'),
     // Il programma che dà l'icona al cerchio tratteggiato dei giorni futuri:
     // il primo per orario, come nella card del giorno.
     mainPlan: plans[0]?.kind ?? null,

@@ -15,16 +15,31 @@
 //   avgHr / maxHr   bpm interi           130 / 168
 //   trainingEffect  scala Garmin 0..5    3.4  (effetto aerobico)
 //   anaerobicTrainingEffect  scala Garmin 0..5  1.8  (effetto anaerobico)
-//   zones           [s,s,s,s,s] secondi per zona 1..5, oppure null
+//   zones           [s×7] secondi per zona 0..6 (come Garmin), oppure null
+//
+// Campi che arrivano SOLO dall'import del file .FIT (facoltativi, `null` se
+// la sessione è trascritta a mano):
+//   trainingLoad    carico Garmin (EPOC), 1 decimale     140.6
+//   maxSpeedKmh     velocità massima                     12.8
+//   ascentM/descentM  dislivello in metri interi         33
+//   hrBounds        [bpm×6] confini superiori delle zone 0..5 (la 6 è aperta)
+//   dynamics        potenza, cadenza e dinamiche di corsa (solo corsa)
+//   source          'fit' = misurato dall'orologio; assente = trascritto
+//   fitId           identità del file importato (id del documento fitDetails)
 
-// Zone di frequenza cardiaca (standard a 5 zone di Garmin/Polar).
-// I colori sono token definiti in index.css, non valori hardcoded.
+// Zone di frequenza cardiaca: le 7 fasce che l'orologio Garmin registra nel
+// file (`time_in_zone`): sotto la Z1, le cinque zone, sopra la Z5. L'indice
+// nell'array è il numero della zona (0 = riposo, 6 = oltre il massimo): è lo
+// stesso vocabolario delle zone di passo del Profilo e dei target delle fasi
+// di corsa (`z0`…`z6`). I colori sono token definiti in index.css.
 export const HR_ZONES = [
-  { id: 1, label: 'Z1', name: 'Riscaldamento', color: 'var(--color-zone-1)' },
-  { id: 2, label: 'Z2', name: 'Facile',        color: 'var(--color-zone-2)' },
-  { id: 3, label: 'Z3', name: 'Aerobica',      color: 'var(--color-zone-3)' },
-  { id: 4, label: 'Z4', name: 'Soglia',        color: 'var(--color-zone-4)' },
-  { id: 5, label: 'Z5', name: 'Massimale',     color: 'var(--color-zone-5)' },
+  { id: 0, label: 'Z0', name: 'Riposo',           color: 'var(--color-zone-0)' },
+  { id: 1, label: 'Z1', name: 'Riscaldamento',    color: 'var(--color-zone-1)' },
+  { id: 2, label: 'Z2', name: 'Facile',           color: 'var(--color-zone-2)' },
+  { id: 3, label: 'Z3', name: 'Aerobica',         color: 'var(--color-zone-3)' },
+  { id: 4, label: 'Z4', name: 'Soglia',           color: 'var(--color-zone-4)' },
+  { id: 5, label: 'Z5', name: 'Massimale',        color: 'var(--color-zone-5)' },
+  { id: 6, label: 'Z6', name: 'Oltre il massimo', color: 'var(--color-zone-6)' },
 ]
 
 // Limiti di plausibilità per gli input del wizard. Non sono vincoli di dominio
@@ -50,7 +65,21 @@ export function emptyAthletics() {
     trainingEffect: null,
     anaerobicTrainingEffect: null,
     zones: null,
+    trainingLoad: null,
+    maxSpeedKmh: null,
+    ascentM: null,
+    descentM: null,
+    hrBounds: null,
+    dynamics: null,
+    source: null,
+    fitId: null,
   }
+}
+
+// Draft per gli editor: i dati salvati prima delle 7 zone avevano 5 posizioni
+// (Z1…Z5), qui diventano 7 così le righe del form combaciano con l'indice.
+export function athleticsDraft(a) {
+  return { ...emptyAthletics(), ...(a || {}), zones: readZones(a?.zones) }
 }
 
 // Accetta il draft del wizard (o un documento legacy) e restituisce l'oggetto
@@ -69,15 +98,57 @@ export function normalizeAthletics(a) {
     trainingEffect: round(clampTo(a.trainingEffect, ATHLETIC_LIMITS.trainingEffect), 1),
     anaerobicTrainingEffect: round(clampTo(a.anaerobicTrainingEffect, ATHLETIC_LIMITS.anaerobicTrainingEffect), 1),
     zones,
+    trainingLoad: round(clampTo(a.trainingLoad, { min: 0, max: 2000 }), 1),
+    maxSpeedKmh:  round(clampTo(a.maxSpeedKmh, { min: 0, max: 100 }), 1),
+    ascentM:      intOrNull(a.ascentM, 0, 20000),
+    descentM:     intOrNull(a.descentM, 0, 20000),
+    hrBounds:     normalizeBounds(a.hrBounds),
+    dynamics:     normalizeDynamics(a.dynamics),
+    source:       a.source === 'fit' ? 'fit' : null,
+    fitId:        typeof a.fitId === 'string' && a.fitId ? a.fitId : null,
   }
   return hasAthletics(out) ? out : null
 }
 
-// Un array di 5 durate in secondi, o null se nessuna zona è compilata.
-function normalizeZones(zones) {
+// Le zone si leggono sempre a 7 posizioni. I documenti salvati con la tabella
+// a 5 zone (Z1…Z5) vengono riportati in forma: Z0 e Z6 a zero. Ritorna null se
+// non è un array.
+export function readZones(zones) {
   if (!Array.isArray(zones)) return null
-  const filled = HR_ZONES.map((_, i) => intOrNull(zones[i], 0, 24 * 3600) ?? 0)
+  if (zones.length === 5) return [0, ...zones, 0]
+  return HR_ZONES.map((_, i) => zones[i] ?? 0)
+}
+
+// 7 durate in secondi, o null se nessuna zona è compilata.
+function normalizeZones(zones) {
+  const z = readZones(zones)
+  if (!z) return null
+  const filled = z.map(v => intOrNull(v, 0, 24 * 3600) ?? 0)
   return filled.some(v => v > 0) ? filled : null
+}
+
+function normalizeBounds(b) {
+  if (!Array.isArray(b) || b.length < 6) return null
+  const out = b.slice(0, 6).map(v => intOrNull(v, 0, 250))
+  return out.every(v => v !== null) ? out : null
+}
+
+const DYNAMICS_FIELDS = {
+  avgPowerW: [0, 2000], maxPowerW: [0, 3000], normPowerW: [0, 2000],
+  cadenceSpm: [0, 300], strideM: [0, 5], vertOscCm: [0, 50],
+  contactMs: [0, 1000], vertRatioPct: [0, 30],
+}
+
+function normalizeDynamics(d) {
+  if (!d || typeof d !== 'object') return null
+  const out = {}
+  let any = false
+  Object.entries(DYNAMICS_FIELDS).forEach(([key, [min, max]]) => {
+    const v = round(clampTo(d[key], { min, max }), 2)
+    out[key] = v
+    if (v !== null) any = true
+  })
+  return any ? out : null
 }
 
 export function hasAthletics(a) {
@@ -100,8 +171,9 @@ export function athleticsIssues(a) {
   }
 
   const zonesTotal = zonesTotalSec(a.zones)
-  if (zonesTotal > 0 && isNum(a.durationSec) && zonesTotal > a.durationSec) {
-    issues.push('Il tempo totale nelle zone supera la durata della partita.')
+  // 5 secondi di tolleranza: i secondi del file sono arrotondati zona per zona.
+  if (zonesTotal > 0 && isNum(a.durationSec) && zonesTotal > a.durationSec + 5) {
+    issues.push('Il tempo totale nelle zone supera la durata della sessione.')
   }
 
   return issues
@@ -115,11 +187,12 @@ export function zonesTotalSec(zones) {
 }
 
 // Percentuale di ogni zona sul totale delle zone (non sulla durata del match:
-// l'orologio può non coprire tutta la partita).
+// l'orologio può non coprire tutta la partita). Sempre a 7 posizioni.
 export function zonePercents(zones) {
-  const total = zonesTotalSec(zones)
+  const z = readZones(zones)
+  const total = zonesTotalSec(z)
   if (total <= 0) return HR_ZONES.map(() => 0)
-  return HR_ZONES.map((_, i) => ((zones?.[i] || 0) / total) * 100)
+  return HR_ZONES.map((_, i) => ((z?.[i] || 0) / total) * 100)
 }
 
 // Velocità media in km/h, derivata: non si inserisce a mano perché è già

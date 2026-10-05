@@ -1,8 +1,11 @@
-import { Card, Tile, NotEnough, SampleTag, Note, InfoButton, InfoItem } from './StatsUI'
+import { useState } from 'react'
+import { Card, Tile, NotEnough, SampleTag, Note, InfoButton, InfoItem, ZoneBar } from './StatsUI'
 import MovementBlock from './MovementBlock'
 import OutcomeBlock from './OutcomeBlock'
+import FitGate from './FitGate'
 import { HR_ZONES, formatDuration, formatTrainingEffect, trainingEffectLabel } from '../../lib/athletics'
 import { MIN_SIDE } from '../../lib/physical'
+import { thirdsReport, thirdsVerdict, MIN_DRIFT_N, THIRDS_MIN_SEC, THIRDS_TOLERANCE_BPM } from '../../lib/fitStats'
 
 // Sezione "Fisico" — risponde a "come sto fisicamente, e sto migliorando?".
 //
@@ -15,6 +18,7 @@ import { MIN_SIDE } from '../../lib/physical'
 //   2. Profilo di stimolo  — che allenamento è, per te, il tennis
 //   3. Movimento           — quanto ti muovi, a che ritmo, e come cambia
 //   4. Economia cardiaca   — la metrica di fitness vera
+//   4b. Tenuta in partita  — come cambia il battito dall'inizio alla fine (dal file .FIT)
 //   5. Fisico ↔ risultato  — come sono fatte le partite che perdi
 //
 // ── Perché la copertura sta in TESTA e non in fondo ──
@@ -53,11 +57,12 @@ export default function Fisico({ report, periodLabel }) {
       <ZonesCard report={report} />
       <StimulusCard report={report} />
       <MovementBlock report={report} />
+      <ThirdsCard report={report} />
       <OutcomeBlock report={report} />
 
       <Note>
-        Tutti i numeri di questa sezione nascono da dati che hai trascritto a mano dall'orologio, e
-        ogni campo è indipendente dagli altri: le medie qui sopra hanno campioni diversi, ed è per
+        Tutti i numeri di questa sezione nascono da dati dell'orologio, importati dal file .FIT o
+        trascritti a mano, e ogni campo è indipendente dagli altri: le medie qui sopra hanno campioni diversi, ed è per
         questo che ogni blocco porta il proprio «su quante sessioni». Le partite senza dati atletici
         non vengono stimate — in Attività la durata di un match si stima dai game, qui no: la stima
         cresce con i game giocati e farebbe apparire da sola una differenza tra vittorie e sconfitte
@@ -106,6 +111,17 @@ function CoverageCard({ report, periodLabel }) {
         <Tile label="Allenamenti" value={`${c.trainings.n}/${c.trainings.total}`} color="var(--color-teal)"
               sub={c.trainings.share != null ? `${Math.round(c.trainings.share * 100)}%` : '—'} />
       </div>
+
+      {/* Misurato (file .FIT) contro trascritto a mano. Le sessioni del file
+          hanno tutti i campi e il tempo esatto dell'orologio: più ce ne sono,
+          più le medie di questa sezione poggiano su dati completi. */}
+      {c.n > 0 && (
+        <p className="text-[11px] mt-3" style={{ color: 'var(--color-slate)' }}>
+          Di queste, <span style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-mono)' }}>{c.measured}</span> dal
+          file .FIT dell'orologio e <span style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-mono)' }}>{c.n - c.measured}</span> trascritte
+          a mano.
+        </p>
+      )}
 
       {/* Quale campo manca, quando trascrivi. È l'unica parte azionabile del
           blocco: dice cosa aggiungere alla routine per sbloccare un blocco. */}
@@ -161,6 +177,12 @@ function CoverageInfo() {
         La copertura separata per i due tipi di sessione. Se trascrivi le partite e non gli
         allenamenti, i confronti «partita contro allenamento» di questa sezione restano chiusi:
         servono almeno {MIN_SIDE} sessioni per lato.
+      </InfoItem>
+      <InfoItem title="Dal file e a mano">
+        Una sessione importata dal file .FIT ha tutti i campi, misurati dall'orologio, e per un
+        allenamento anche il tempo esatto. Una trascritta a mano ne ha solo alcuni, e può avere
+        valori approssimati. Il blocco dice quante delle tue sessioni con dati sono dell'uno e
+        dell'altro tipo.
       </InfoItem>
       <InfoItem title="Campi compilati">
         Anche quando trascrivi, non trascrivi tutto: puoi avere la FC media e non la distanza. Ogni
@@ -230,7 +252,7 @@ function ZonesCard({ report }) {
       {dominant && (
         <p className="text-[11px] mt-4 leading-relaxed" style={{ color: 'var(--color-white)' }}>
           Passi la maggior parte del tempo in <strong>{dominant.label} · {dominant.name}</strong>, e
-          il {Math.round((z.all.highShare ?? 0) * 100)}% del tempo totale sopra la soglia (Z4-Z5),
+          il {Math.round((z.all.highShare ?? 0) * 100)}% del tempo totale sopra la soglia (Z4-Z6),
           su {formatDuration(z.all.total)} registrati.
         </p>
       )}
@@ -252,8 +274,8 @@ function ZonesCard({ report }) {
                 {Math.abs(z.highGap) < 0.08
                   ? `Sopra soglia stai praticamente lo stesso tempo in partita (${Math.round(z.match.highShare * 100)}%) e in allenamento (${Math.round(z.training.highShare * 100)}%): ti alleni all'intensità a cui giochi.`
                   : z.highGap > 0
-                    ? `In partita stai in Z4-Z5 il ${Math.round(z.match.highShare * 100)}% del tempo, in allenamento il ${Math.round(z.training.highShare * 100)}%: ti alleni più piano di come giochi, e la differenza la paghi nei finali di set.`
-                    : `In allenamento stai in Z4-Z5 il ${Math.round(z.training.highShare * 100)}% del tempo, in partita il ${Math.round(z.match.highShare * 100)}%: gli allenamenti sono più duri delle partite, il che va bene finché arrivi fresco a giocare.`}
+                    ? `In partita stai in Z4-Z6 il ${Math.round(z.match.highShare * 100)}% del tempo, in allenamento il ${Math.round(z.training.highShare * 100)}%: ti alleni più piano di come giochi, e la differenza la paghi nei finali di set.`
+                    : `In allenamento stai in Z4-Z6 il ${Math.round(z.training.highShare * 100)}% del tempo, in partita il ${Math.round(z.match.highShare * 100)}%: gli allenamenti sono più duri delle partite, il che va bene finché arrivi fresco a giocare.`}
               </p>
             )}
           </>
@@ -276,23 +298,7 @@ function ZonesCard({ report }) {
   )
 }
 
-// Barra impilata delle cinque zone. Le zone a 0 non occupano spazio: uno
-// spicchio da 0px con il suo bordo diventerebbe una riga di colore fantasma.
-function ZoneBar({ shares, height = 10 }) {
-  return (
-    <div className="flex w-full rounded-full overflow-hidden"
-         style={{ height, background: 'var(--color-surface-2)' }}>
-      {HR_ZONES.map((z, i) => (
-        shares[i] > 0
-          ? <div key={z.id} title={`${z.label} · ${z.name}: ${Math.round(shares[i] * 100)}%`}
-                 style={{ width: `${shares[i] * 100}%`, background: z.color }} />
-          : null
-      ))}
-    </div>
-  )
-}
-
-// Una riga del confronto: etichetta, quota sopra soglia, barra. La quota Z4-Z5
+// Una riga del confronto: etichetta, quota sopra soglia, barra. La quota Z4-Z6
 // è ripetuta in cifre perché è l'unico numero che si confronta davvero tra i due
 // lati — a occhio, due barre impilate simili sono indistinguibili.
 function SideBar({ label, side, className = '' }) {
@@ -308,7 +314,7 @@ function SideBar({ label, side, className = '' }) {
         </span>
         <span className="text-[11px] shrink-0 font-semibold"
               style={{ color: 'var(--color-zone-4)', fontFamily: 'var(--font-mono)' }}>
-          {Math.round((side.highShare ?? 0) * 100)}% Z4-5
+          {Math.round((side.highShare ?? 0) * 100)}% Z4-6
         </span>
       </div>
       <ZoneBar shares={side.shares} height={8} />
@@ -320,14 +326,15 @@ function ZonesInfo() {
   return (
     <>
       <InfoItem>
-        L'orologio divide la frequenza cardiaca in cinque fasce, dalla più leggera alla più dura:
-        <strong> Z1 riscaldamento</strong>, <strong>Z2 facile</strong>, <strong>Z3 aerobica</strong>,
-        <strong> Z4 soglia</strong>, <strong>Z5 massimale</strong>. Questo blocco somma quanto tempo
+        L'orologio divide la frequenza cardiaca in sette fasce, dalla più leggera alla più dura:
+        <strong> Z0 riposo</strong>, <strong>Z1 riscaldamento</strong>, <strong>Z2 facile</strong>,
+        <strong> Z3 aerobica</strong>, <strong>Z4 soglia</strong>, <strong>Z5 massimale</strong> e
+        <strong> Z6 oltre il massimo</strong>. Questo blocco somma quanto tempo
         hai passato in ognuna, su tutte le sessioni del periodo.
       </InfoItem>
       <InfoItem title="Come si legge la barra">
         È la fotografia di che tipo di sforzo è il tennis per il tuo cuore. Molto Z2-Z3 significa
-        uno sforzo continuo e sostenibile; molto Z4-Z5 significa uno sforzo che consuma e da cui
+        uno sforzo continuo e sostenibile; molto Z4-Z6 significa uno sforzo che consuma e da cui
         serve recuperare. Non c'è una distribuzione «giusta»: c'è la tua, ed è quella con cui
         confrontare gli allenamenti.
       </InfoItem>
@@ -336,7 +343,7 @@ function ZonesInfo() {
         minuti peserebbe quanto una partita di due ore. Sommando i secondi, ogni sessione pesa per
         quanto è durata davvero.
       </InfoItem>
-      <InfoItem title="La quota Z4-Z5">
+      <InfoItem title="La quota Z4-Z6">
         Il tempo sopra la soglia, cioè la parte di sforzo che non è sostenibile a lungo. È l'unico
         numero delle zone che si confronta davvero tra partita e allenamento: due barre impilate
         simili a occhio sono indistinguibili, una differenza di 20 punti percentuali sopra soglia
@@ -537,4 +544,132 @@ function coverageColor(share) {
 function fieldColor(share) {
   if (share == null) return 'var(--color-surface-2)'
   return share >= 0.7 ? 'var(--color-teal-dark)' : share >= 0.35 ? 'var(--color-amber)' : 'var(--color-slate)'
+}
+
+// ── Blocco 3b — Tenuta in partita ──────────────────────────
+// Dalla serie della FC del file, sulle sole partite: il battito medio per terzo
+// di partita. Come gli altri blocchi che leggono `fitDetails`, resta chiuso
+// finché non lo apri (`FitGate`): il resto della sezione nasce dal riassunto.
+
+const THIRDS_WORD = { rises: 'sale', steady: 'resta', falls: 'scende' }
+const SHOWN = 5
+
+function thirdsColor(verdict) {
+  return verdict === 'rises' ? 'var(--color-amber)' : 'var(--color-white)'
+}
+
+function signedBpm(v) {
+  return `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)}`
+}
+
+function ThirdsCard({ report }) {
+  const info = (
+    <InfoButton title="Come si legge la tenuta in partita">
+      <InfoItem title="Cosa misura">
+        La partita è divisa in tre parti uguali per tempo, e per ognuna c'è il battito medio. Dice
+        come cambia il cuore dall'inizio alla fine: se sale molto, o se resta fermo.
+      </InfoItem>
+      <InfoItem title="Come si legge">
+        Entro ±{THIRDS_TOLERANCE_BPM} bpm tra primo e ultimo terzo si dice «resta». Sono soglie di
+        partenza uguali per tutti, non tarate su di te. Un battito che sale è normale, perché il
+        riscaldamento è nel primo terzo: conta quanto.
+      </InfoItem>
+      <InfoItem title="Attenzione">
+        Il file non distingue riscaldamento, pause e game: il battito sale anche per un game
+        combattuto, per il caldo o per l'ansia. È una forma, non una diagnosi di stanchezza.
+        Il recupero tra un punto e l'altro non si legge, perché l'orologio salva un campione ogni
+        5-10 secondi. Solo le partite: negli allenamenti pause ed esercizi diversi rendono le curve
+        non confrontabili. Servono partite di almeno {THIRDS_MIN_SEC / 60} minuti, e la media da {MIN_DRIFT_N}.
+      </InfoItem>
+    </InfoButton>
+  )
+
+  return (
+    <Card id="tenuta-partita" title="Tenuta in partita" titleExtra={info}
+          sub="Il battito medio per terzo di partita, dal file .FIT">
+      <FitGate fit={report.fit} unit="partite">
+        {({ byId }) => <ThirdsBody sessions={report.fit.list} byId={byId} />}
+      </FitGate>
+    </Card>
+  )
+}
+
+function ThirdsBody({ sessions, byId }) {
+  const [all, setAll] = useState(false)
+  const t = thirdsReport(sessions, byId)
+
+  if (t.n === 0) {
+    return (
+      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-slate)' }}>
+        Nessuna partita dura almeno {THIRDS_MIN_SEC / 60} minuti con il battito del file
+        {t.missing > 0 ? ` (${t.missing} senza i dettagli)` : ''}.
+      </p>
+    )
+  }
+
+  const rows = [...t.rows].reverse()
+  const shown = all ? rows : rows.slice(0, SHOWN)
+
+  return (
+    <>
+      {t.thirds ? (
+        <>
+          <div className="grid grid-cols-3 gap-2">
+            <Tile label="1° terzo" value={t.thirds[0]} sub="bpm" />
+            <Tile label="2° terzo" value={t.thirds[1]} sub="bpm" />
+            <Tile label="3° terzo" value={t.thirds[2]} sub="bpm"
+                  color={thirdsColor(thirdsVerdict(t.deltaBpm))} />
+          </div>
+          <div className="flex items-baseline justify-between gap-3 mt-3">
+            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-white)' }}>
+              Dal primo all'ultimo terzo il battito{' '}
+              <span style={{ color: thirdsColor(thirdsVerdict(t.deltaBpm)), fontFamily: 'var(--font-mono)' }}>
+                {THIRDS_WORD[thirdsVerdict(t.deltaBpm)]} ({signedBpm(t.deltaBpm)} bpm)
+              </span>.
+            </p>
+            <SampleTag n={t.n} unit="partite" />
+          </div>
+        </>
+      ) : (
+        <NotEnough need={MIN_DRIFT_N - t.n} unit="partite" what="Per la curva media" />
+      )}
+
+      <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid var(--color-surface-2)' }}>
+        {shown.map(r => (
+          <div key={r.id}>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[11px] flex-1 min-w-0 truncate"
+                    style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                {r.label}
+              </span>
+              <span className="text-[11px] shrink-0 font-semibold"
+                    style={{ color: thirdsColor(r.verdict), fontFamily: 'var(--font-mono)' }}>
+                {signedBpm(r.deltaBpm)} bpm · {THIRDS_WORD[r.verdict]}
+              </span>
+            </div>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+              {dayLabel(r.day)} · {r.thirds.join(' → ')} bpm · {Math.round(r.durationSec / 60)} min
+            </p>
+          </div>
+        ))}
+        {rows.length > SHOWN && (
+          <button type="button" onClick={() => setAll(v => !v)}
+                  className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-teal)' }}>
+            {all ? 'Mostra meno' : `Mostra altre ${rows.length - SHOWN}`}
+          </button>
+        )}
+      </div>
+
+      {(t.missing > 0 || t.short > 0) && (
+        <Note>
+          {t.short > 0 ? `${t.short} ${t.short === 1 ? 'partita è troppo breve' : 'partite sono troppo brevi'} o senza battito sufficiente. ` : ''}
+          {t.missing > 0 ? `${t.missing} ${t.missing === 1 ? 'è senza' : 'sono senza'} i dettagli del file.` : ''}
+        </Note>
+      )}
+    </>
+  )
+}
+
+function dayLabel(time) {
+  return new Date(time).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: '2-digit' })
 }

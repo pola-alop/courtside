@@ -42,9 +42,10 @@
 // che non ce l'hanno restano fuori dal conteggio.
 
 import { gamesInMatch } from './tennis'
-import { HR_ZONES, hasAthletics, zonesTotalSec, avgSpeedKmh, trainingEffectLabel } from './athletics'
+import { HR_ZONES, hasAthletics, zonesTotalSec, readZones, avgSpeedKmh, trainingEffectLabel } from './athletics'
 import { dayTime } from './stats'
 import { MONTHS_SHORT } from './activity'
+import { pickLatest } from './fitStats'
 
 // ── Soglie minime di campione ──────────────────────────────
 // Più basse che altrove, e non per distrazione: qui il campione non è "quante
@@ -70,9 +71,9 @@ export const TREND_MONTHS = 12
 const MIN_ECONOMY_R = 0.35
 
 // Le zone "alte": è lì che si costruisce (o si subisce) la partita. La quota di
-// tempo in Z4+Z5 è l'unico numero delle zone che si confronta davvero tra
+// tempo in Z4+Z5+Z6 è l'unico numero delle zone che si confronta davvero tra
 // partita e allenamento.
-const HIGH_ZONES = [3, 4]   // indici 0-based di Z4 e Z5
+const HIGH_ZONES = [4, 5, 6]   // l'indice nell'array è il numero della zona
 
 // ── Sessioni normalizzate ──────────────────────────────────
 // Partite e allenamenti portano lo stesso oggetto `athletics`, quindi la
@@ -121,6 +122,10 @@ function normalize(base) {
   return {
     ...base,
     has: hasAthletics(a),
+    // Misurato dall'orologio (file .FIT) contro trascritto a mano: per un
+    // allenamento cambia anche il significato della durata (vedi `movement`).
+    measured: a?.source === 'fit',
+    fitId: a?.fitId || null,
     hr:     isNum(a?.avgHr) ? a.avgHr : null,
     maxHr:  isNum(a?.maxHr) ? a.maxHr : null,
     km:     isNum(a?.distanceKm) ? a.distanceKm : null,
@@ -131,7 +136,7 @@ function normalize(base) {
     speed:  avgSpeedKmh(a),
     te:     isNum(a?.trainingEffect) ? a.trainingEffect : null,
     anTe:   isNum(a?.anaerobicTrainingEffect) ? a.anaerobicTrainingEffect : null,
-    zones:  zonesSec > 0 ? a.zones : null,
+    zones:  zonesSec > 0 ? readZones(a.zones) : null,
     zonesSec,
   }
 }
@@ -157,6 +162,9 @@ export function coverage(sessions) {
       total: list.length,
       n: withData.length,
       share: list.length ? withData.length / list.length : null,
+      // Di quelle con dati, quante vengono dal file .FIT. Le altre sono
+      // trascritte a mano e hanno quasi sempre meno campi.
+      measured: withData.filter(s => s.measured).length,
     }
   }
 
@@ -176,6 +184,7 @@ export function coverage(sessions) {
       share: withData.length ? withData.filter(s => f.pick(s) != null).length / withData.length : null,
     })),
     withData: withData.length,
+    measured: withData.filter(s => s.measured).length,
   }
 }
 
@@ -185,7 +194,7 @@ export function coverage(sessions) {
 // far contare un riscaldamento di 20 minuti quanto una partita di due ore.
 //
 // Il confronto partita vs allenamento è il punto del blocco. Se in partita passi
-// il 40% del tempo in Z4-Z5 e in allenamento il 12%, ti stai allenando a
+// il 40% del tempo in Z4-Z6 e in allenamento il 12%, ti stai allenando a
 // un'intensità che non prepara a quello che poi fai in campo.
 
 export function zoneMix(sessions) {
@@ -297,6 +306,10 @@ export function movement(sessions) {
       kmPerHour: hours > 0 ? km / hours : null,
       kmPerSession: ok.length ? km / ok.length : null,
       minutesPerSession: ok.length ? sum(ok, s => s.minutes) / ok.length : null,
+      // Quante di queste sessioni hanno la durata MISURATA dall'orologio. Per un
+      // allenamento senza file la durata è la somma dei blocchi, non il tempo
+      // dell'orologio: la velocità ne risente, e la UI deve dirlo.
+      measuredN: ok.filter(s => s.measured).length,
       sessions: ok,
     }
   }
@@ -408,7 +421,7 @@ export function cardiacEconomy(sessions) {
   const b = corrected ? beta : 0
 
   const points = ok.map(s => ({
-    id: s.id, kind: s.kind, day: s.day, label: s.label,
+    id: s.id, kind: s.kind, day: s.day, label: s.label, measured: s.measured,
     hr: s.hr, speed: s.speed, km: s.km, minutes: s.minutes,
     adjusted: s.hr - b * (s.speed - meanSpeed),
     // Costo cardiaco descrittivo: quanti battiti ti è costato un chilometro.
@@ -433,6 +446,9 @@ export function cardiacEconomy(sessions) {
     n, points, corrected, beta, r, refSpeed: meanSpeed, meanHr,
     matchN:    ok.filter(s => s.kind === 'match').length,
     trainingN: ok.filter(s => s.kind === 'training').length,
+    // Allenamenti la cui velocità poggia sulla durata dell'orologio e non su
+    // quella dei blocchi: sono i soli dove la velocità è esatta.
+    trainingMeasuredN: ok.filter(s => s.kind === 'training' && s.measured).length,
     speedRange: { min: Math.min(...speeds), max: Math.max(...speeds) },
     halves: enoughSides ? {
       first:  { n: first.length,  hr: firstHr,  speed: avg(first.map(p => p.speed)),  from: first[0].day,  to: first[first.length - 1].day },
@@ -542,6 +558,10 @@ export function buildPhysical({ matches = [], trainings = [] }) {
     movement: movement(withData),
     economy:  cardiacEconomy(withData),
     outcome:  outcomeSplit(withData),
+    // Le partite di cui il blocco «Tenuta in partita» può leggere i dettagli.
+    // Solo partite: negli allenamenti pause ed esercizi diversi rendono la
+    // curva del battito non confrontabile.
+    fit: pickLatest(sessions.filter(s => s.kind === 'match')),
   }
 
   report.insights = report.enough ? physicalInsights(report) : []
@@ -609,8 +629,8 @@ export function physicalInsights(r) {
       id: 'zone-gap', target: 'zone', tone: harder ? 'bad' : 'neutral', icon: harder ? '🔥' : '🧊',
       effect: Math.abs(z.highGap), n: z.match.n + z.training.n, weight: 1.2,
       text: harder
-        ? `In partita stai il ${pct(z.match.highShare)} del tempo in Z4-Z5, in allenamento il ${pct(z.training.highShare)}: ti alleni più piano di come giochi.`
-        : `In allenamento stai il ${pct(z.training.highShare)} del tempo in Z4-Z5, in partita il ${pct(z.match.highShare)}: gli allenamenti sono più duri delle partite.`,
+        ? `In partita stai il ${pct(z.match.highShare)} del tempo in Z4-Z6, in allenamento il ${pct(z.training.highShare)}: ti alleni più piano di come giochi.`
+        : `In allenamento stai il ${pct(z.training.highShare)} del tempo in Z4-Z6, in partita il ${pct(z.match.highShare)}: gli allenamenti sono più duri delle partite.`,
     }))
   }
 

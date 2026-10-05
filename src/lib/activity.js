@@ -25,7 +25,7 @@
 
 import { matchMinutes, hasRealDuration, SURFACES } from './tennis'
 import { totalMinutes, normalizeBlocks, TRAINING_KINDS, INTENSITIES } from './training'
-import { dayTime } from './stats'
+import { dayTime, filterPeriod } from './stats'
 
 // ── Soglie minime di campione ──────────────────────────────
 export const MIN_ACTIVITY   = 8   // sessioni nel periodo, per aprire la sezione
@@ -100,7 +100,7 @@ export function toSessions(matches = [], trainings = []) {
     const day = dayTime(m.date)
     if (day == null) return
     out.push({
-      id: m.id, kind: 'match', day, date: m.date,
+      id: m.id, kind: 'match', domain: 'tennis', day, date: m.date,
       minutes: matchMinutes(m),
       estimated: !hasRealDuration(m),
       surface: m.surface || null,
@@ -117,7 +117,7 @@ export function toSessions(matches = [], trainings = []) {
     if (day == null) return
     const blocks = normalizeBlocks(t.blocks)
     out.push({
-      id: t.id, kind: 'training', day, date: t.date,
+      id: t.id, kind: 'training', domain: 'tennis', day, date: t.date,
       minutes: totalMinutes(blocks),
       estimated: false,
       surface: t.surface || null,
@@ -146,7 +146,7 @@ export function todayTime() {
   return d.getTime()
 }
 
-function addDays(time, n) {
+export function addDays(time, n) {
   const d = new Date(time)
   d.setDate(d.getDate() + n)
   d.setHours(0, 0, 0, 0)
@@ -329,8 +329,10 @@ export function consistency(sessions, range, allSessions = sessions) {
 // È esportata perché la Home ha bisogno esattamente di questo — e di nient'altro
 // di `consistency`, che richiederebbe un periodo che la Home non ha: lì il ritmo
 // attuale è il dato di apertura, non un sotto-blocco dell'analisi di un periodo.
-export function currentRhythm(allSessions) {
-  const today = todayTime()
+//
+// `today` è un parametro perché il calendario della Home (`calendar.js`) lo
+// riceve dall'esterno, così si collauda su date fisse; il default è oggi.
+export function currentRhythm(allSessions, today = todayTime()) {
   if (!allSessions.length) return { streakWeeks: 0, sinceLast: null, lastDay: null }
 
   const activeWeeks = new Set(allSessions.map(s => startOfWeek(s.day)))
@@ -538,14 +540,32 @@ function dailyLoadMap(sessions) {
   return map
 }
 
+function acuteByDomain(sessions, today) {
+  const from = addDays(today, -6)
+  const out = { tennis: 0, run: 0, gym: 0 }
+  sessions.forEach(s => {
+    if (s.day < from || s.day > today) return
+    out[s.domain || 'tennis'] += s.minutes * s.rpe
+  })
+  return out
+}
+
 function windowDays(endTime, length) {
   const out = []
   for (let i = length - 1; i >= 0; i--) out.push(addDays(endTime, -i))
   return out
 }
 
-export function loadStatus(allSessions) {
-  const today = todayTime()
+// `atDay` rende lo stesso calcolo valido per un giorno del passato (il carico con
+// cui sei arrivato a una partita, in Stats › Incroci): senza, è oggi. Le sessioni
+// dopo quel giorno non esistono ancora, quindi non contano nemmeno nello storico.
+//
+// Le sessioni possono venire da più domini (`domain`: tennis / run / gym, vedi
+// `toLoadSessions` in crossStats.js): il carico è la somma, perché al corpo non
+// importa dove ha faticato, ma `byDomain` dice di chi è il carico acuto.
+export function loadStatus(sessionsIn, atDay = todayTime()) {
+  const today = atDay
+  const allSessions = sessionsIn.filter(s => s.day <= today)
   if (!allSessions.length) return { available: false, reason: 'no-data' }
 
   const daily = dailyLoadMap(allSessions)
@@ -591,6 +611,8 @@ export function loadStatus(allSessions) {
     assumedSessions: sessions28.filter(s => !s.rpeDeclared).length,
     sessions7: allSessions.filter(s => s.day >= addDays(today, -6) && s.day <= today).length,
     sessions28: sessions28.length,
+    // Carico dei 7 giorni diviso per dominio: chi lo sta producendo.
+    byDomain: acuteByDomain(allSessions, today),
     daily: acuteDays.map(d => ({ day: d, load: daily.get(d) || 0, label: WEEKDAYS[weekdayIndex(d)] })),
   }
 }
@@ -666,6 +688,10 @@ export function buildActivity({
   matches = [], trainings = [],
   allMatches = null, allTrainings = null,
   previousMatches = [], previousTrainings = [],
+  // Sessioni di carico di TUTTI i domini e dell'intero storico (`toLoadSessions`):
+  // alimentano solo ACWR e barre del carico. Volume, costanza e mix restano di
+  // tennis, perché sono «ore in campo». Se mancano si ricade sul solo tennis.
+  loadSessions = null,
   range = null,
 }) {
   const sessions = toSessions(matches, trainings)
@@ -682,10 +708,11 @@ export function buildActivity({
     volume:      volume(sessions, range, previous),
     consistency: consistency(sessions, range, all),
     weeks:       weekBuckets(sessions, range),
+    loadWeeks:   loadSessions ? weekBuckets(filterPeriod(loadSessions, range), range) : weekBuckets(sessions, range),
     seasonality: seasonality(sessions),
     mix:         blockMix(sessions),
     company:     company(sessions),
-    load:        loadStatus(all),
+    load:        loadStatus(loadSessions || all),
     surfaces:    surfaceMix(sessions),
   }
 

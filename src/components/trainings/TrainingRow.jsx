@@ -36,11 +36,13 @@ export default function TrainingRow({ training, onClick }) {
         )}
       </div>
 
-      {/* Tipi di blocco + durata totale */}
+      {/* Tipi di blocco + durata totale. La 🎾 davanti al titolo è l'icona del
+          tipo di allenamento, come 🏃 sulle card di RunRow: nella lista unica
+          del tab Allenamenti il tipo si riconosce a colpo d'occhio. */}
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-sm font-semibold truncate"
            style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-          {blocksSummary(training.blocks) || 'Allenamento'}
+          🎾 {blocksSummary(training.blocks) || 'Allenamento'}
         </p>
         <span className="text-sm font-bold shrink-0"
               style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-mono)' }}>

@@ -7,6 +7,7 @@ import {
 import { trainingGameEquivalents } from '../../lib/wear'
 import AthleticsSection from '../athletics/AthleticsSection'
 import TrainingAthleticsEditor from './TrainingAthleticsEditor'
+import IntensitySuggestion from '../athletics/IntensitySuggestion'
 
 const MAX_NOTE_LENGTH = 150
 
@@ -18,7 +19,7 @@ const EQUIP_TYPES = [
 ]
 
 export default function TrainingDetailModal({
-  training, equipment = [], onClose, onEdit, onUpdate, onDelete
+  training, equipment = [], fitUse = null, intensityCalibration = null, onClose, onEdit, onUpdate, onDelete
 }) {
   // view | confirmDelete | editAthletics | addNote | editNote | confirmDeleteNote
   const [mode, setMode]     = useState('view')
@@ -62,10 +63,10 @@ export default function TrainingDetailModal({
     setSaving(false); setNoteDraft(''); setNoteTarget(null); setMode('view')
   }
 
-  const handleSaveAthletics = async (athletics) => {
+  const handleSaveAthletics = async (athletics, fitDetails) => {
     if (saving) return
     setSaving(true)
-    await onUpdate(training.id, { athletics })
+    await onUpdate(training.id, { athletics }, { details: fitDetails, prevFitId: training.athletics?.fitId || null })
     setSaving(false); setMode('view')
   }
 
@@ -125,6 +126,14 @@ export default function TrainingDetailModal({
               </button>
             )}
           </div>
+
+          {/* L'orologio può suggerire un'intensità diversa da quella segnata: un tap
+              per confermarla, altrimenti resta quella dell'utente. */}
+          {mode === 'view' && (
+            <IntensitySuggestion athletics={training.athletics} current={training.intensity}
+              calibration={intensityCalibration}
+              onUse={async (id) => { if (!saving) { setSaving(true); await onUpdate(training.id, { intensity: id, intensitySource: 'suggested' }); setSaving(false) } }} />
+          )}
 
           {/* Blocchi della sessione */}
           <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--color-surface-2)' }}>
@@ -228,6 +237,8 @@ export default function TrainingDetailModal({
             <TrainingAthleticsEditor
               athletics={training.athletics}
               sessionMinutes={minutes}
+              sessionDate={training.date ? training.date.split('T')[0] : null}
+              fitUse={fitUse}
               saving={saving}
               onCancel={() => setMode('view')}
               onSave={handleSaveAthletics}

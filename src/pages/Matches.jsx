@@ -1,9 +1,17 @@
-import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useMemo, useRef } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useOpponents } from '../hooks/useOpponents'
 import { useMatches } from '../hooks/useMatches'
 import { useTrainings } from '../hooks/useTrainings'
 import { useEquipment } from '../hooks/useEquipment'
+import { useRuns } from '../hooks/useRuns'
+import { useRunWorkouts } from '../hooks/useRunWorkouts'
+import { useGymSessions } from '../hooks/useGymSessions'
+import { useGymWorkouts } from '../hooks/useGymWorkouts'
+import { useGymExercises } from '../hooks/useGymExercises'
+import { useProfile } from '../hooks/useProfile'
+import { useFitDetails } from '../hooks/useFitDetails'
+import { usePlans } from '../hooks/usePlans'
 import OpponentCard from '../components/matches/OpponentCard'
 import AddOpponentModal from '../components/matches/AddOpponentModal'
 import OpponentDetailModal from '../components/matches/OpponentDetailModal'
@@ -17,12 +25,27 @@ import TrainingRow from '../components/trainings/TrainingRow'
 import AddTrainingModal from '../components/trainings/AddTrainingModal'
 import TrainingDetailModal from '../components/trainings/TrainingDetailModal'
 import FocusProgress from '../components/trainings/FocusProgress'
+import SessionTypePicker from '../components/trainings/SessionTypePicker'
+import RunRow from '../components/runs/RunRow'
+import AddRunModal from '../components/runs/AddRunModal'
+import RunDetailModal from '../components/runs/RunDetailModal'
+import WorkoutLibrary from '../components/runs/WorkoutLibrary'
+import WorkoutEditModal from '../components/runs/WorkoutEditModal'
+import GymRow from '../components/gym/GymRow'
+import AddGymModal from '../components/gym/AddGymModal'
+import GymDetailModal from '../components/gym/GymDetailModal'
+import GymWorkoutLibrary from '../components/gym/GymWorkoutLibrary'
+import GymWorkoutEditModal from '../components/gym/GymWorkoutEditModal'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
+import { calibrateIntensity } from '../lib/fit'
 import {
   TRAINING_KINDS, INTENSITIES, FOCUS_CATEGORIES, FOCUS_BY_ID,
   totalMinutes, formatHours,
 } from '../lib/training'
+import { isRunningReady, runMinutes, workoutUsage, sortWorkoutsByUse } from '../lib/running'
+import { gymMinutes, workoutUsage as gymWorkoutUsage, sortWorkoutsByUse as sortGymWorkoutsByUse } from '../lib/gym'
+import { planPrefill, keyToDay } from '../lib/calendar'
 
 const TABS = [
   { id: 'panoramica',  label: 'Panoramica',  icon: '🗂' },
@@ -30,6 +53,14 @@ const TABS = [
   { id: 'tornei',      label: 'Tornei',      icon: '🏆' },
   { id: 'avversari',   label: 'Avversari',   icon: '👥' },
   { id: 'allenamenti', label: 'Allenamenti', icon: '🎯' },
+]
+
+// Tipo di allenamento nella lista unificata del tab Allenamenti.
+const SPORT_FILTERS = [
+  { id: 'all',    label: 'Tutti' },
+  { id: 'tennis', label: 'Tennis', icon: '🎾' },
+  { id: 'corsa',  label: 'Corsa',  icon: '🏃' },
+  { id: 'palestra', label: 'Palestra', icon: '🏋️' },
 ]
 
 const RESULT_FILTERS = [
@@ -41,9 +72,55 @@ const RESULT_FILTERS = [
 
 export default function Matches() {
   const { opponents, loading: oppLoading, add: addOpponent, update: updateOpponent, remove: removeOpponent } = useOpponents()
-  const { matches,   loading: matchLoading, add: addMatch, update: updateMatch, remove: removeMatch } = useMatches()
+  const { matches,   loading: matchLoading, add: addMatch, update: updateMatch, remove: removeMatch, reload: reloadMatches } = useMatches()
   const { trainings, loading: trainLoading, add: addTraining, update: updateTraining, remove: removeTraining } = useTrainings()
   const { equipment } = useEquipment()
+  const { runs, loading: runLoading, add: addRun, update: updateRun, remove: removeRun } = useRuns()
+  const { workouts, loading: workoutLoading, add: addWorkout, update: updateWorkout, remove: removeWorkout } = useRunWorkouts()
+  const { sessions: gymSessions, loading: gymLoading, add: addGymSession, update: updateGymSession, remove: removeGymSession } = useGymSessions()
+  const { workouts: gymWorkouts, loading: gymWorkoutLoading, add: addGymWorkout, update: updateGymWorkout, remove: removeGymWorkout } = useGymWorkouts()
+  const exerciseApi = useGymExercises()
+  const { profile, loading: profileLoading } = useProfile()
+
+  // Soglie del suggerimento «quanto è stata dura», imparate dalle partite con
+  // un'intensità scelta dall'utente. Si ricalcolano a ogni cambio delle partite:
+  // niente è salvato, quindi non può invecchiare.
+  const intensityCalibration = useMemo(() => calibrateIntensity(matches), [matches])
+  const running = profile?.running || null
+  const runningReady = isRunningReady(running)
+
+  // ── File .FIT importati ──
+  // Il riassunto sta in `athletics` della sessione; i dettagli pesanti (serie,
+  // lap, traccia) in users/{uid}/fitDetails/{fitId}. Si scrivono INSIEME alla
+  // sessione, mai prima: un import annullato non deve lasciare documenti
+  // orfani. Cancellare la sessione cancella anche i suoi dettagli.
+  const { save: saveFitDetails, remove: removeFitDetails } = useFitDetails()
+
+  // `fit` = { details, prevFitId }: i dettagli nuovi (se il file è stato
+  // appena importato) e il file che la sessione aveva prima (da togliere se è
+  // stato sostituito o svuotato).
+  const commitFit = async (fit, athletics) => {
+    if (!fit) return
+    const next = athletics?.fitId || null
+    if (fit.details && fit.details.fitId === next) await saveFitDetails(fit.details)
+    if (fit.prevFitId && fit.prevFitId !== next) await removeFitDetails(fit.prevFitId)
+  }
+  const dropFit = async (athletics) => {
+    if (athletics?.fitId) await removeFitDetails(athletics.fitId)
+  }
+
+  // Un file .FIT appartiene a UNA sessione. `fitUseFor(selfId)` ritorna la
+  // funzione che dice, dato un fitId, quale altra sessione lo ha già (o null).
+  const fitOwners = {}
+  const dayLabel = d => new Date(d).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  matches.forEach(m => { if (m.athletics?.fitId) fitOwners[m.athletics.fitId] = { id: m.id, text: `partita del ${dayLabel(m.date)}` } })
+  trainings.forEach(t => { if (t.athletics?.fitId) fitOwners[t.athletics.fitId] = { id: t.id, text: `allenamento di tennis del ${dayLabel(t.date)}` } })
+  runs.forEach(r => { if (r.athletics?.fitId) fitOwners[r.athletics.fitId] = { id: r.id, text: `corsa del ${dayLabel(r.date)}` } })
+  gymSessions.forEach(g => { if (g.athletics?.fitId) fitOwners[g.athletics.fitId] = { id: g.id, text: `sessione di palestra del ${dayLabel(g.date)}` } })
+  const fitUseFor = (selfId) => (fitId) => {
+    const o = fitOwners[fitId]
+    return o && o.id !== selfId ? o.text : null
+  }
 
   // ── Intenzioni che arrivano dalla Home ──
   // La Home non tiene i wizard né i detail modal: sono di questa pagina, e
@@ -61,6 +138,30 @@ export default function Matches() {
   // derivata trova la sessione.
   const [searchParams] = useSearchParams()
   const intent = searchParams.get('add')
+
+  // ── "Registra" dal calendario della Home ──
+  // `&plan=<id>` apre il wizard di `add` precompilato con ciò che il programma
+  // sapeva (`planPrefill`); `&date=YYYY-MM-DD` (un giorno passato vuoto) solo
+  // con la data. È una prop distinta da `initial`, che vuol dire modifica.
+  // Il wizard legge il suo stato una volta sola, al montaggio: con un
+  // programma deve quindi aspettare il programma stesso, l'anagrafica e le
+  // schede, altrimenti partirebbe vuoto. I programmi si leggono sempre (sono
+  // pochi), come fa la Home.
+  // La precompilazione vale per il PRIMO wizard di quel tipo: chiuso quello,
+  // un "+" qualsiasi riparte da zero (`prefillFor` torna null).
+  const { plans, loading: planLoading } = usePlans()
+  const planId = searchParams.get('plan')
+  const dateParam = keyToDay(searchParams.get('date')) != null ? searchParams.get('date') : null
+  const [prefillFor, setPrefillFor] = useState(() => (
+    (planId || dateParam) && ['match', 'training', 'run', 'gym'].includes(intent) ? intent : null
+  ))
+  const prefillPlan = planId ? plans.find(p => p.id === planId && p.kind === intent) || null : null
+  const prefill = prefillFor == null ? null
+    : planId ? planPrefill(prefillPlan, { opponents, runWorkouts: workouts, gymWorkouts })
+    : { date: dateParam }
+  const waitPrefill = prefillFor != null && Boolean(planId)
+    && (planLoading || oppLoading || workoutLoading || gymWorkoutLoading)
+  const prefillOf = (kind) => (prefillFor === kind ? prefill : null)
 
   const [activeTab, setActiveTab] = useState(() => initialTab(searchParams))
 
@@ -86,8 +187,10 @@ export default function Matches() {
   // Tornei
   const [selectedTournamentId, setSelectedTournamentId] = useState(null)
 
-  // Allenamenti
-  const [showAddTraining, setShowAddTraining] = useState(intent === 'training')
+  // Allenamenti — "+ Allenamento" apre prima la scelta del tipo (tennis/corsa)
+  // Con una precompilazione il tipo è già deciso (tennis): niente scelta.
+  const [showTypePicker, setShowTypePicker] = useState(intent === 'training' && prefillFor == null)
+  const [showAddTraining, setShowAddTraining] = useState(intent === 'training' && prefillFor != null)
   const [editingTraining, setEditingTraining] = useState(null)
   const [selectedTrainingId, setSelectedTrainingId] = useState(() => searchParams.get('training'))
   const [trainingDeleteToast, setTrainingDeleteToast] = useState(false)
@@ -96,6 +199,61 @@ export default function Matches() {
   const [fIntensity, setFIntensity] = useState('all')
   const [fTrDateFrom, setFTrDateFrom] = useState('')
   const [fTrDateTo, setFTrDateTo]     = useState('')
+  const [fSport, setFSport]           = useState(() => (
+    intent === 'run' || searchParams.get('run') ? 'corsa'
+      : intent === 'gym' || searchParams.get('gym') ? 'palestra' : 'all'
+  ))
+  const [fWorkout, setFWorkout]       = useState('all')
+  const [fGymWorkout, setFGymWorkout] = useState('all')
+
+  // Corsa
+  const [showAddRun, setShowAddRun] = useState(intent === 'run')
+  const [editingRun, setEditingRun] = useState(null)
+  const [selectedRunId, setSelectedRunId] = useState(() => searchParams.get('run'))
+  const [runDeleteToast, setRunDeleteToast] = useState(false)
+  const [editingWorkoutId, setEditingWorkoutId] = useState(null)
+  const [creatingWorkout, setCreatingWorkout] = useState(false)
+
+  // Palestra
+  const [showAddGym, setShowAddGym] = useState(intent === 'gym')
+  const [editingGym, setEditingGym] = useState(null)
+  const [selectedGymId, setSelectedGymId] = useState(() => searchParams.get('gym'))
+  const [gymDeleteToast, setGymDeleteToast] = useState(false)
+  const [editingGymWorkoutId, setEditingGymWorkoutId] = useState(null)
+  const [creatingGymWorkout, setCreatingGymWorkout] = useState(false)
+
+  // ── Ritorno in Home (`from=home`) ──
+  // Il calendario della Home apre i dettagli qui, ma l'utente stava guardando
+  // la Home: chiudere il dettaglio, o il wizard di modifica aperto da lì, lo
+  // riporta indietro invece di lasciarlo in Matches. `navigate(-1)` quando c'è
+  // una pagina precedente dell'app, così Indietro non trova la Home due volte;
+  // altrimenti (link aperto a freddo) si sostituisce la voce con la Home.
+  //
+  // L'eliminazione è il caso delicato: i dettagli chiamano `onDelete(id)` e
+  // subito `onClose()` senza aspettare. Tornare in Home dal `onClose` vorrebbe
+  // dire ricaricare i dati mentre la sessione esiste ancora, e il giorno del
+  // calendario resterebbe pieno. Per questo durante un'eliminazione la chiusura
+  // non naviga, e si torna in Home solo a cancellazione finita (senza toast:
+  // il giorno che si svuota è già la conferma).
+  const navigate = useNavigate()
+  const fromHome = searchParams.get('from') === 'home'
+  const deletingRef = useRef(false)
+  const backHome = () => {
+    if (window.history.state?.idx > 0) navigate(-1)
+    else navigate('/', { replace: true })
+  }
+  const closing = (clear) => () => {
+    clear()
+    if (fromHome && !deletingRef.current) backHome()
+  }
+  const deleting = (remove) => async (id) => {
+    if (fromHome) deletingRef.current = true
+    try {
+      await remove(id)
+    } finally {
+      if (fromHome) backHome()
+    }
+  }
 
   // I tornei non sono documenti: sono la lettura delle partite di tipo torneo
   // raggruppate per evento ed edizione. Si ricostruiscono qui, una volta sola,
@@ -109,6 +267,10 @@ export default function Matches() {
   const selectedMatch    = selectedMatchId ? matches.find(m => m.id === selectedMatchId) || null : null
   const selectedTraining = selectedTrainingId ? trainings.find(t => t.id === selectedTrainingId) || null : null
   const selectedTournament = selectedTournamentId ? tournaments.find(t => t.id === selectedTournamentId) || null : null
+  const selectedRun      = selectedRunId ? runs.find(r => r.id === selectedRunId) || null : null
+  const editingWorkout   = editingWorkoutId ? workouts.find(w => w.id === editingWorkoutId) || null : null
+  const selectedGym          = selectedGymId ? gymSessions.find(g => g.id === selectedGymId) || null : null
+  const editingGymWorkout   = editingGymWorkoutId ? gymWorkouts.find(w => w.id === editingGymWorkoutId) || null : null
 
   // Record H2H reale (chiusura del cerchio con la sezione Partite)
   const recordFor = (opponentId) => {
@@ -157,24 +319,87 @@ export default function Matches() {
   // completa (~45 voci) in una select sarebbe illeggibile.
   const usedFocusIds = [...new Set(trainings.flatMap(t => t.focus || []))].filter(id => FOCUS_BY_ID[id])
 
-  const filteredTrainings = trainings.filter(t => {
-    if (fKind !== 'all' && !(t.blocks || []).some(b => b.kind === fKind)) return false
-    if (fFocus !== 'all' && !(t.focus || []).includes(fFocus)) return false
-    if (fIntensity !== 'all' && t.intensity !== fIntensity) return false
-    if (fTrDateFrom && t.date.slice(0, 10) < fTrDateFrom) return false
-    if (fTrDateTo && t.date.slice(0, 10) > fTrDateTo) return false
-    return true
-  })
-  const trainingMonthGroups = groupByMonth(filteredTrainings)
+  // Lista UNIFICATA tennis + corsa. Il range di date vale per entrambi; i
+  // filtri di tennis (blocco, colpo, intensità) valgono solo con il chip
+  // "Tennis" attivo e quello per scheda solo con "Corsa" — sono le uniche
+  // viste in cui si vedono, e un filtro nascosto che taglia la lista
+  // sembrerebbe un bug.
+  const inDateRange = (date) => !(fTrDateFrom && date.slice(0, 10) < fTrDateFrom) && !(fTrDateTo && date.slice(0, 10) > fTrDateTo)
 
-  const hasActiveTrainingFilters = fKind !== 'all' || fFocus !== 'all' || fIntensity !== 'all'
-    || fTrDateFrom !== '' || fTrDateTo !== ''
+  const filteredTrainings = (fSport === 'corsa' || fSport === 'palestra') ? [] : trainings.filter(t => {
+    if (fSport === 'tennis') {
+      if (fKind !== 'all' && !(t.blocks || []).some(b => b.kind === fKind)) return false
+      if (fFocus !== 'all' && !(t.focus || []).includes(fFocus)) return false
+      if (fIntensity !== 'all' && t.intensity !== fIntensity) return false
+    }
+    return inDateRange(t.date)
+  })
+  const filteredRuns = (fSport === 'tennis' || fSport === 'palestra') ? [] : runs.filter(r => {
+    if (fSport === 'corsa' && fWorkout !== 'all' && r.workoutId !== fWorkout) return false
+    return inDateRange(r.date)
+  })
+  const filteredGym = (fSport === 'tennis' || fSport === 'corsa') ? [] : gymSessions.filter(g => {
+    if (fSport === 'palestra' && fGymWorkout !== 'all' && g.workoutId !== fGymWorkout) return false
+    return inDateRange(g.date)
+  })
+  const sessionEntries = [
+    ...filteredTrainings.map(t => ({ sport: 'tennis', id: t.id, date: t.date, item: t })),
+    ...filteredRuns.map(r => ({ sport: 'corsa', id: r.id, date: r.date, item: r })),
+    ...filteredGym.map(g => ({ sport: 'palestra', id: g.id, date: g.date, item: g })),
+  ].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+  const trainingMonthGroups = groupByMonth(sessionEntries)
+
+  // Solo le schede davvero corse compaiono nel filtro per scheda.
+  const usage = workoutUsage(runs)
+  const usedWorkouts = sortWorkoutsByUse(workouts.filter(w => usage[w.id]), runs)
+  const gymUsage = gymWorkoutUsage(gymSessions)
+  const usedGymWorkouts = sortGymWorkoutsByUse(gymWorkouts.filter(w => gymUsage[w.id]), gymSessions)
+
+  const hasActiveTrainingFilters = fTrDateFrom !== '' || fTrDateTo !== ''
+    || (fSport === 'tennis' && (fKind !== 'all' || fFocus !== 'all' || fIntensity !== 'all'))
+    || (fSport === 'corsa' && fWorkout !== 'all')
+    || (fSport === 'palestra' && fGymWorkout !== 'all')
   const resetTrainingFilters = () => {
     setFKind('all')
     setFFocus('all')
     setFIntensity('all')
     setFTrDateFrom('')
     setFTrDateTo('')
+    setFWorkout('all')
+    setFGymWorkout('all')
+  }
+
+  // Scelta del tipo di allenamento → wizard corrispondente.
+  const pickSessionType = (type) => {
+    setShowTypePicker(false)
+    setShowAddTraining(type === 'tennis')
+    setShowAddRun(type === 'corsa')
+    setShowAddGym(type === 'palestra')
+  }
+
+  // Salvataggio di una corsa: il wizard consegna la sessione e la scheda, qui
+  // si decide se la scheda va creata (nuova), aggiornata (modificata e con la
+  // spunta "aggiorna anche la scheda") o lasciata com'è. La sessione porta
+  // sempre la propria copia della struttura.
+  const saveRun = async ({ run, workout, fitDetails }) => {
+    await commitFit({ details: fitDetails, prevFitId: editingRun?.athletics?.fitId }, run.athletics)
+    let workoutId = workout.id
+    if (!workoutId) workoutId = await addWorkout({ name: workout.name, items: run.items })
+    else if (workout.updateLibrary) await updateWorkout(workoutId, { items: run.items })
+    const data = { ...run, workoutId }
+    if (editingRun) await updateRun(editingRun.id, data)
+    else await addRun(data)
+  }
+
+  // Salvataggio di una sessione di palestra: stessa orchestrazione della corsa.
+  const saveGym = async ({ session, workout, fitDetails }) => {
+    await commitFit({ details: fitDetails, prevFitId: editingGym?.athletics?.fitId }, session.athletics)
+    let workoutId = workout.id
+    if (!workoutId) workoutId = await addGymWorkout({ name: workout.name, items: session.items })
+    else if (workout.updateLibrary) await updateGymWorkout(workoutId, { items: session.items })
+    const data = { ...session, workoutId }
+    if (editingGym) await updateGymSession(editingGym.id, data)
+    else await addGymSession(data)
   }
 
   const oppQuery = oppSearch.trim().toLowerCase()
@@ -186,7 +411,7 @@ export default function Matches() {
     || activeTab === 'allenamenti' || activeTab === 'tornei'
   const onAdd = () => {
     if (activeTab === 'avversari') setShowAddOpponent(true)
-    else if (activeTab === 'allenamenti') setShowAddTraining(true)
+    else if (activeTab === 'allenamenti') setShowTypePicker(true)
     else setShowAddMatch(true)
   }
 
@@ -331,49 +556,91 @@ export default function Matches() {
 
         {/* ── ALLENAMENTI ── */}
         {activeTab === 'allenamenti' && (
-          trainLoading ? (
+          (trainLoading || runLoading || gymLoading) ? (
             <Spinner />
-          ) : trainings.length === 0 ? (
-            <EmptyState icon="🎯" title="Nessun allenamento." sub="Registra le sessioni tecniche per vedere su cosa stai lavorando davvero." onAdd={() => setShowAddTraining(true)} />
+          ) : trainings.length === 0 && runs.length === 0 && workouts.length === 0 && gymSessions.length === 0 && gymWorkouts.length === 0 ? (
+            <EmptyState icon="🎯" title="Nessun allenamento." sub="Registra sessioni di tennis, corse e palestra per vedere su cosa stai lavorando davvero." onAdd={() => setShowTypePicker(true)} />
           ) : (
             <div className="space-y-4">
-              <FocusProgress trainings={trainings} />
+              {/* Tipo di allenamento */}
+              <div className="flex gap-2">
+                {SPORT_FILTERS.map(f => (
+                  <Chip key={f.id} active={fSport === f.id} onClick={() => setFSport(f.id)} icon={f.icon}>{f.label}</Chip>
+                ))}
+              </div>
+
+              {(fSport === 'all' || fSport === 'tennis') && trainings.length > 0 && <FocusProgress trainings={trainings} />}
+              {fSport === 'corsa' && (
+                <WorkoutLibrary
+                  workouts={workouts}
+                  runs={runs}
+                  running={running}
+                  onSelect={setEditingWorkoutId}
+                  onAdd={() => setCreatingWorkout(true)}
+                />
+              )}
+
+              {fSport === 'palestra' && (
+                <GymWorkoutLibrary
+                  workouts={gymWorkouts}
+                  sessions={gymSessions}
+                  index={exerciseApi.index}
+                  onSelect={setEditingGymWorkoutId}
+                  onAdd={() => setCreatingGymWorkout(true)}
+                />
+              )}
 
               <TrainingFilters
+                sport={fSport}
                 kind={fKind} setKind={setFKind}
                 focus={fFocus} setFocus={setFFocus} focusOptions={usedFocusIds}
                 intensity={fIntensity} setIntensity={setFIntensity}
+                workout={fSport === 'palestra' ? fGymWorkout : fWorkout}
+                setWorkout={fSport === 'palestra' ? setFGymWorkout : setFWorkout}
+                workoutOptions={fSport === 'palestra' ? usedGymWorkouts : usedWorkouts}
                 dateFrom={fTrDateFrom} setDateFrom={setFTrDateFrom}
                 dateTo={fTrDateTo} setDateTo={setFTrDateTo}
                 hasActiveFilters={hasActiveTrainingFilters}
                 onReset={resetTrainingFilters}
               />
 
-              {filteredTrainings.length === 0 ? (
+              {sessionEntries.length === 0 ? (
                 <p className="text-sm text-center pt-8" style={{ color: 'var(--color-slate)' }}>
-                  Nessun allenamento con questi filtri.
+                  {hasActiveTrainingFilters
+                    ? 'Nessun allenamento con questi filtri.'
+                    : fSport === 'corsa' ? 'Nessuna corsa registrata.'
+                    : fSport === 'palestra' ? 'Nessun allenamento di palestra registrato.' : 'Nessun allenamento registrato.'}
                 </p>
               ) : (
                 <div className="space-y-6">
-                  {trainingMonthGroups.map(group => (
-                    <div key={group.key}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <p className="text-xs font-semibold uppercase tracking-wider"
-                           style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
-                          {group.label}
-                        </p>
-                        <div className="flex-1 h-px" style={{ background: 'var(--color-surface-2)' }} />
-                        <span className="text-xs" style={{ color: 'var(--color-slate)' }}>
-                          {formatHours(group.items.reduce((sum, t) => sum + totalMinutes(t.blocks), 0))} h
-                        </span>
+                  {trainingMonthGroups.map(group => {
+                    const hours = monthHours(group.items, running, exerciseApi.index)
+                    return (
+                      <div key={group.key}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <p className="text-xs font-semibold uppercase tracking-wider"
+                             style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
+                            {group.label}
+                          </p>
+                          <div className="flex-1 h-px" style={{ background: 'var(--color-surface-2)' }} />
+                          <span className="text-xs" style={{ color: 'var(--color-slate)' }}>
+                            {hours.estimated ? '~' : ''}{formatHours(hours.minutes)} h
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {group.items.map(e => (
+                            e.sport === 'corsa' ? (
+                              <RunRow key={e.id} run={e.item} workouts={workouts} running={running} onClick={() => setSelectedRunId(e.id)} />
+                            ) : e.sport === 'palestra' ? (
+                              <GymRow key={e.id} session={e.item} workouts={gymWorkouts} index={exerciseApi.index} onClick={() => setSelectedGymId(e.id)} />
+                            ) : (
+                              <TrainingRow key={e.id} training={e.item} onClick={() => setSelectedTrainingId(e.id)} />
+                            )
+                          ))}
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        {group.items.map(t => (
-                          <TrainingRow key={t.id} training={t} onClick={() => setSelectedTrainingId(t.id)} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -390,7 +657,7 @@ export default function Matches() {
               onSelectMatch={setSelectedMatchId}
               onSelectTraining={setSelectedTrainingId}
               onAddMatch={() => setShowAddMatch(true)}
-              onAddTraining={() => setShowAddTraining(true)}
+              onAddTraining={() => setShowTypePicker(true)}
             />
           )
         )}
@@ -407,7 +674,11 @@ export default function Matches() {
           matches={matchesVs(selectedOpponent.id)}
           onClose={() => setSelectedOpponentId(null)}
           onSelectMatch={(matchId) => setSelectedMatchId(matchId)}
-          onUpdate={async (id, data) => { await updateOpponent(id, data) }}
+          onUpdate={async (id, data) => {
+            await updateOpponent(id, data)
+            // Le partite portano una copia del nome: dopo una rinomina vanno riallineate.
+            if (data.name !== undefined) await reloadMatches()
+          }}
           onDelete={async (id) => {
             // Guard difensiva: il bottone di eliminazione è già nascosto nel
             // modale quando ci sono match collegati, ma non fidarsi solo della UI.
@@ -434,13 +705,17 @@ export default function Matches() {
       )}
 
       {/* ── Modali Partite ── */}
-      {(showAddMatch || editingMatch) && (
+      {(showAddMatch || editingMatch) && !waitPrefill && (
         <AddMatchModal
           initial={editingMatch}
+          prefill={editingMatch ? null : prefillOf('match')}
           opponents={opponents}
           equipment={equipment}
-          onClose={() => { setShowAddMatch(false); setEditingMatch(null) }}
-          onSave={async (data) => {
+          fitUse={fitUseFor(editingMatch?.id)}
+          intensityCalibration={intensityCalibration}
+          onClose={closing(() => { setShowAddMatch(false); setEditingMatch(null); setPrefillFor(null) })}
+          onSave={async (data, fitDetails) => {
+            await commitFit({ details: fitDetails, prevFitId: editingMatch?.athletics?.fitId }, data.athletics)
             if (editingMatch) await updateMatch(editingMatch.id, data)
             else await addMatch(data)
           }}
@@ -450,21 +725,22 @@ export default function Matches() {
         <MatchDetailModal
           match={selectedMatch}
           equipment={equipment}
-          onClose={() => setSelectedMatchId(null)}
+          onClose={closing(() => setSelectedMatchId(null))}
           onEdit={() => { setEditingMatch(selectedMatch); setSelectedMatchId(null) }}
           onUpdate={async (id, data) => { await updateMatch(id, data) }}
-          onDelete={async (id) => { await removeMatch(id); setSelectedMatchId(null); setMatchDeleteToast(true) }}
+          onDelete={deleting(async (id) => { await dropFit(selectedMatch.athletics); await removeMatch(id); setSelectedMatchId(null); setMatchDeleteToast(true) })}
         />
       )}
 
       {/* ── Modali Allenamenti ── */}
-      {(showAddTraining || editingTraining) && (
+      {(showAddTraining || editingTraining) && !waitPrefill && (
         <AddTrainingModal
           initial={editingTraining}
+          prefill={editingTraining ? null : prefillOf('training')}
           opponents={opponents}
           equipment={equipment}
           trainings={trainings}
-          onClose={() => { setShowAddTraining(false); setEditingTraining(null) }}
+          onClose={closing(() => { setShowAddTraining(false); setEditingTraining(null); setPrefillFor(null) })}
           onSave={async (data) => {
             if (editingTraining) await updateTraining(editingTraining.id, data)
             else await addTraining(data)
@@ -475,10 +751,112 @@ export default function Matches() {
         <TrainingDetailModal
           training={selectedTraining}
           equipment={equipment}
-          onClose={() => setSelectedTrainingId(null)}
+          fitUse={fitUseFor(selectedTraining.id)}
+          intensityCalibration={intensityCalibration}
+          onClose={closing(() => setSelectedTrainingId(null))}
           onEdit={() => { setEditingTraining(selectedTraining); setSelectedTrainingId(null) }}
-          onUpdate={async (id, data) => { await updateTraining(id, data) }}
-          onDelete={async (id) => { await removeTraining(id); setSelectedTrainingId(null); setTrainingDeleteToast(true) }}
+          onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateTraining(id, data) }}
+          onDelete={deleting(async (id) => { await dropFit(selectedTraining.athletics); await removeTraining(id); setSelectedTrainingId(null); setTrainingDeleteToast(true) })}
+        />
+      )}
+
+      {/* ── Allenamenti: scelta del tipo ── */}
+      {showTypePicker && (
+        <SessionTypePicker
+          runningReady={runningReady}
+          profileLoading={profileLoading}
+          onPick={pickSessionType}
+          onClose={() => setShowTypePicker(false)}
+        />
+      )}
+
+      {/* ── Modali Corsa ── */}
+      {/* Il wizard aspetta il profilo: senza zone di passo non c'è niente da
+          stimare, e da `?add=run` si può arrivare prima che siano caricate.
+          Con il profilo incompleto si mostra la scelta del tipo, che dice
+          perché la corsa è bloccata e dove sbloccarla. */}
+      {(showAddRun || editingRun) && !profileLoading && !waitPrefill && (
+        runningReady ? (
+          <AddRunModal
+            initial={editingRun}
+            prefill={editingRun ? null : prefillOf('run')}
+            workouts={workouts}
+            runs={runs.filter(r => r.id !== editingRun?.id)}
+            running={running}
+            fitUse={fitUseFor(editingRun?.id)}
+            onClose={closing(() => { setShowAddRun(false); setEditingRun(null); setPrefillFor(null) })}
+            onSave={saveRun}
+          />
+        ) : (
+          <SessionTypePicker
+            runningReady={false}
+            onPick={pickSessionType}
+            onClose={closing(() => { setShowAddRun(false); setEditingRun(null) })}
+          />
+        )
+      )}
+      {selectedRun && (
+        <RunDetailModal
+          run={selectedRun}
+          workouts={workouts}
+          running={running}
+          fitUse={fitUseFor(selectedRun.id)}
+          onClose={closing(() => setSelectedRunId(null))}
+          onEdit={() => { setEditingRun(selectedRun); setSelectedRunId(null) }}
+          onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateRun(id, data) }}
+          onDelete={deleting(async (id) => { await dropFit(selectedRun.athletics); await removeRun(id); setSelectedRunId(null); setRunDeleteToast(true) })}
+        />
+      )}
+      {(creatingWorkout || editingWorkout) && (
+        <WorkoutEditModal
+          workout={editingWorkout}
+          runsCount={editingWorkout ? runs.filter(r => r.workoutId === editingWorkout.id).length : 0}
+          running={running}
+          onClose={() => { setCreatingWorkout(false); setEditingWorkoutId(null) }}
+          onSave={async (data) => {
+            if (editingWorkout) await updateWorkout(editingWorkout.id, data)
+            else await addWorkout(data)
+          }}
+          onDelete={async (id) => { await removeWorkout(id) }}
+        />
+      )}
+
+      {/* ── Modali Palestra ── */}
+      {(showAddGym || editingGym) && !waitPrefill && (
+        <AddGymModal
+          initial={editingGym}
+          prefill={editingGym ? null : prefillOf('gym')}
+          workouts={gymWorkouts}
+          sessions={gymSessions.filter(g => g.id !== editingGym?.id)}
+          exerciseApi={exerciseApi}
+          fitUse={fitUseFor(editingGym?.id)}
+          onClose={closing(() => { setShowAddGym(false); setEditingGym(null); setPrefillFor(null) })}
+          onSave={saveGym}
+        />
+      )}
+      {selectedGym && (
+        <GymDetailModal
+          session={selectedGym}
+          workouts={gymWorkouts}
+          index={exerciseApi.index}
+          fitUse={fitUseFor(selectedGym.id)}
+          onClose={closing(() => setSelectedGymId(null))}
+          onEdit={() => { setEditingGym(selectedGym); setSelectedGymId(null) }}
+          onUpdate={async (id, data, fit) => { await commitFit(fit, data.athletics); await updateGymSession(id, data) }}
+          onDelete={deleting(async (id) => { await dropFit(selectedGym.athletics); await removeGymSession(id); setSelectedGymId(null); setGymDeleteToast(true) })}
+        />
+      )}
+      {(creatingGymWorkout || editingGymWorkout) && (
+        <GymWorkoutEditModal
+          workout={editingGymWorkout}
+          sessionsCount={editingGymWorkout ? gymSessions.filter(g => g.workoutId === editingGymWorkout.id).length : 0}
+          exerciseApi={exerciseApi}
+          onClose={() => { setCreatingGymWorkout(false); setEditingGymWorkoutId(null) }}
+          onSave={async (data) => {
+            if (editingGymWorkout) await updateGymWorkout(editingGymWorkout.id, data)
+            else await addGymWorkout(data)
+          }}
+          onDelete={async (id) => { await removeGymWorkout(id) }}
         />
       )}
 
@@ -486,6 +864,8 @@ export default function Matches() {
       {oppDeleteToast && <Toast title="Avversario eliminato" sub="È stato rimosso dalla tua anagrafica." onClose={() => setOppDeleteToast(false)} />}
       {matchDeleteToast && <Toast title="Partita eliminata" sub="È stata rimossa dallo storico." onClose={() => setMatchDeleteToast(false)} />}
       {trainingDeleteToast && <Toast title="Allenamento eliminato" sub="È stato rimosso dallo storico." onClose={() => setTrainingDeleteToast(false)} />}
+      {runDeleteToast && <Toast title="Corsa eliminata" sub="È stata rimossa dallo storico." onClose={() => setRunDeleteToast(false)} />}
+      {gymDeleteToast && <Toast title="Allenamento eliminato" sub="È stato rimosso dallo storico." onClose={() => setGymDeleteToast(false)} />}
     </div>
   )
 }
@@ -571,9 +951,11 @@ function MatchFilters({
 // ── Filtri allenamenti ─────────────────────────────────────
 
 function TrainingFilters({
+  sport,
   kind, setKind,
   focus, setFocus, focusOptions,
   intensity, setIntensity,
+  workout, setWorkout, workoutOptions,
   dateFrom, setDateFrom, dateTo, setDateTo,
   hasActiveFilters, onReset
 }) {
@@ -596,6 +978,23 @@ function TrainingFilters({
         </div>
       )}
 
+      {/* Range di date — vale per tennis e corsa */}
+      <div className="flex gap-2">
+        <DateInput value={dateFrom} onChange={setDateFrom} placeholder="Da" />
+        <DateInput value={dateTo} onChange={setDateTo} placeholder="A" />
+      </div>
+
+      {/* Scheda di corsa o di palestra */}
+      {(sport === 'corsa' || sport === 'palestra') && workoutOptions.length > 0 && (
+        <div className="flex">
+          <Select value={workout} onChange={setWorkout}>
+            <option value="all">Tutte le schede</option>
+            {workoutOptions.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </Select>
+        </div>
+      )}
+
+      {sport === 'tennis' && <>
       {/* Tipo di blocco */}
       <div className="overflow-x-auto">
         <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
@@ -604,12 +1003,6 @@ function TrainingFilters({
             <Chip key={k.id} active={kind === k.id} onClick={() => setKind(k.id)} icon={k.icon}>{k.label}</Chip>
           ))}
         </div>
-      </div>
-
-      {/* Range di date */}
-      <div className="flex gap-2">
-        <DateInput value={dateFrom} onChange={setDateFrom} placeholder="Da" />
-        <DateInput value={dateTo} onChange={setDateTo} placeholder="A" />
       </div>
 
       {/* Colpo lavorato */}
@@ -633,6 +1026,7 @@ function TrainingFilters({
           </Chip>
         ))}
       </div>
+      </>}
     </div>
   )
 }
@@ -735,6 +1129,8 @@ function initialTab(searchParams) {
   const add = searchParams.get('add')
   if (add === 'match'    || searchParams.get('match'))    return 'partite'
   if (add === 'training' || searchParams.get('training')) return 'allenamenti'
+  if (add === 'run'      || searchParams.get('run'))      return 'allenamenti'
+  if (add === 'gym'      || searchParams.get('gym'))      return 'allenamenti'
   if (add === 'opponent') return 'avversari'
   return 'panoramica'
 }
@@ -750,6 +1146,28 @@ function monthKey(dateStr) {
 function monthLabelFromKey(key) {
   const [y, m] = key.split('-')
   return `${MONTH_NAMES[Number(m) - 1]} ${y}`
+}
+
+// Ore del mese nella lista allenamenti: minuti dei blocchi per il tennis,
+// durata dell'orologio per corsa e palestra (o la stima della scheda, che
+// accende il "~").
+function monthHours(entries, running, exerciseIndex) {
+  let minutes = 0
+  let estimated = false
+  entries.forEach(e => {
+    if (e.sport === 'palestra') {
+      const g = gymMinutes(e.item, exerciseIndex)
+      minutes += g.minutes
+      estimated = estimated || g.estimated
+    } else if (e.sport === 'corsa') {
+      const r = runMinutes(e.item, running)
+      minutes += r.minutes
+      estimated = estimated || r.estimated
+    } else {
+      minutes += totalMinutes(e.item.blocks)
+    }
+  })
+  return { minutes, estimated }
 }
 
 // Raggruppa le partite (già ordinate per data desc) per mese, preservando l'ordine

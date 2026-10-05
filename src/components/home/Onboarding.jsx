@@ -43,7 +43,7 @@ export default function Onboarding({ name, profileDone, equipmentDone, addMatchT
               sub="Racchette e scarpe: da qui nasce il calcolo dell'usura" />
         <Step n={3} done={false}
               title="Registra la prima sessione"
-              sub="Una partita o un allenamento — bastano pochi tap" />
+              sub="Una partita o un allenamento (tennis, corsa o palestra) — bastano pochi tap" />
       </div>
 
       <div className="flex gap-2">

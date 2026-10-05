@@ -3,8 +3,11 @@
 //
 // Riusa i moduli puri dell'app (src/lib/tennis.js, athletics.js) per calcolare
 // risultati/normalizzazioni esattamente come farebbe l'app. Cancella TUTTI i
-// dati esistenti (equipment/opponents/matches/trainings + profilo) dell'utente
-// target e li ricrea da zero — pensato solo per il progetto dev.
+// dati esistenti (equipment/opponents/matches/trainings/runs/runWorkouts/
+// gymWorkouts/gymSessions/gymExercises/plans + profilo) dell'utente target e
+// li ricrea da zero — pensato solo per il progetto dev. Quasi tutte le date
+// sono fisse; quelle del calendario della Home (sessioni recenti e programmi)
+// partono dal giorno in cui si lancia lo script.
 
 import { readFileSync } from 'fs'
 import { pathToFileURL, fileURLToPath } from 'url'
@@ -95,7 +98,7 @@ async function main() {
   console.log(`Utente target: ${user.email} (uid=${uid})`)
 
   // ── Pulizia ──────────────────────────────────────────────
-  for (const col of ['equipment', 'opponents', 'matches', 'trainings']) {
+  for (const col of ['equipment', 'opponents', 'matches', 'trainings', 'runs', 'runWorkouts', 'gymWorkouts', 'gymSessions', 'gymExercises', 'plans']) {
     const n = await wipeSubcollection(uid, col)
     console.log(`Eliminati ${n} doc esistenti in ${col}`)
   }
@@ -492,15 +495,327 @@ async function main() {
   if (trainOps > 0) await trainBatch.commit()
   console.log(`Allenamenti creati: ${trainCount}`)
 
+  // ── Corsa: schede e sessioni ─────────────────────────────
+  // Le strutture sono scritte già nella forma normalizzata di
+  // normalizeItems (src/lib/running.js): quel modulo non si importa da qui
+  // perché usa import senza estensione, che risolve Vite ma non Node.
+  let stepSeq = 0
+  const st = (stepType, target, duration, notes = '') => ({ kind: 'step', id: `s${++stepSeq}`, stepType, notes, duration, target })
+  const time = sec => ({ type: 'time', sec })
+  const dist = (meters, unit = 'km') => ({ type: 'distance', meters, unit })
+  const rep = (times, steps, skipLastRecovery = false) => ({ kind: 'repeat', id: `r${++stepSeq}`, times, skipLastRecovery, steps })
+
+  const workoutsCol = userRef.collection('runWorkouts')
+  // HIIT sullo schema dello screenshot Garmin: ripetute brevi, recuperi a FC
+  // (fase stimata, tratteggiata nel grafico) e salto dell'ultimo recupero.
+  const hiitItems = [
+    st('camminata', 'camminata', time(180)),
+    st('riscaldamento', 'z1', time(600)),
+    st('camminata', 'camminata', time(120)),
+    rep(5, [st('corsa', 'z5', time(15)), st('recupero', 'camminata', time(45))]),
+    rep(8, [
+      st('corsa', 'z5', time(10)),
+      st('corsa', 'z4', dist(200, 'm')),
+      st('recupero', 'fermo', { type: 'hr', bpm: 120, condition: 'sotto', estimatedSec: 90 }),
+    ], true),
+    st('defaticamento', 'z1', dist(1500)),
+    st('camminata', 'camminata', time(180)),
+  ]
+  const lentoItems = [st('corsa', 'z2', dist(8000), 'Conversazionale, senza guardare il passo')]
+  const ripetuteItems = [
+    st('riscaldamento', 'z1', time(900)),
+    rep(4, [st('corsa', 'z4', dist(1000)), st('recupero', 'camminata', time(120))], true),
+    st('defaticamento', 'z1', { type: 'calories', kcal: 60 }),
+  ]
+  const progressivoItems = [
+    st('riscaldamento', 'z1', time(600)),
+    st('corsa', 'z2', time(900)),
+    st('corsa', 'z3', time(900)),
+    st('corsa', 'z4', time(600)),
+    st('defaticamento', 'z1', time(300)),
+  ]
+  const wHiit = await workoutsCol.add({ name: 'HIIT brevi distanze', items: hiitItems, createdAt: ts('2026-06-01') })
+  const wLento = await workoutsCol.add({ name: 'Lento 8 km', items: lentoItems, createdAt: ts('2026-06-01') })
+  const wRipetute = await workoutsCol.add({ name: 'Ripetute 1000', items: ripetuteItems, createdAt: ts('2026-06-10') })
+  // Mai corsa: per lo stato "Mai corsa" della libreria
+  await workoutsCol.add({ name: 'Progressivo 45\'', items: progressivoItems, createdAt: ts('2026-08-01') })
+
+  // Dati dell'orologio coerenti con un passo medio (s/km) e una distanza.
+  const runAthletics = (km, paceSec, intensity) => normalizeAthletics({
+    distanceKm: km,
+    durationSec: Math.round(km * paceSec),
+    calories: Math.round(km * 72),
+    avgHr: { leggera: randInt(135, 145), media: randInt(145, 155), intensa: randInt(155, 168) }[intensity],
+    maxHr: randInt(170, 186),
+    trainingEffect: { leggera: 2.6, media: 3.2, intensa: 3.9 }[intensity],
+    anaerobicTrainingEffect: { leggera: 0.8, media: 1.6, intensa: 2.8 }[intensity],
+    zones: null,
+  })
+
+  const rawRuns = [
+    { date: '2026-06-03', w: wLento, name: 'Lento 8 km', items: lentoItems, intensity: 'leggera', ath: [8.1, 400, 'leggera'] },
+    { date: '2026-06-10', w: wHiit, name: 'HIIT brevi distanze', items: hiitItems, intensity: 'intensa', ath: [6.9, 455, 'intensa'] },
+    { date: '2026-06-17', w: wRipetute, name: 'Ripetute 1000', items: ripetuteItems, intensity: 'intensa', ath: [7.6, 390, 'intensa'] },
+    { date: '2026-06-24', w: wLento, name: 'Lento 8 km', items: lentoItems, intensity: 'leggera', ath: null },
+    { date: '2026-07-01', w: wHiit, name: 'HIIT brevi distanze', items: hiitItems, intensity: 'intensa', ath: [7.1, 450, 'intensa'] },
+    // Variante di un giorno: 3 ripetute invece di 4, senza toccare la scheda
+    { date: '2026-07-08', w: wRipetute, name: 'Ripetute 1000', intensity: 'media', ath: [6.4, 395, 'media'],
+      items: [ripetuteItems[0], { ...ripetuteItems[1], times: 3 }, ripetuteItems[2]],
+      notes: [note('Caldo: fatte 3 ripetute invece di 4.', '2026-07-08')] },
+    { date: '2026-07-22', w: wLento, name: 'Lento 8 km', items: lentoItems, intensity: 'media', ath: [8.0, 385, 'media'] },
+    // Scheda eliminata dalla libreria: la corsa conserva nome e struttura
+    { date: '2026-07-29', w: { id: 'scheda-eliminata' }, name: 'Collinare 6 km', intensity: 'media', ath: [6.2, 430, 'media'],
+      items: [st('riscaldamento', 'z1', time(600)), st('corsa', 'z3', dist(6000)), st('defaticamento', 'z1', time(300))] },
+    { date: '2026-08-05', w: wHiit, name: 'HIIT brevi distanze', items: hiitItems, intensity: 'intensa', ath: null },
+    { date: '2026-08-12', w: wRipetute, name: 'Ripetute 1000', items: ripetuteItems, intensity: 'intensa', ath: [7.7, 385, 'intensa'] },
+  ]
+
+  const runsCol = userRef.collection('runs')
+  const runBatch = db.batch()
+  rawRuns.forEach(r => {
+    runBatch.set(runsCol.doc(), {
+      date: iso(r.date),
+      workoutId: r.w.id,
+      workoutName: r.name,
+      items: r.items,
+      intensity: r.intensity,
+      athletics: r.ath ? runAthletics(...r.ath) : null,
+      notes: r.notes || [],
+      createdAt: ts(r.date),
+    })
+  })
+  await runBatch.commit()
+  console.log(`Corse create: ${rawRuns.length} (4 schede, di cui una mai corsa)`)
+
+  // ── Palestra: esercizio personalizzato, schede e sessioni ─
+  // Gli esercizi si citano per id del database (src/data/exercises.json); quello
+  // personalizzato ha id `custom:<docId>` e le sue sessioni portano lo snapshot,
+  // come fa normalizeItems (src/lib/gym.js).
+  const customCol = userRef.collection('gymExercises')
+  const customDef = { name: 'Rematore Pendlay', equipment: 'bilanciere', mode: 'reps-kg', primary: ['dorsali'], secondary: ['trapezio', 'bicipiti', 'lombari'] }
+  const customRef = await customCol.add({ ...customDef, createdAt: ts('2026-06-01') })
+  const customId = `custom:${customRef.id}`
+  const gi = (exerciseId, sets, extra = {}) => ({ id: `g${++stepSeq}`, exerciseId, sets, ...extra })
+  const uni = (n, set) => Array.from({ length: n }, () => ({ ...set }))
+  const pendlay = kg => gi(customId, uni(4, { reps: 6, kg }), { snapshot: { ...customDef, movement: 'pull' } })
+
+  const pushItems = kg => [
+    gi('panca-piana-bilanciere', [{ reps: 8, kg }, { reps: 8, kg }, { reps: 6, kg: kg + 5 }, { reps: 6, kg: kg + 5 }]),
+    gi('shoulder-press-manubri', uni(3, { reps: 10, kg: 18 + Math.round((kg - 60) / 10) * 2 })),
+    gi('alzate-laterali', uni(3, { reps: 15, kg: 8 })),
+    gi('pushdown-cavi', uni(3, { reps: 12, kg: 30 })),
+  ]
+  const pullItems = kg => [
+    pendlay(kg),
+    gi('trazioni-prone', uni(4, { reps: 6 })),
+    gi('pulley-basso', uni(3, { reps: 10, kg: 55 })),
+    gi('curl-bilanciere', uni(3, { reps: 10, kg: 30 })),
+    gi('face-pull', uni(3, { reps: 15, kg: 20 })),
+  ]
+  const legsItems = kg => [
+    gi('squat-bilanciere', uni(4, { reps: 5, kg })),
+    gi('stacco-rumeno', uni(3, { reps: 8, kg: kg - 20 })),
+    gi('leg-press', uni(3, { reps: 12, kg: 140 })),
+    gi('calf-raise-in-piedi', uni(3, { reps: 15, kg: 60 })),
+    gi('plank', [{ sec: 45 }, { sec: 60 }, { sec: 60 }]),
+  ]
+
+  const gymWorkoutsCol = userRef.collection('gymWorkouts')
+  const gPush = await gymWorkoutsCol.add({ name: 'Push', items: pushItems(70), createdAt: ts('2026-06-01') })
+  const gPull = await gymWorkoutsCol.add({ name: 'Pull', items: pullItems(60), createdAt: ts('2026-06-01') })
+  const gLegs = await gymWorkoutsCol.add({ name: 'Gambe', items: legsItems(90), createdAt: ts('2026-06-01') })
+  // Mai fatta: per lo stato "Mai fatta" della libreria
+  await gymWorkoutsCol.add({
+    name: 'Full body A',
+    items: [gi('goblet-squat', uni(3, { reps: 12, kg: 20 })), gi('piegamenti', uni(3, { reps: 15 })), gi('rematore-manubrio', uni(3, { reps: 10, kg: 24 })), gi('crunch', uni(3, { reps: 20 }))],
+    createdAt: ts('2026-08-20'),
+  })
+
+  const gymAthletics = (min, hr, intensity) => normalizeAthletics({
+    durationSec: min * 60,
+    calories: Math.round(min * 5.5),
+    avgHr: hr,
+    maxHr: hr + randInt(25, 40),
+    trainingEffect: { leggera: 1.2, media: 2.0, intensa: 2.8 }[intensity],
+    anaerobicTrainingEffect: { leggera: 0, media: 0.4, intensa: 1.2 }[intensity],
+    zones: null,
+  })
+
+  // Dieci settimane, tre sessioni a settimana con carichi che salgono piano:
+  // dà alla sezione Stats progressione, bilancio e qualche buco (una settimana
+  // saltata, il pull che sparisce nell'ultimo mese).
+  const gymSeed = []
+  const start = new Date('2026-07-06T00:00:00Z')
+  for (let w = 0; w < 12; w++) {
+    const monday = new Date(start.getTime() + w * 7 * 86400000)
+    const at = d => new Date(monday.getTime() + d * 86400000).toISOString().slice(0, 10)
+    if (w === 6) continue
+    const up = w * 2.5
+    gymSeed.push({ date: at(0), w: gPush, name: 'Push', items: pushItems(70 + up), intensity: 'media', ath: w % 2 ? [58, 112, 'media'] : null })
+    if (w < 8) gymSeed.push({ date: at(2), w: gPull, name: 'Pull', items: pullItems(60 + up), intensity: 'media', ath: null })
+    gymSeed.push({ date: at(4), w: gLegs, name: 'Gambe', items: legsItems(90 + up), intensity: w % 3 === 0 ? 'intensa' : 'media', ath: w % 3 === 0 ? [64, 121, 'intensa'] : null,
+      notes: w === 3 ? [note('Ginocchio un po\' fastidioso, carico ridotto sul leg press.', at(4))] : [] })
+  }
+  const gymCol = userRef.collection('gymSessions')
+  for (let i = 0; i < gymSeed.length; i += 400) {
+    const b = db.batch()
+    gymSeed.slice(i, i + 400).forEach(g => {
+      b.set(gymCol.doc(), {
+        date: iso(g.date),
+        workoutId: g.w.id,
+        workoutName: g.name,
+        items: g.items,
+        intensity: g.intensity,
+        athletics: g.ath ? gymAthletics(...g.ath) : null,
+        notes: g.notes || [],
+        createdAt: ts(g.date),
+      })
+    })
+    await b.commit()
+  }
+  console.log(`Sessioni di palestra create: ${gymSeed.length} (3 schede in uso, una mai fatta, 1 esercizio personalizzato)`)
+
+  // ── Calendario della Home: sessioni recenti e programmi ──
+  // Tutto il resto del seed ha date fisse; queste partono dal giorno in cui
+  // si lancia lo script, altrimenti il mese corrente del calendario sarebbe
+  // vuoto (niente fiammella, niente programmi fatti o non svolti). I giorni
+  // sono quelli LOCALI della macchina, come li legge l'app.
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const dayAt = offset => new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset)
+  const keyOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const dow = (today.getDay() + 6) % 7          // 0 = lunedì
+  const monday = -dow                            // offset del lunedì della settimana corrente
+
+  const calBatch = db.batch()
+  const recent = { match: 0, training: 0, run: 0, gym: 0 }
+  const calMatch = (offset, opp, sets, extra = {}) => {
+    const date = keyOf(dayAt(offset))
+    const outcome = computeOutcome(sets, 'atp', null)
+    calBatch.set(matchesCol.doc(), {
+      date: iso(date), opponentId: opp.id, opponentName: oppNames[opp.id],
+      type: 'amichevole', eventName: null, round: null, surface: 'terra', format: 'atp',
+      sets, retired: null, result: outcome.result, completed: outcome.completed,
+      setsMe: outcome.setsMe, setsOpp: outcome.setsOpp,
+      equipment: { racchetta: racchettaA.id, scarpa: scarpaTerra.id, outfit: outfit.id, borsone: null },
+      intensity: 'media', athletics: null, notes: [], createdAt: ts(date), ...extra,
+    })
+    recent.match++
+  }
+  const calTraining = (offset, blocks, focus = []) => {
+    const date = keyOf(dayAt(offset))
+    calBatch.set(trainingsCol.doc(), {
+      date: iso(date), blocks, surface: 'terra', focus, ratings: {}, intensity: 'media',
+      withWhom: null, brokeStrings: false,
+      equipment: { racchetta: racchettaA.id, scarpa: scarpaTerra.id, outfit: outfit.id, borsone: null },
+      athletics: null, notes: [], createdAt: ts(date),
+    })
+    recent.training++
+  }
+  const calRun = (offset, w, name, items, ath) => {
+    const date = keyOf(dayAt(offset))
+    calBatch.set(runsCol.doc(), {
+      date: iso(date), workoutId: w.id, workoutName: name, items, intensity: ath[2],
+      athletics: runAthletics(...ath), notes: [], createdAt: ts(date),
+    })
+    recent.run++
+  }
+  const calGym = (offset, w, name, items) => {
+    const date = keyOf(dayAt(offset))
+    calBatch.set(gymCol.doc(), {
+      date: iso(date), workoutId: w.id, workoutName: name, items, intensity: 'media',
+      athletics: null, notes: [], createdAt: ts(date),
+    })
+    recent.gym++
+  }
+
+  // Le tre settimane prima di questa, tutte attive: la fiammella parte accesa.
+  calMatch(monday - 20, oMarco, [S(6, 4), S(4, 6), S(6, 3)])
+  calGym(monday - 18, gPush, 'Push', pushItems(100))
+  calTraining(monday - 14, [{ kind: 'lezione', minutes: 60 }], ['dritto', 'rovescio'])
+  calRun(monday - 12, wLento, 'Lento 8 km', lentoItems, [8.0, 390, 'media'])
+  calGym(monday - 10, gLegs, 'Gambe', legsItems(120))
+  calTraining(monday - 6, [{ kind: 'sparring', minutes: 90 }], ['servizio-kick'])
+  calRun(monday - 4, wRipetute, 'Ripetute 1000', ripetuteItems, [7.6, 380, 'intensa'])
+  calMatch(monday - 2, oLuca, [S(3, 6), S(6, 7, 4, 7)])
+
+  const plansCol = userRef.collection('plans')
+  const planDays = new Map() // chiave del giorno → tipi già programmati
+  let planCount = 0
+  // Rispetta la regola di `planConflict`: il riposo non convive con altro.
+  const plan = (offset, kind, time = null, details = {}, notes = null) => {
+    const date = keyOf(typeof offset === 'number' ? dayAt(offset) : offset)
+    const kinds = planDays.get(date) || []
+    if (kinds.includes('rest') || (kind === 'rest' && kinds.length)) return
+    planDays.set(date, [...kinds, kind])
+    calBatch.set(plansCol.doc(), { date, time: kind === 'rest' ? null : time, kind, details, notes, createdAt: ts(date) })
+    planCount++
+  }
+  const workoutPlan = (w, name) => ({ workoutId: w.id, workoutName: name })
+  const trainingPlan = (minutes, surface, focus = [], withWhom = null) => ({ minutes, surface, withWhom, focus })
+
+  // Un programma passato fuori dalla settimana corrente: resta a DB ma la
+  // griglia non lo mostra (il passato mostra solo il fatto).
+  plan(monday - 9, 'gym', '07:30', workoutPlan(gPull, 'Pull'))
+
+  // I giorni già passati della settimana corrente, uno per stato. Quanti se
+  // ne vedono dipende dal giorno in cui si lancia il seed: di lunedì nessuno.
+  const pastScenarios = [
+    // Fatto: il programma e la sessione dello stesso tipo.
+    d => { plan(d, 'training', '18:00', trainingPlan(90, 'terra', ['dritto'])); calTraining(d, [{ kind: 'sparring', minutes: 90 }], ['dritto']) },
+    // Non svolto: corsa programmata e mai fatta.
+    d => plan(d, 'run', '07:00', workoutPlan(wLento, 'Lento 8 km'), 'Prima del lavoro'),
+    // Riposo rispettato: nessuna sessione.
+    d => plan(d, 'rest'),
+    // Fatto, palestra.
+    d => { plan(d, 'gym', null, workoutPlan(gLegs, 'Gambe')); calGym(d, gLegs, 'Gambe', legsItems(122)) },
+    // Abbinamento uno a uno: due allenamenti programmati, uno solo svolto.
+    d => { plan(d, 'training', '09:00', trainingPlan(60, 'cemento')); plan(d, 'training', '19:00', trainingPlan(60, 'cemento')); calTraining(d, [{ kind: 'servizio', minutes: 45 }]) },
+    // Una sessione senza programma: il calendario la mostra comunque.
+    d => calRun(d, wHiit, 'HIIT brevi distanze', hiitItems, [6.8, 450, 'intensa']),
+  ]
+  for (let d = monday; d < 0; d++) pastScenarios[d - monday]?.(d)
+
+  // Oggi: una corsa programmata e già fatta, e il tennis della sera da fare
+  // ("Registra" nella PlanModal).
+  plan(0, 'run', '07:00', workoutPlan(wRipetute, 'Ripetute 1000'))
+  calRun(0, wRipetute, 'Ripetute 1000', ripetuteItems, [7.7, 378, 'intensa'])
+  plan(0, 'training', '18:30', trainingPlan(90, 'terra', ['servizio-kick', 'dritto'], { label: oppNames[oSimone.id], opponentId: oSimone.id }), 'Portare le palline nuove')
+
+  // I prossimi giorni: palestra, un giorno con due programmi (corsa + partita
+  // di torneo), un riposo e una partita con l'avversario ancora da definire.
+  plan(1, 'gym', '07:30', workoutPlan(gPush, 'Push'))
+  plan(2, 'training', '19:00', trainingPlan(60, 'cemento', ['volee-dritto']))
+  plan(3, 'run', '07:00', workoutPlan(wLento, 'Lento 8 km'))
+  plan(3, 'match', '18:00', { opponentId: oLuca.id, opponentName: oppNames[oLuca.id], surface: 'terra', type: 'torneo', eventName: 'Torneo d\'Autunno' })
+  plan(5, 'rest')
+  plan(6, 'match', '10:00', { opponentId: null, opponentName: null, surface: 'terra', type: 'torneo', eventName: 'Torneo d\'Autunno' }, 'Tabellone non ancora uscito')
+
+  // Se l'ultima riga della griglia arriva nel mese dopo, un programma lì.
+  const lastOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  const firstNext = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+  if (lastOfMonth.getDay() !== 0 && firstNext > today) plan(firstNext, 'gym', null, workoutPlan(gLegs, 'Gambe'))
+
+  await calBatch.commit()
+  console.log(`Calendario: ${recent.match} partite, ${recent.training} allenamenti, ${recent.run} corse, ${recent.gym} palestre recenti · ${planCount} programmi (oggi = ${keyOf(today)})`)
+
   // ── Profilo ──────────────────────────────────────────────
+  // `running` è la tabella zone → passo (s/km) che sblocca la corsa.
   await userRef.update({
-    profile: { dominantHand: 'destro', level: '3.4', birthYear: 1994, playingSince: 2008 },
+    profile: {
+      dominantHand: 'destro', level: '3.4', birthYear: 1994, playingSince: 2008,
+      running: {
+        zones: [[480, 540], [420, 460], [380, 420], [340, 380], [300, 340], [260, 300], [220, 260]].map(([fast, slow]) => ({ fast, slow })),
+        walk: { fast: 570, slow: 690 },
+        weightKg: 74,
+      },
+    },
     updatedAt: FieldValue.serverTimestamp(),
   })
   console.log('Profilo aggiornato')
 
   console.log('\n✅ Seed completato con successo su', DEV_PROJECT_ID)
-  console.log(`   Equipment: 7 · Avversari: 6 · Partite: ${matchCount} · Allenamenti: ${trainCount}`)
+  console.log(`   Equipment: 7 · Avversari: 6 · Partite: ${matchCount} · Allenamenti: ${trainCount} · Corse: ${rawRuns.length} · Palestra: ${gymSeed.length}`)
 }
 
 main().then(() => process.exit(0)).catch(err => {

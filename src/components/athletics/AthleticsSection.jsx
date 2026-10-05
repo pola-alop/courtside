@@ -1,33 +1,56 @@
 import {
-  HR_ZONES, hasAthletics, zonesTotalSec, zonePercents, avgSpeedKmh,
+  HR_ZONES, hasAthletics, zonesTotalSec, zonePercents, readZones, avgSpeedKmh,
   trainingEffectLabel, formatDuration, formatSpeed, formatHr, formatTrainingEffect,
 } from '../../lib/athletics'
+import { avgPaceSec, formatPace } from '../../lib/running'
+import { paceSeries } from '../../lib/fit'
+import { useFitDetail } from '../../hooks/useFitDetail'
 import TrainingEffectInfoButton from './TrainingEffectInfo'
+import { HrCurve, LineSeries, RouteTrace } from './FitCharts'
 
 // Visualizzazione dei dati atletici di una sessione (partita o allenamento).
 // Vive qui e non dentro MatchDetailModal perché è identica nei due dettagli:
 // stessa shape `athletics`, stesse tile, stesso training effect, stesse zone.
 // Interamente nascosta se la sessione non ha dati (le partite registrate prima
 // della feature non hanno affatto il campo `athletics`).
-export default function AthleticsSection({ athletics, title = 'Dati atletici' }) {
+// Con `pace` (le corse) la riga derivata è il passo in min/km invece della
+// velocità in km/h: è l'unità con cui un runner legge la propria andatura.
+//
+// Se i dati vengono da un file .FIT (`athletics.source === 'fit'`) la sezione
+// mostra anche ciò che il file porta in più: carico Garmin, velocità massima,
+// dislivello, dinamiche di corsa e — dai dettagli, letti a parte — la curva
+// della FC con le zone, il passo, l'altitudine, la potenza e il percorso.
+// `details` si può passare se il chiamante li ha già (il dettaglio corsa li usa
+// anche per le fasi): altrimenti la sezione li legge da sola.
+export default function AthleticsSection({ athletics, title = 'Dati atletici', pace = false, details: given = null }) {
+  const own = useFitDetail(given ? null : athletics?.fitId)
+  const details = given || own.details
   if (!hasAthletics(athletics)) return null
 
   const speed = avgSpeedKmh(athletics)
+  const paceSec = pace ? avgPaceSec(athletics) : null
 
   // Le tile mostrano solo i valori davvero presenti: una griglia con buchi
-  // sarebbe peggio di una griglia più corta.
+  // sarebbe peggio di una griglia più corta. Il `?.` sulla distanza serve alla
+  // palestra, che non ne ha: il valore si calcola per tutte le tile prima del
+  // filtro, e `null.toLocaleString` romperebbe l'intera sezione.
   // Numero nudo nella tile e unità nell'etichetta: con 2 colonne su mobile un
   // "2,54 km" a caratteri grandi va a capo, "2,54" no.
   const tiles = [
-    { key: 'dist', label: 'Distanza (km)', show: isSet(athletics.distanceKm),  value: athletics.distanceKm.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), color: 'var(--color-teal)' },
+    { key: 'dist', label: 'Distanza (km)', show: isSet(athletics.distanceKm),  value: athletics.distanceKm?.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), color: 'var(--color-teal)' },
     { key: 'time', label: 'Tempo',         show: isSet(athletics.durationSec), value: formatDuration(athletics.durationSec), color: 'var(--color-white)' },
     { key: 'kcal', label: 'Calorie',       show: isSet(athletics.calories),    value: Math.round(athletics.calories).toLocaleString('it-IT'), color: 'var(--color-amber)' },
     { key: 'hr',   label: 'FC media (bpm)', show: isSet(athletics.avgHr),      value: String(Math.round(athletics.avgHr)), color: 'var(--color-loss)' },
+    { key: 'load', label: 'Carico Garmin',  show: isSet(athletics.trainingLoad), value: String(Math.round(athletics.trainingLoad)), color: 'var(--color-draw)' },
+    { key: 'vmax', label: 'Vel. max (km/h)', show: isSet(athletics.maxSpeedKmh) && !pace, value: athletics.maxSpeedKmh?.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), color: 'var(--color-white)' },
   ].filter(t => t.show)
 
   const rows = [
     { key: 'maxHr', label: 'FC massima',   show: isSet(athletics.maxHr),          value: formatHr(athletics.maxHr) },
-    { key: 'speed', label: 'Velocità media (calcolata)', show: speed !== null,    value: formatSpeed(speed) },
+    { key: 'speed', label: 'Velocità media (calcolata)', show: !pace && speed !== null, value: formatSpeed(speed) },
+    { key: 'pace',  label: 'Passo medio (calcolato)',    show: paceSec !== null,        value: `${formatPace(paceSec)} /km` },
+    { key: 'vmaxrun', label: 'Passo più veloce',         show: pace && isSet(athletics.maxSpeedKmh) && athletics.maxSpeedKmh > 0, value: `${formatPace(3600 / athletics.maxSpeedKmh)} /km` },
+    { key: 'asc',   label: 'Dislivello',                 show: isSet(athletics.ascentM) || isSet(athletics.descentM), value: `+${athletics.ascentM ?? 0} m / −${athletics.descentM ?? 0} m` },
   ].filter(r => r.show)
 
   const zonesTotal = zonesTotalSec(athletics.zones)
@@ -62,11 +85,93 @@ export default function AthleticsSection({ athletics, title = 'Dati atletici' })
       )}
 
       {zonesTotal > 0 && <ZonesBreakdown zones={athletics.zones} total={zonesTotal} />}
+
+      {athletics.dynamics && <RunDynamics d={athletics.dynamics} />}
+
+      {details && <FitCharts details={details} bounds={athletics.hrBounds} pace={pace} />}
+
+      {athletics.source === 'fit' && (
+        <p className="text-[10px] mt-1 text-center" style={{ color: 'var(--color-slate)' }}>
+          ⌚ Misurato dall'orologio (file Garmin)
+        </p>
+      )}
     </div>
   )
 }
 
 // ── Componenti interni ─────────────────────────────────────
+
+// Curve della sessione dal file .FIT. La FC c'è sempre; passo, altitudine e
+// potenza solo per la corsa (`pace`), dove hanno senso; il percorso solo se il
+// file lo porta (la corsa: il GPS del tennis non si salva).
+function FitCharts({ details, bounds, pace }) {
+  const s = details.series || {}
+  const step = details.step
+  const paces = pace ? paceSeries(s.speed) : []
+  const hasPace = paces.filter(v => v !== null).length > 1
+
+  return (
+    <div className="rounded-2xl px-4 py-3 mt-2" style={{ background: 'var(--color-surface-2)' }}>
+      {s.hr?.length > 1 && (
+        <ChartBlock title="Frequenza cardiaca">
+          <HrCurve hr={s.hr} step={step} bounds={bounds || null} />
+        </ChartBlock>
+      )}
+      {hasPace && (
+        <ChartBlock title="Passo (min/km)">
+          <LineSeries values={paces} step={step} color="var(--color-teal)" invert fmt={v => formatPace(v)} />
+        </ChartBlock>
+      )}
+      {pace && s.alt?.length > 1 && (
+        <ChartBlock title="Altitudine">
+          <LineSeries values={s.alt} step={step} color="var(--color-win)" fmt={v => `${Math.round(v / 10)} m`} />
+        </ChartBlock>
+      )}
+      {pace && s.power?.length > 1 && (
+        <ChartBlock title="Potenza">
+          <LineSeries values={s.power} step={step} color="var(--color-amber)" fmt={v => `${Math.round(v)} W`} />
+        </ChartBlock>
+      )}
+      {details.route && (
+        <ChartBlock title="Percorso">
+          <RouteTrace route={details.route} />
+        </ChartBlock>
+      )}
+    </div>
+  )
+}
+
+function ChartBlock({ title, children }) {
+  return (
+    <div className="mb-3 last:mb-0">
+      <p className="text-[11px] uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-slate)' }}>{title}</p>
+      {children}
+    </div>
+  )
+}
+
+// Potenza e dinamiche di corsa misurate dall'orologio (solo corsa, da file).
+function RunDynamics({ d }) {
+  const rows = [
+    { label: 'Potenza media / max', show: isSet(d.avgPowerW), value: `${Math.round(d.avgPowerW)} / ${isSet(d.maxPowerW) ? Math.round(d.maxPowerW) : '—'} W` },
+    { label: 'Potenza normalizzata', show: isSet(d.normPowerW), value: `${Math.round(d.normPowerW)} W` },
+    { label: 'Cadenza', show: isSet(d.cadenceSpm), value: `${Math.round(d.cadenceSpm)} spm` },
+    { label: 'Lunghezza del passo', show: isSet(d.strideM), value: `${d.strideM?.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m` },
+    { label: 'Oscillazione verticale', show: isSet(d.vertOscCm), value: `${d.vertOscCm?.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} cm` },
+    { label: 'Contatto al suolo', show: isSet(d.contactMs), value: `${Math.round(d.contactMs)} ms` },
+    { label: 'Rapporto verticale', show: isSet(d.vertRatioPct), value: `${d.vertRatioPct?.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %` },
+  ].filter(r => r.show)
+  if (rows.length === 0) return null
+
+  return (
+    <div className="rounded-2xl overflow-hidden mt-2" style={{ background: 'var(--color-surface-2)' }}>
+      <p className="text-[11px] uppercase tracking-wider px-4 pt-3 pb-1" style={{ color: 'var(--color-slate)' }}>
+        Potenza e dinamiche di corsa
+      </p>
+      {rows.map(r => <Row key={r.label} label={r.label} value={r.value} />)}
+    </div>
+  )
+}
 
 function Row({ label, value }) {
   return (
@@ -186,6 +291,7 @@ function TrainingEffectBar({ value }) {
 
 function ZonesBreakdown({ zones, total }) {
   const percents = zonePercents(zones)
+  const secs = readZones(zones)
 
   return (
     <div className="rounded-2xl px-4 py-3" style={{ background: 'var(--color-surface-2)' }}>
@@ -209,7 +315,7 @@ function ZonesBreakdown({ zones, total }) {
 
       <div className="space-y-1.5">
         {HR_ZONES.map((z, i) => {
-          const sec = zones?.[i] || 0
+          const sec = secs?.[i] || 0
           if (sec <= 0) return null
           return (
             <div key={z.id} className="flex items-center gap-2">

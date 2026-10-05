@@ -6,6 +6,7 @@ import {
 } from '../../lib/training'
 import { trainingGameEquivalents } from '../../lib/wear'
 import FocusPicker from './FocusPicker'
+import OpponentSearchField from '../matches/OpponentSearchField'
 
 // Wizard volutamente CORTO (3 step, contro i 7 del match): una partita è un
 // evento raro e memorabile, un allenamento è settimanale e ripetitivo. Se
@@ -28,6 +29,10 @@ const EQUIP_TYPES = [
 const MINUTE_STEP = 15
 const MAX_BLOCK_MINUTES = 300
 
+// `initial` è l'allenamento da modificare; per uno nuovo può arrivare invece
+// `prefill` ("Registra" da un programma del calendario: data, superficie,
+// focus, con chi, un blocco della durata prevista), con gli stessi nomi di
+// campo. Solo `initial` vuol dire modifica.
 function initialForm(initial) {
   return {
     date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -42,9 +47,9 @@ function initialForm(initial) {
   }
 }
 
-export default function AddTrainingModal({ initial = null, opponents = [], equipment = [], trainings = [], onClose, onSave }) {
+export default function AddTrainingModal({ initial = null, prefill = null, opponents = [], equipment = [], trainings = [], onClose, onSave }) {
   const [step, setStep]     = useState(1)
-  const [form, setForm]     = useState(() => initialForm(initial))
+  const [form, setForm]     = useState(() => initialForm(initial || prefill))
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -81,6 +86,8 @@ export default function AddTrainingModal({ initial = null, opponents = [], equip
       // scartando quelle rimaste orfane se un colpo è stato tolto dal focus.
       ratings:   normalizeRatings(initial?.ratings, form.focus),
       intensity: form.intensity,
+      // Cambiare l'intensità a mano toglie il marchio di «suggerita dall'orologio».
+      intensitySource: form.intensity === initial?.intensity ? (initial?.intensitySource ?? null) : null,
       withWhom:  label ? { label, opponentId: form.withWhomOpponentId } : null,
       brokeStrings: form.brokeStrings,
       equipment: form.equipment,
@@ -465,62 +472,6 @@ function StepDetails({ form, set, setForm, opponents, equipment }) {
           {form.brokeStrings ? '✓' : ''}
         </span>
       </button>
-    </div>
-  )
-}
-
-// Sostituisce le bubble con tutti gli avversari (non scala oltre una manciata
-// di nomi) con una ricerca: box chiuso finché non si tocca, poi filtra man
-// mano che si scrive, come lo step "Contro chi?" del wizard match.
-function OpponentSearchField({ opponents, valueId, onSelect, onClear }) {
-  const [search, setSearch] = useState('')
-  const [open, setOpen] = useState(false)
-  const selected = opponents.find(o => o.id === valueId)
-  const query = search.trim().toLowerCase()
-  const results = query ? opponents.filter(o => o.name.toLowerCase().includes(query)) : opponents
-
-  if (selected) {
-    return (
-      <div className="w-full p-3 rounded-xl text-sm flex items-center justify-between"
-           style={{ background: 'var(--color-teal-dark)', border: '1px solid var(--color-teal)' }}>
-        <span style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{selected.name}</span>
-        <button onClick={onClear} className="text-xs font-semibold" style={{ color: 'var(--color-teal-light)' }}>
-          Rimuovi ✕
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="relative">
-      <input
-        type="text"
-        value={search}
-        onChange={e => { setSearch(e.target.value); setOpen(true) }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Cerca avversario..."
-        className="w-full p-3 rounded-xl text-sm outline-none"
-        style={{ background: 'var(--color-surface-2)', color: 'var(--color-white)', border: '1px solid transparent', fontFamily: 'var(--font-body)' }}
-      />
-      {open && (
-        <div className="absolute left-0 right-0 mt-1.5 rounded-xl overflow-y-auto z-10"
-             style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-teal-dark)', maxHeight: '11rem' }}>
-          {results.length === 0 ? (
-            <p className="text-xs text-center py-3" style={{ color: 'var(--color-slate)' }}>Nessun avversario trovato.</p>
-          ) : (
-            results.map(o => (
-              <button key={o.id}
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => { onSelect(o); setSearch(''); setOpen(false) }}
-                className="w-full text-left px-3 py-2.5 text-sm transition-all"
-                style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-                {o.name}
-              </button>
-            ))
-          )}
-        </div>
-      )}
     </div>
   )
 }

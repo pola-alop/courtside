@@ -1,0 +1,1102 @@
+[
+ {
+  "id": "panca-piana-bilanciere",
+  "name": "Panca piana con bilanciere",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "petto" ],
+  "secondary": [ "tricipiti", "spalle" ],
+  "garmin": "bench_press"
+ },
+ {
+  "id": "panca-inclinata-bilanciere",
+  "name": "Panca inclinata con bilanciere",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "petto", "spalle" ],
+  "secondary": [ "tricipiti" ],
+  "garmin": "bench_press"
+ },
+ {
+  "id": "panca-declinata-bilanciere",
+  "name": "Panca declinata con bilanciere",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "petto" ],
+  "secondary": [ "tricipiti" ],
+  "garmin": "bench_press"
+ },
+ {
+  "id": "panca-piana-manubri",
+  "name": "Panca piana con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "petto" ],
+  "secondary": [ "tricipiti", "spalle" ],
+  "garmin": "bench_press"
+ },
+ {
+  "id": "panca-inclinata-manubri",
+  "name": "Panca inclinata con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "petto", "spalle" ],
+  "secondary": [ "tricipiti" ],
+  "garmin": "bench_press"
+ },
+ {
+  "id": "croci-manubri",
+  "name": "Croci con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "petto" ],
+  "secondary": [ "spalle" ],
+  "garmin": "flye"
+ },
+ {
+  "id": "croci-cavi",
+  "name": "Croci ai cavi",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "petto" ],
+  "secondary": [ "spalle" ],
+  "garmin": "flye"
+ },
+ {
+  "id": "pec-deck",
+  "name": "Pec deck",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "petto" ],
+  "secondary": [ "spalle" ],
+  "garmin": "flye"
+ },
+ {
+  "id": "chest-press",
+  "name": "Chest press",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "petto" ],
+  "secondary": [ "tricipiti", "spalle" ],
+  "garmin": "bench_press"
+ },
+ {
+  "id": "piegamenti",
+  "name": "Piegamenti sulle braccia",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "push",
+  "primary": [ "petto" ],
+  "secondary": [ "tricipiti", "spalle", "addominali" ],
+  "garmin": "push_up"
+ },
+ {
+  "id": "piegamenti-diamante",
+  "name": "Piegamenti a diamante",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "push",
+  "primary": [ "tricipiti", "petto" ],
+  "secondary": [ "spalle" ],
+  "garmin": "push_up"
+ },
+ {
+  "id": "dip-parallele",
+  "name": "Dip alle parallele",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "push",
+  "primary": [ "petto", "tricipiti" ],
+  "secondary": [ "spalle" ],
+  "garmin": "bench_press"
+ },
+ {
+  "id": "dip-panca",
+  "name": "Dip su panca",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "push",
+  "primary": [ "tricipiti" ],
+  "secondary": [ "petto", "spalle" ],
+  "garmin": "triceps_extension"
+ },
+ {
+  "id": "military-press",
+  "name": "Military press con bilanciere",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "spalle" ],
+  "secondary": [ "tricipiti", "trapezio" ],
+  "garmin": "shoulder_press"
+ },
+ {
+  "id": "shoulder-press-manubri",
+  "name": "Shoulder press con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "spalle" ],
+  "secondary": [ "tricipiti" ],
+  "garmin": "shoulder_press"
+ },
+ {
+  "id": "shoulder-press-macchina",
+  "name": "Shoulder press alla macchina",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "spalle" ],
+  "secondary": [ "tricipiti" ],
+  "garmin": "shoulder_press"
+ },
+ {
+  "id": "arnold-press",
+  "name": "Arnold press",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "spalle" ],
+  "secondary": [ "tricipiti" ],
+  "garmin": "shoulder_press"
+ },
+ {
+  "id": "push-press",
+  "name": "Push press",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "spalle" ],
+  "secondary": [ "tricipiti", "quadricipiti" ],
+  "garmin": "shoulder_press"
+ },
+ {
+  "id": "alzate-laterali",
+  "name": "Alzate laterali con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "spalle" ],
+  "secondary": [ "trapezio" ],
+  "garmin": "lateral_raise"
+ },
+ {
+  "id": "alzate-laterali-cavi",
+  "name": "Alzate laterali ai cavi",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "spalle" ],
+  "secondary": [ "trapezio" ],
+  "garmin": "lateral_raise"
+ },
+ {
+  "id": "alzate-frontali",
+  "name": "Alzate frontali",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "spalle" ],
+  "secondary": [ "petto" ],
+  "garmin": "lateral_raise"
+ },
+ {
+  "id": "alzate-posteriori",
+  "name": "Alzate posteriori con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "spalle" ],
+  "secondary": [ "trapezio", "dorsali" ],
+  "garmin": "lateral_raise"
+ },
+ {
+  "id": "reverse-pec-deck",
+  "name": "Reverse pec deck",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "spalle" ],
+  "secondary": [ "trapezio" ],
+  "garmin": "flye"
+ },
+ {
+  "id": "face-pull",
+  "name": "Face pull",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "spalle", "trapezio" ],
+  "secondary": [],
+  "garmin": "row"
+ },
+ {
+  "id": "tirate-al-mento",
+  "name": "Tirate al mento",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "spalle", "trapezio" ],
+  "secondary": [ "bicipiti" ],
+  "garmin": "row"
+ },
+ {
+  "id": "shrug-bilanciere",
+  "name": "Shrug con bilanciere",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "trapezio" ],
+  "secondary": [ "avambracci" ],
+  "garmin": "shrug"
+ },
+ {
+  "id": "shrug-manubri",
+  "name": "Shrug con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "trapezio" ],
+  "secondary": [ "avambracci" ],
+  "garmin": "shrug"
+ },
+ {
+  "id": "trazioni-prone",
+  "name": "Trazioni alla sbarra (presa prona)",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "bicipiti", "avambracci", "trapezio" ],
+  "garmin": "pull_up"
+ },
+ {
+  "id": "trazioni-supine",
+  "name": "Trazioni alla sbarra (presa supina)",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "pull",
+  "primary": [ "dorsali", "bicipiti" ],
+  "secondary": [ "avambracci", "trapezio" ],
+  "garmin": "pull_up"
+ },
+ {
+  "id": "lat-machine",
+  "name": "Lat machine presa larga",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "bicipiti", "trapezio" ],
+  "garmin": "pull_up"
+ },
+ {
+  "id": "lat-machine-stretta",
+  "name": "Lat machine presa stretta",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "bicipiti", "trapezio" ],
+  "garmin": "pull_up"
+ },
+ {
+  "id": "pulley-basso",
+  "name": "Pulley basso",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "bicipiti", "trapezio", "lombari" ],
+  "garmin": "row"
+ },
+ {
+  "id": "rematore-bilanciere",
+  "name": "Rematore con bilanciere",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "trapezio", "bicipiti", "lombari", "avambracci" ],
+  "garmin": "row"
+ },
+ {
+  "id": "rematore-manubrio",
+  "name": "Rematore con manubrio a un braccio",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "trapezio", "bicipiti" ],
+  "garmin": "row"
+ },
+ {
+  "id": "rematore-t-bar",
+  "name": "Rematore al T-bar",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "trapezio", "bicipiti", "lombari" ],
+  "garmin": "row"
+ },
+ {
+  "id": "rematore-macchina",
+  "name": "Rematore alla macchina",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "trapezio", "bicipiti" ],
+  "garmin": "row"
+ },
+ {
+  "id": "pullover-manubrio",
+  "name": "Pullover con manubrio",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "petto", "tricipiti" ],
+  "garmin": "flye"
+ },
+ {
+  "id": "pulldown-braccia-tese",
+  "name": "Pulldown a braccia tese",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "dorsali" ],
+  "secondary": [ "tricipiti" ],
+  "garmin": "pull_up"
+ },
+ {
+  "id": "iperestensioni",
+  "name": "Iperestensioni",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "pull",
+  "primary": [ "lombari" ],
+  "secondary": [ "glutei", "femorali" ],
+  "garmin": "hyperextension"
+ },
+ {
+  "id": "superman",
+  "name": "Superman",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "pull",
+  "primary": [ "lombari" ],
+  "secondary": [ "glutei" ],
+  "garmin": "hyperextension"
+ },
+ {
+  "id": "good-morning",
+  "name": "Good morning",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "lombari", "femorali", "glutei" ],
+  "secondary": [],
+  "garmin": "hyperextension"
+ },
+ {
+  "id": "stacco-da-terra",
+  "name": "Stacco da terra",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "glutei", "femorali", "lombari" ],
+  "secondary": [ "quadricipiti", "trapezio", "avambracci", "dorsali" ],
+  "garmin": "deadlift"
+ },
+ {
+  "id": "stacco-rumeno",
+  "name": "Stacco rumeno",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "femorali", "glutei" ],
+  "secondary": [ "lombari", "avambracci" ],
+  "garmin": "deadlift"
+ },
+ {
+  "id": "stacco-sumo",
+  "name": "Stacco sumo",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "glutei", "adduttori", "femorali" ],
+  "secondary": [ "lombari", "quadricipiti" ],
+  "garmin": "deadlift"
+ },
+ {
+  "id": "stacco-trap-bar",
+  "name": "Stacco con trap bar",
+  "equipment": "altro",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "femorali", "lombari", "trapezio" ],
+  "garmin": "deadlift"
+ },
+ {
+  "id": "stacco-rumeno-manubri",
+  "name": "Stacco rumeno con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "femorali", "glutei" ],
+  "secondary": [ "lombari", "avambracci" ],
+  "garmin": "deadlift"
+ },
+ {
+  "id": "curl-bilanciere",
+  "name": "Curl con bilanciere",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "bicipiti" ],
+  "secondary": [ "avambracci" ],
+  "garmin": "curl"
+ },
+ {
+  "id": "curl-manubri",
+  "name": "Curl con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "bicipiti" ],
+  "secondary": [ "avambracci" ],
+  "garmin": "curl"
+ },
+ {
+  "id": "curl-martello",
+  "name": "Curl a martello",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "bicipiti", "avambracci" ],
+  "secondary": [],
+  "garmin": "curl"
+ },
+ {
+  "id": "curl-panca-scott",
+  "name": "Curl alla panca Scott",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "bicipiti" ],
+  "secondary": [ "avambracci" ],
+  "garmin": "curl"
+ },
+ {
+  "id": "curl-cavi",
+  "name": "Curl ai cavi",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "bicipiti" ],
+  "secondary": [ "avambracci" ],
+  "garmin": "curl"
+ },
+ {
+  "id": "curl-concentrato",
+  "name": "Curl concentrato",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "bicipiti" ],
+  "secondary": [],
+  "garmin": "curl"
+ },
+ {
+  "id": "reverse-curl",
+  "name": "Reverse curl",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "avambracci" ],
+  "secondary": [ "bicipiti" ],
+  "garmin": "curl"
+ },
+ {
+  "id": "wrist-curl",
+  "name": "Wrist curl",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "pull",
+  "primary": [ "avambracci" ],
+  "secondary": [],
+  "garmin": "curl"
+ },
+ {
+  "id": "french-press",
+  "name": "French press (skull crusher)",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "tricipiti" ],
+  "secondary": [],
+  "garmin": "triceps_extension"
+ },
+ {
+  "id": "pushdown-cavi",
+  "name": "Pushdown ai cavi",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "tricipiti" ],
+  "secondary": [],
+  "garmin": "triceps_extension"
+ },
+ {
+  "id": "estensioni-sopra-testa",
+  "name": "Estensioni sopra la testa con manubrio",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "tricipiti" ],
+  "secondary": [],
+  "garmin": "triceps_extension"
+ },
+ {
+  "id": "estensioni-sopra-testa-cavi",
+  "name": "Estensioni sopra la testa ai cavi",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "tricipiti" ],
+  "secondary": [],
+  "garmin": "triceps_extension"
+ },
+ {
+  "id": "kickback-tricipiti",
+  "name": "Kickback per tricipiti",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "tricipiti" ],
+  "secondary": [],
+  "garmin": "triceps_extension"
+ },
+ {
+  "id": "panca-presa-stretta",
+  "name": "Panca piana presa stretta",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "push",
+  "primary": [ "tricipiti" ],
+  "secondary": [ "petto", "spalle" ],
+  "garmin": "bench_press"
+ },
+ {
+  "id": "squat-bilanciere",
+  "name": "Squat con bilanciere",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "femorali", "adduttori", "lombari", "addominali" ],
+  "garmin": "squat"
+ },
+ {
+  "id": "front-squat",
+  "name": "Front squat",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti" ],
+  "secondary": [ "glutei", "addominali", "lombari" ],
+  "garmin": "squat"
+ },
+ {
+  "id": "goblet-squat",
+  "name": "Goblet squat",
+  "equipment": "kettlebell",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "addominali", "adduttori" ],
+  "garmin": "squat"
+ },
+ {
+  "id": "squat-bulgaro",
+  "name": "Squat bulgaro",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "femorali", "adduttori" ],
+  "garmin": "lunge"
+ },
+ {
+  "id": "squat-corpo-libero",
+  "name": "Squat a corpo libero",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "femorali", "adduttori" ],
+  "garmin": "squat"
+ },
+ {
+  "id": "leg-press",
+  "name": "Leg press",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "femorali", "adduttori" ],
+  "garmin": "squat"
+ },
+ {
+  "id": "hack-squat",
+  "name": "Hack squat",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti" ],
+  "secondary": [ "glutei" ],
+  "garmin": "squat"
+ },
+ {
+  "id": "leg-extension",
+  "name": "Leg extension",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti" ],
+  "secondary": [],
+  "garmin": "squat"
+ },
+ {
+  "id": "leg-curl-sdraiato",
+  "name": "Leg curl sdraiato",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "femorali" ],
+  "secondary": [ "polpacci" ],
+  "garmin": "leg_curl"
+ },
+ {
+  "id": "leg-curl-seduto",
+  "name": "Leg curl seduto",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "femorali" ],
+  "secondary": [ "polpacci" ],
+  "garmin": "leg_curl"
+ },
+ {
+  "id": "affondi-manubri",
+  "name": "Affondi con manubri",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "femorali", "adduttori" ],
+  "garmin": "lunge"
+ },
+ {
+  "id": "affondi-camminata",
+  "name": "Affondi in camminata",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "femorali", "adduttori" ],
+  "garmin": "lunge"
+ },
+ {
+  "id": "affondi-indietro",
+  "name": "Affondi indietro",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "femorali", "adduttori" ],
+  "garmin": "lunge"
+ },
+ {
+  "id": "step-up",
+  "name": "Step-up",
+  "equipment": "manubri",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "femorali", "polpacci" ],
+  "garmin": "lunge"
+ },
+ {
+  "id": "hip-thrust",
+  "name": "Hip thrust con bilanciere",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "glutei" ],
+  "secondary": [ "femorali", "adduttori" ],
+  "garmin": "hip_raise"
+ },
+ {
+  "id": "ponte-glutei",
+  "name": "Ponte per i glutei",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "legs",
+  "primary": [ "glutei" ],
+  "secondary": [ "femorali" ],
+  "garmin": "hip_raise"
+ },
+ {
+  "id": "kickback-glutei-cavi",
+  "name": "Kickback glutei ai cavi",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "glutei" ],
+  "secondary": [ "femorali" ],
+  "garmin": "hip_stability"
+ },
+ {
+  "id": "abduttori-macchina",
+  "name": "Abduttori alla macchina",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "glutei" ],
+  "secondary": [],
+  "garmin": "hip_stability"
+ },
+ {
+  "id": "adduttori-macchina",
+  "name": "Adduttori alla macchina",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "adduttori" ],
+  "secondary": [],
+  "garmin": "hip_stability"
+ },
+ {
+  "id": "calf-raise-in-piedi",
+  "name": "Calf raise in piedi",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "polpacci" ],
+  "secondary": [],
+  "garmin": "calf_raise"
+ },
+ {
+  "id": "calf-raise-seduto",
+  "name": "Calf raise da seduto",
+  "equipment": "macchina",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "polpacci" ],
+  "secondary": [],
+  "garmin": "calf_raise"
+ },
+ {
+  "id": "calf-raise-corpo-libero",
+  "name": "Calf raise a corpo libero",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "legs",
+  "primary": [ "polpacci" ],
+  "secondary": [],
+  "garmin": "calf_raise"
+ },
+ {
+  "id": "nordic-curl",
+  "name": "Nordic curl",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "legs",
+  "primary": [ "femorali" ],
+  "secondary": [ "glutei", "polpacci" ],
+  "garmin": "leg_curl"
+ },
+ {
+  "id": "swing-kettlebell",
+  "name": "Swing con kettlebell",
+  "equipment": "kettlebell",
+  "mode": "reps-kg",
+  "movement": "legs",
+  "primary": [ "glutei", "femorali" ],
+  "secondary": [ "lombari", "spalle", "quadricipiti" ],
+  "garmin": "hip_swing"
+ },
+ {
+  "id": "jump-squat",
+  "name": "Jump squat",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "polpacci", "femorali" ],
+  "garmin": "plyo"
+ },
+ {
+  "id": "box-jump",
+  "name": "Box jump",
+  "equipment": "altro",
+  "mode": "reps",
+  "movement": "legs",
+  "primary": [ "quadricipiti", "glutei" ],
+  "secondary": [ "polpacci", "femorali" ],
+  "garmin": "plyo"
+ },
+ {
+  "id": "crunch",
+  "name": "Crunch",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [ "obliqui" ],
+  "garmin": "crunch"
+ },
+ {
+  "id": "crunch-cavi",
+  "name": "Crunch ai cavi",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [ "obliqui" ],
+  "garmin": "crunch"
+ },
+ {
+  "id": "sit-up",
+  "name": "Sit-up",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [],
+  "garmin": "sit_up"
+ },
+ {
+  "id": "crunch-inverso",
+  "name": "Crunch inverso",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [],
+  "garmin": "leg_raise"
+ },
+ {
+  "id": "sollevamento-gambe-sdraiato",
+  "name": "Sollevamento gambe da sdraiato",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [],
+  "garmin": "leg_raise"
+ },
+ {
+  "id": "sollevamento-gambe-sbarra",
+  "name": "Sollevamento gambe alla sbarra",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [ "avambracci", "obliqui" ],
+  "garmin": "leg_raise"
+ },
+ {
+  "id": "v-up",
+  "name": "V-up",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [],
+  "garmin": "sit_up"
+ },
+ {
+  "id": "bicycle-crunch",
+  "name": "Bicycle crunch",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "addominali", "obliqui" ],
+  "secondary": [],
+  "garmin": "crunch"
+ },
+ {
+  "id": "russian-twist",
+  "name": "Russian twist",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "obliqui" ],
+  "secondary": [ "addominali" ],
+  "garmin": "core"
+ },
+ {
+  "id": "woodchop-cavi",
+  "name": "Woodchop ai cavi",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "core",
+  "primary": [ "obliqui" ],
+  "secondary": [ "addominali", "spalle" ],
+  "garmin": "chop"
+ },
+ {
+  "id": "pallof-press",
+  "name": "Pallof press",
+  "equipment": "cavi",
+  "mode": "reps-kg",
+  "movement": "core",
+  "primary": [ "obliqui", "addominali" ],
+  "secondary": [ "spalle" ],
+  "garmin": "core"
+ },
+ {
+  "id": "ab-wheel",
+  "name": "Ab wheel",
+  "equipment": "altro",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [ "dorsali", "spalle" ],
+  "garmin": "core"
+ },
+ {
+  "id": "dead-bug",
+  "name": "Dead bug",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [],
+  "garmin": "core"
+ },
+ {
+  "id": "bird-dog",
+  "name": "Bird dog",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "core",
+  "primary": [ "lombari" ],
+  "secondary": [ "glutei", "spalle" ],
+  "garmin": "core"
+ },
+ {
+  "id": "mountain-climber",
+  "name": "Mountain climber",
+  "equipment": "corpo libero",
+  "mode": "time",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [ "spalle", "quadricipiti" ],
+  "garmin": "core"
+ },
+ {
+  "id": "plank",
+  "name": "Plank",
+  "equipment": "corpo libero",
+  "mode": "time",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [ "spalle", "glutei", "lombari" ],
+  "garmin": "plank"
+ },
+ {
+  "id": "plank-laterale",
+  "name": "Plank laterale",
+  "equipment": "corpo libero",
+  "mode": "time",
+  "movement": "core",
+  "primary": [ "obliqui" ],
+  "secondary": [ "addominali", "glutei", "spalle" ],
+  "garmin": "plank"
+ },
+ {
+  "id": "hollow-hold",
+  "name": "Hollow hold",
+  "equipment": "corpo libero",
+  "mode": "time",
+  "movement": "core",
+  "primary": [ "addominali" ],
+  "secondary": [],
+  "garmin": "plank"
+ },
+ {
+  "id": "farmer-walk",
+  "name": "Farmer walk",
+  "equipment": "manubri",
+  "mode": "time",
+  "movement": "other",
+  "primary": [ "avambracci", "trapezio" ],
+  "secondary": [ "addominali", "glutei", "quadricipiti" ],
+  "garmin": "carry"
+ },
+ {
+  "id": "thruster",
+  "name": "Thruster",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "other",
+  "primary": [ "quadricipiti", "spalle" ],
+  "secondary": [ "glutei", "tricipiti" ],
+  "garmin": "total_body"
+ },
+ {
+  "id": "burpee",
+  "name": "Burpee",
+  "equipment": "corpo libero",
+  "mode": "reps",
+  "movement": "other",
+  "primary": [ "petto", "quadricipiti" ],
+  "secondary": [ "spalle", "tricipiti", "addominali" ],
+  "garmin": "total_body"
+ },
+ {
+  "id": "power-clean",
+  "name": "Power clean",
+  "equipment": "bilanciere",
+  "mode": "reps-kg",
+  "movement": "other",
+  "primary": [ "glutei", "femorali", "trapezio" ],
+  "secondary": [ "quadricipiti", "spalle", "lombari" ],
+  "garmin": "olympic_lift"
+ },
+ {
+  "id": "battle-rope",
+  "name": "Battle rope",
+  "equipment": "altro",
+  "mode": "time",
+  "movement": "other",
+  "primary": [ "spalle" ],
+  "secondary": [ "bicipiti", "tricipiti", "addominali" ],
+  "garmin": "total_body"
+ },
+ {
+  "id": "salto-con-la-corda",
+  "name": "Salto con la corda",
+  "equipment": "altro",
+  "mode": "time",
+  "movement": "other",
+  "primary": [ "polpacci" ],
+  "secondary": [ "quadricipiti", "spalle", "avambracci" ],
+  "garmin": "cardio"
+ }
+]

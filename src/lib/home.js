@@ -6,6 +6,7 @@ import {
 } from './activity'
 import { toFocusSessions, neglect, NEGLECT_BAD } from './technique'
 import { computeWear } from './wear'
+import { toLoadSessions } from './crossStats'
 
 // Il report della Home — "adesso", niente altro.
 //
@@ -27,7 +28,6 @@ import { computeWear } from './wear'
 // a questa pagina — è la stessa divisione dei ruoli che tiene separate quelle
 // due, portata un piano più su.
 
-export const STRIP_DAYS = 14   // giorni della striscia di continuità
 export const MAX_ALERTS = 3    // oltre, il blocco "Da sistemare" diventa rumore
 export const IDLE_WARN  = 7    // giorni dall'ultima sessione: da qui l'header si accende
 export const IDLE_BAD   = 14
@@ -40,10 +40,16 @@ export const ALERT_TONES = {
   warn: { color: 'var(--color-amber-light)', bg: 'rgba(244,163,0,0.12)' },
 }
 
-export function buildHome({ matches = [], trainings = [], equipment = [] }) {
+// Il ritmo resta di TENNIS (è «quando sei stato in campo»), ma il
+// carico è di tutto il corpo: corsa e palestra pesano sull'ACWR quanto il
+// tennis, ed è la stessa serie che usa Stats › Attività — una verità sola.
+export function buildHome({
+  matches = [], trainings = [], equipment = [],
+  runs = [], gymSessions = [], index = null, running = null,
+}) {
   const sessions = toSessions(matches, trainings)
   const rhythm   = currentRhythm(sessions)
-  const load     = loadStatus(sessions)
+  const load     = loadStatus(toLoadSessions({ matches, trainings, runs, gymSessions, index, running }))
   const focusSessions = toFocusSessions(trainings)
   const missed   = focusSessions.length ? neglect(focusSessions) : null
 
@@ -66,7 +72,6 @@ export function buildHome({ matches = [], trainings = [], equipment = [] }) {
       technique: Boolean(missed?.rows.length),
     },
     last: lastSession(matches, trainings),
-    strip: buildStrip(sessions),
     career: buildCareer(matches, trainings),
   }
 }
@@ -192,31 +197,6 @@ function mostRecent(list) {
   return best
 }
 
-// ── Striscia di continuità ─────────────────────────────────
-// Gli ultimi STRIP_DAYS giorni fino a oggi, una cella per giorno. Stesso codice
-// colore della striscia di densità della Panoramica (ambra = partita, teal =
-// allenamento, gradiente = entrambi): due strisce con due grammatiche diverse
-// nella stessa app costringerebbero a impararle entrambe.
-
-function buildStrip(sessions) {
-  const today = todayTime()
-  const byDay = new Map()
-  sessions.forEach(s => {
-    const row = byDay.get(s.day) || { match: false, training: false }
-    if (s.kind === 'match') row.match = true
-    else row.training = true
-    byDay.set(s.day, row)
-  })
-
-  const out = []
-  for (let i = STRIP_DAYS - 1; i >= 0; i--) {
-    const day = addDays(today, -i)
-    const row = byDay.get(day) || { match: false, training: false }
-    out.push({ day, ...row })
-  }
-  return out
-}
-
 // ── Carriera ───────────────────────────────────────────────
 // I totali di sempre. Non è analisi — quella è di Stats, che sa confrontarli con
 // un periodo — è l'identità: "ecco quanto tennis hai messo qui dentro".
@@ -246,13 +226,6 @@ function dayTime(dateStr) {
   if (!dateStr) return null
   const d = new Date(dateStr)
   if (isNaN(d)) return null
-  d.setHours(0, 0, 0, 0)
-  return d.getTime()
-}
-
-function addDays(time, n) {
-  const d = new Date(time)
-  d.setDate(d.getDate() + n)
   d.setHours(0, 0, 0, 0)
   return d.getTime()
 }

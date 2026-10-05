@@ -5,7 +5,7 @@ import {
   isTiebreakSet, isTiebreakValid, RESULT_META, surfaceIcon,
 } from '../../lib/tennis'
 import {
-  HR_ZONES, ATHLETIC_LIMITS, emptyAthletics, normalizeAthletics,
+  HR_ZONES, ATHLETIC_LIMITS, emptyAthletics, athleticsDraft, normalizeAthletics,
   athleticsIssues, hasAthletics, splitDuration, joinDuration, zonesTotalSec,
   trainingEffectLabel, formatDuration,
 } from '../../lib/athletics'
@@ -16,6 +16,9 @@ import {
 import { INTENSITIES } from '../../lib/training'
 import { levelLabel } from '../../lib/opponents'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
+import FitImport from '../athletics/FitImport'
+import IntensitySuggestion from '../athletics/IntensitySuggestion'
+import { intensityFromRpe } from '../../lib/fit'
 
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura', 'Atletica']
 
@@ -26,6 +29,10 @@ const EQUIP_TYPES = [
   { id: 'borsone',   label: 'Borsone',   icon: '🎒' },
 ]
 
+// `initial` è la partita da modificare; per una partita nuova può arrivare
+// invece `prefill` ("Registra" da un programma del calendario: data,
+// avversario, tipo, superficie), con gli stessi nomi di campo. Si leggono allo
+// stesso modo, ma solo `initial` vuol dire modifica (titolo, note conservate).
 function initialForm(initial) {
   return {
     date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
@@ -42,7 +49,7 @@ function initialForm(initial) {
     equipment:  { racchetta: null, scarpa: null, outfit: null, borsone: null, ...(initial?.equipment || {}) },
     // I match registrati prima di questa feature non hanno `athletics`: il
     // draft parte comunque vuoto e resta tale se l'utente non compila nulla.
-    athletics:  { ...emptyAthletics(), ...(initial?.athletics || {}) },
+    athletics:  athleticsDraft(initial?.athletics),
     // Intensità percepita. A differenza del wizard allenamento — che preseleziona
     // "media" — qui il default è null, e la differenza è deliberata: il carico di
     // una partita non dichiarata usa un valore di riferimento più alto di
@@ -50,18 +57,35 @@ function initialForm(initial) {
     // significherebbe far dichiarare all'utente uno sforzo che non ha scelto e
     // abbassargli il carico senza che se ne accorga.
     intensity:  initial?.intensity || null,
+    // «suggested» se l'intensità è stata confermata con il tap sul suggerimento
+    // dell'orologio: quelle partite non alimentano la calibrazione delle soglie,
+    // altrimenti il suggerimento si rafforzerebbe da solo.
+    intensitySource: initial?.intensitySource || null,
+    // Import da file .FIT: il riassunto già applicato (per la conferma a video)
+    // e i dettagli pesanti, che si salvano insieme alla partita e non prima.
+    fitSummary: null,
+    fitDetails: null,
   }
 }
 
-export default function AddMatchModal({ initial = null, opponents = [], equipment = [], onClose, onSave }) {
+export default function AddMatchModal({ initial = null, prefill = null, opponents = [], equipment = [], fitUse = null, intensityCalibration = null, onClose, onSave }) {
   const [step, setStep]   = useState(1)
-  const [form, setForm]   = useState(() => initialForm(initial))
+  const [form, setForm]   = useState(() => initialForm(initial || prefill))
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const typeMeta = MATCH_TYPES.find(t => t.id === form.type)
   const outcome  = computeOutcome(form.sets, form.format, form.retired)
   const athIssues = athleticsIssues(form.athletics)
+
+  // Se l'orologio ha registrato lo sforzo dichiarato (accade solo se lo si
+  // imposta sul profilo dell'attività) diventa l'intensità, come per corsa e
+  // palestra; altrimenti resta quella già scelta.
+  const importFit = (summary) => setForm(f => ({
+    ...f, athletics: athleticsDraft(summary.athletics), fitSummary: summary, fitDetails: summary.details,
+    intensity: intensityFromRpe(summary.rpe) || f.intensity,
+    intensitySource: intensityFromRpe(summary.rpe) ? null : f.intensitySource,
+  }))
 
   const stepValid = (() => {
     switch (step) {
@@ -106,6 +130,10 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
       tbMe: s.tbMe ?? null, tbOpp: s.tbOpp ?? null,
     }))
     const out = computeOutcome(cleanedSets, form.format, form.retired)
+    const athletics = normalizeAthletics(form.athletics)
+    // I dettagli del file vanno salvati solo se la partita li referenzia ancora
+    // (se l'utente ha svuotato i dati dopo l'import, non c'è più niente da legare).
+    const fitDetails = athletics?.fitId && form.fitDetails?.fitId === athletics.fitId ? form.fitDetails : null
     await onSave({
       date:         new Date(form.date).toISOString(),
       opponentId:   form.opponentId,
@@ -123,9 +151,10 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
       setsOpp:      out.setsOpp,
       equipment:    form.equipment,
       intensity:    form.intensity || null,
-      athletics:    normalizeAthletics(form.athletics),
+      intensitySource: form.intensity && form.intensitySource === 'suggested' ? 'suggested' : null,
+      athletics,
       notes:        initial?.notes || [],
-    })
+    }, fitDetails)
     setSaving(false)
     onClose()
   }
@@ -176,7 +205,10 @@ export default function AddMatchModal({ initial = null, opponents = [], equipmen
           {step === 6 && <StepEquipment equipment={equipment} value={form.equipment} onChange={v => set('equipment', v)} />}
           {step === 7 && (
             <StepAthletics value={form.athletics} onChange={v => set('athletics', v)} issues={athIssues}
-                           intensity={form.intensity} onIntensityChange={v => set('intensity', v)} />
+                           intensity={form.intensity} calibration={intensityCalibration}
+                           onIntensityChange={v => setForm(f => ({ ...f, intensity: v, intensitySource: null }))}
+                           onIntensitySuggested={v => setForm(f => ({ ...f, intensity: v, intensitySource: 'suggested' }))}
+                           fit={{ summary: form.fitSummary, date: form.date, fitUse, onImport: importFit, onUseDate: d => set('date', d) }} />
           )}
         </div>
 
@@ -654,7 +686,7 @@ function StepEquipment({ equipment, value, onChange }) {
 
 // ── Step 7 — Atletica ──────────────────────────────────────
 
-function StepAthletics({ value, onChange, issues, intensity, onIntensityChange }) {
+function StepAthletics({ value, onChange, issues, intensity, calibration, onIntensityChange, onIntensitySuggested, fit }) {
   // Le zone partono aperte solo se ci sono già dati: sono 5 righe, e sul
   // mobile appesantiscono lo step per chi non le usa.
   const [showZones, setShowZones] = useState(() => zonesTotalSec(value.zones) > 0)
@@ -713,7 +745,19 @@ function StepAthletics({ value, onChange, issues, intensity, onIntensityChange }
             ? 'Alimenta il carico di allenamento in Stats › Attività. Tocca di nuovo per togliere.'
             : 'Se non la indichi, in Stats la partita viene contata come sforzo alto — che è quello che una partita è di solito.'}
         </p>
+        <IntensitySuggestion athletics={value} current={intensity} calibration={calibration} onUse={onIntensitySuggested} />
       </FieldGroup>
+
+      <FitImport
+        expected="tennis"
+        imported={fit.summary}
+        currentFitId={value.fitId}
+        hasData={hasAthletics(value)}
+        date={fit.date}
+        onUseDate={fit.onUseDate}
+        fitUse={fit.fitUse}
+        onImport={fit.onImport}
+      />
 
       <FieldGroup label="Dati dall'orologio">
         <div className="grid grid-cols-2 gap-2">

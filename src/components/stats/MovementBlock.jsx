@@ -93,9 +93,7 @@ function MovementCard({ report }) {
       <Note>
         La velocità è calcolata sui <strong>totali</strong> (km totali diviso ore totali), non come
         media delle singole sessioni: così un'ora di partita non pesa quanto venti minuti di
-        riscaldamento. Per gli allenamenti la durata è la somma dei blocchi che hai registrato, non
-        il tempo dell'orologio: se l'orologio si mette in pausa e la tua stima dei blocchi include
-        le pause, la velocità degli allenamenti risulta un po' più bassa di quella vera.
+        riscaldamento. <TrainingDurationNote side={m.training} />
       </Note>
     </Card>
   )
@@ -194,13 +192,28 @@ function MovementInfo() {
         sembrerebbe piatta, e invece è lì che sta tutta la differenza tra un mese in forma e uno
         storto.
       </InfoItem>
-      <InfoItem>
-        Un avvertimento sul dato: per un allenamento la durata non è quella dell'orologio ma la
-        somma dei blocchi che hai registrato nel wizard. Se l'orologio si è messo in pausa e tu hai
-        contato anche le pause, la velocità degli allenamenti esce leggermente più bassa del vero.
+      <InfoItem title="La durata degli allenamenti">
+        Per un allenamento importato dal file .FIT la durata è il tempo misurato dall'orologio, e
+        la velocità è esatta. Per uno trascritto a mano è la somma dei blocchi registrati nel
+        wizard: se l'orologio si è messo in pausa e hai contato anche le pause, la velocità esce
+        leggermente più bassa del vero. Il blocco dice di quanti allenamenti si tratta.
       </InfoItem>
     </>
   )
+}
+
+// Quanto è esatta la velocità degli allenamenti: dipende da quanti hanno la
+// durata misurata dall'orologio (file .FIT) invece della somma dei blocchi.
+function TrainingDurationNote({ side }) {
+  const total = side.n
+  if (!total) return null
+  if (side.measuredN === total) {
+    return <>Per gli allenamenti la durata è quella misurata dall'orologio (file .FIT), quindi la velocità è esatta.</>
+  }
+  if (side.measuredN === 0) {
+    return <>Per gli allenamenti la durata è la somma dei blocchi che hai registrato, non il tempo dell'orologio: se l'orologio si mette in pausa e la tua stima dei blocchi include le pause, la velocità degli allenamenti risulta un po' più bassa di quella vera.</>
+  }
+  return <>Per {side.measuredN} allenamenti su {total} la durata è quella misurata dall'orologio (file .FIT); per gli altri è la somma dei blocchi registrati, e se include pause la loro velocità risulta un po' più bassa del vero.</>
 }
 
 // ── Blocco 4 — Economia cardiaca ───────────────────────────
@@ -282,6 +295,9 @@ function EconomyCard({ report }) {
           : <>Le tue sessioni non mostrano una relazione abbastanza netta tra velocità e battiti (o hanno velocità troppo simili tra loro), quindi la FC è confrontata <strong>grezza</strong>, senza correzione: correggere con un coefficiente stimato male sarebbe peggio che non correggere. Con velocità simili, del resto, confrontare le FC grezze è già un confronto a parità di velocità.</>}
         {' '}Il confronto divide le sessioni in due metà cronologiche{h?.dropped ? ' e, essendo dispari, lascia fuori quella centrale invece di assegnarla arbitrariamente a una delle due' : ''}.
         {' '}Partite e allenamenti sono contati insieme ({e.matchN} e {e.trainingN}): sono sforzi diversi, ma separarli dimezzerebbe un campione già piccolo.
+        {e.trainingN > 0 && (
+          <> La velocità degli allenamenti è esatta per {e.trainingMeasuredN} su {e.trainingN} (durata misurata dall'orologio); per gli altri poggia sulla somma dei blocchi.</>
+        )}
       </Note>
     </Card>
   )
@@ -291,7 +307,7 @@ function EconomyCard({ report }) {
 // con dieci punti sparsi su un anno, le date vere ammasserebbero tre sessioni
 // in un pixel. L'asse x è l'ordine, e le due linee orizzontali sono le medie
 // delle due metà — è il confronto che il blocco sta facendo, disegnato.
-function EconomyChart({ economy }) {
+export function EconomyChart({ economy }) {
   const pts = economy.points
   if (pts.length < 3) return null
 
@@ -347,8 +363,9 @@ function EconomyChart({ economy }) {
       </svg>
 
       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-        <Legend color="var(--color-amber)" label="Partite" />
-        <Legend color="var(--color-teal)" label="Allenamenti" />
+        {economy.matchN > 0 && <Legend color="var(--color-amber)" label="Partite" />}
+        {economy.trainingN > 0 && <Legend color="var(--color-teal)" label="Allenamenti" />}
+        {economy.matchN + economy.trainingN === 0 && <Legend color="var(--color-teal)" label="Corse" />}
         {h && <Legend color={deltaColor(h.delta)} label="Media delle due metà" dashed />}
       </div>
     </div>

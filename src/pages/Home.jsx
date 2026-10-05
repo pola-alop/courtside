@@ -1,14 +1,24 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthState } from '../hooks/useAuth'
 import { useMatches } from '../hooks/useMatches'
 import { useTrainings } from '../hooks/useTrainings'
+import { useRuns } from '../hooks/useRuns'
+import { useGymSessions } from '../hooks/useGymSessions'
+import { useGymExercises } from '../hooks/useGymExercises'
+import { useRunWorkouts } from '../hooks/useRunWorkouts'
+import { useGymWorkouts } from '../hooks/useGymWorkouts'
 import { useEquipment } from '../hooks/useEquipment'
 import { useProfile } from '../hooks/useProfile'
+import { useOpponents } from '../hooks/useOpponents'
+import { usePlans } from '../hooks/usePlans'
 import Onboarding from '../components/home/Onboarding'
+import Calendar from '../components/home/Calendar'
+import PlanModal from '../components/home/PlanModal'
 import MatchRow from '../components/matches/MatchRow'
 import TrainingRow from '../components/trainings/TrainingRow'
-import { buildHome, ALERT_TONES, STRIP_DAYS, IDLE_BAD } from '../lib/home'
+import { buildHome, ALERT_TONES, IDLE_BAD } from '../lib/home'
+import { buildCalendar } from '../lib/calendar'
 import { formatDaysAgo } from '../lib/technique'
 
 // Home — "adesso".
@@ -29,19 +39,19 @@ import { formatDaysAgo } from '../lib/technique'
 // I link portano l'intenzione nell'URL (`/matches?add=match`,
 // `/stats?tab=attivita&focus=carico`, `/equipment?item=<id>`): le pagine di
 // destinazione la leggono e aprono da sole il wizard, il tab o la modale giusta.
+// I dettagli delle sessioni si aprono con `from=home`, che li fa tornare qui
+// alla chiusura invece di lasciare l'utente in Matches. Lo stesso vale per
+// "Registra" (da un programma o da un giorno passato vuoto): il wizard si apre
+// in Matches già precompilato (`&plan=<id>` o `&date=YYYY-MM-DD`) e salvando
+// si torna qui, dove il programma risulta fatto da solo.
+// L'unica modale di proprietà di questa pagina è quella dei programmi
+// (`PlanModal`): i programmi esistono solo qui, quindi non c'è un'altra pagina
+// a cui mandare l'intenzione.
 // L'alternativa — sollevare le modali in App.jsx — avrebbe richiesto uno stato
 // globale che il progetto non ha e che nessun'altra parte dell'app chiede.
 
 const ADD_MATCH_TO    = '/matches?add=match'
 const ADD_TRAINING_TO = '/matches?add=training'
-
-// Stessa grammatica della striscia di densità della Panoramica
-// (`ActivityTimeline`): ambra = partita, teal = allenamento, gradiente =
-// entrambi. Due strisce con due codici colore diversi nella stessa app
-// costringerebbero a impararli tutti e due.
-const COLOR_MATCH    = 'var(--color-amber)'
-const COLOR_TRAINING = 'var(--color-teal-dark)'
-const COLOR_EMPTY    = 'var(--color-surface-2)'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -50,11 +60,48 @@ export default function Home() {
   const { trainings, loading: trainLoading } = useTrainings()
   const { equipment, loading: equipLoading } = useEquipment()
   const { profile,   loading: profileLoading } = useProfile()
+  // Corse e palestre entrano nel carico (ACWR e avviso: l'avviso di Home e il
+  // blocco di Stats › Attività devono dire la stessa cosa) e nel calendario.
+  // Le schede servono alle righe del foglio di un giorno con più sessioni, che
+  // sono le stesse delle liste di Matches.
+  const { runs, loading: runLoading } = useRuns()
+  const { sessions: gymSessions, loading: gymLoading } = useGymSessions()
+  const { index: exerciseIndex, loading: exerciseLoading } = useGymExercises()
+  const { workouts: runWorkouts, loading: runWorkoutLoading } = useRunWorkouts()
+  const { workouts: gymWorkouts, loading: gymWorkoutLoading } = useGymWorkouts()
+  // I programmi del calendario, e l'anagrafica per i nomi degli avversari che
+  // mostrano (derivati, non copiati) e per sceglierli nella modale.
+  const { plans, loading: planLoading, add: addPlan, update: updatePlan, remove: removePlan } = usePlans()
+  const { opponents, loading: opponentLoading } = useOpponents()
+  // { date: 'YYYY-MM-DD', plan?: programma da vedere/modificare } o null.
+  const [planTarget, setPlanTarget] = useState(null)
 
   const report = useMemo(
-    () => buildHome({ matches, trainings, equipment }),
-    [matches, trainings, equipment]
+    () => buildHome({
+      matches, trainings, equipment, runs, gymSessions,
+      index: exerciseIndex, running: profile?.running || null,
+    }),
+    [matches, trainings, equipment, runs, gymSessions, exerciseIndex, profile]
   )
+
+  const calendar = useMemo(
+    () => buildCalendar({ matches, trainings, runs, gymSessions, plans }),
+    [matches, trainings, runs, gymSessions, plans]
+  )
+
+  // `kind` è già il nome del parametro del deep link (match|training|run|gym).
+  const openSession = (s) => navigate(`/matches?${s.kind}=${s.id}&from=home`)
+
+  // "Registra": da un programma (`PlanModal`) il wizard parte da ciò che il
+  // programma sapeva, da un giorno passato vuoto (foglio del giorno) dalla
+  // sola data. `kind` è anche qui il valore di `add`.
+  const registerPlan = (plan) => navigate(`/matches?add=${plan.kind}&plan=${plan.id}&from=home`)
+  const registerDay = ({ kind, date }) => navigate(`/matches?add=${kind}&date=${date}&from=home`)
+
+  const savePlan = async (data, id) => {
+    if (id) await updatePlan(id, data)
+    else await addPlan(data)
+  }
 
   const rawFirstName = (user?.displayName || '').trim().split(' ')[0] || null
   const firstName = rawFirstName
@@ -65,10 +112,22 @@ export default function Home() {
   // un documento, parte in parallelo alle altre tre, e senza di lei il primo
   // passo della checklist si spunterebbe da solo un istante dopo il montaggio.
   const loading = matchLoading || trainLoading || equipLoading || profileLoading
+    || runLoading || gymLoading || exerciseLoading || runWorkoutLoading || gymWorkoutLoading
+    || planLoading || opponentLoading
 
-  if (loading) return <Spinner />
+  // Lo spinner vale solo per il PRIMO caricamento. La Home ora scrive (i
+  // programmi), e ogni mutazione ricarica con `loading` di nuovo a true: senza
+  // questo, salvare un programma farebbe sparire la pagina per un istante e
+  // chiuderebbe il foglio del giorno da cui era partito. Stato aggiustato
+  // durante il render, non in un effect (vedi "selected item derivato").
+  const [ready, setReady] = useState(false)
+  if (!loading && !ready) setReady(true)
 
-  if (matches.length === 0 && trainings.length === 0) {
+  if (!ready) return <Spinner />
+
+  // Una sessione di qualsiasi dominio basta: chi ha solo corse o palestra deve
+  // vedere il calendario. I programmi no — l'onboarding chiede di registrare.
+  if (matches.length + trainings.length + runs.length + gymSessions.length === 0) {
     return (
       <Onboarding
         name={firstName}
@@ -80,7 +139,7 @@ export default function Home() {
     )
   }
 
-  const { rhythm, idle, alerts, checks, last, strip, career } = report
+  const { rhythm, idle, alerts, checks, last, career } = report
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
@@ -117,6 +176,24 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── Calendario: il mese corrente, il fatto e la serie di settimane ──
+          Ha preso il posto della striscia di continuità: dice la stessa cosa
+          meglio, e la serie conta tutti i domini, non solo il tennis. */}
+      <div className="px-6 pb-6">
+        <SectionTitle>Calendario</SectionTitle>
+        <Calendar
+          calendar={calendar}
+          runWorkouts={runWorkouts}
+          gymWorkouts={gymWorkouts}
+          opponents={opponents}
+          index={exerciseIndex}
+          running={profile?.running || null}
+          onOpen={openSession}
+          onPlan={setPlanTarget}
+          onRegister={registerDay}
+        />
+      </div>
+
       {/* ── Da sistemare ── */}
       <div className="px-6 pb-6">
         <SectionTitle>Da sistemare</SectionTitle>
@@ -141,46 +218,45 @@ export default function Home() {
             </span>
           </div>
           {last.kind === 'match' ? (
-            <MatchRow match={last.item} onClick={() => navigate(`/matches?match=${last.item.id}`)} />
+            <MatchRow match={last.item} onClick={() => navigate(`/matches?match=${last.item.id}&from=home`)} />
           ) : (
-            <TrainingRow training={last.item} onClick={() => navigate(`/matches?training=${last.item.id}`)} />
+            <TrainingRow training={last.item} onClick={() => navigate(`/matches?training=${last.item.id}&from=home`)} />
           )}
         </div>
       )}
 
-      {/* ── Striscia di continuità ── */}
-      <div className="px-6 pb-6">
-        <SectionTitle>Continuità</SectionTitle>
-        <div className="rounded-2xl p-4"
-             style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${STRIP_DAYS}, 1fr)`, gap: 3 }}>
-            {strip.map(d => (
-              <div key={d.day}
-                   title={`${cellTitle(d)}`}
-                   style={{ aspectRatio: '1', borderRadius: 3, background: cellColor(d.match, d.training) }} />
-            ))}
-          </div>
-          <div className="flex justify-between mt-1.5">
-            <span className="text-[9px]" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-              {STRIP_DAYS} giorni fa
-            </span>
-            <span className="text-[9px]" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-              Oggi
-            </span>
-          </div>
-          <p className="text-xs mt-3" style={{ color: 'var(--color-white)' }}>
-            {streakText(rhythm.streakWeeks)}
+      {/* ── Carriera: i totali di sempre, una riga sola ──
+          Sono di tennis: con sole corse o palestra la riga è vuota e non c'è.
+          Il padding in fondo resta, perché è lo spazio della bottom nav. */}
+      <div className="px-6 pb-32">
+        {careerText(career) && (
+          <p className="text-[11px] text-center leading-relaxed"
+             style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+            {careerText(career)}
           </p>
-        </div>
+        )}
       </div>
 
-      {/* ── Carriera: i totali di sempre, una riga sola ── */}
-      <div className="px-6 pb-32">
-        <p className="text-[11px] text-center leading-relaxed"
-           style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
-          {careerText(career)}
-        </p>
-      </div>
+      {/* Dopo il calendario nel DOM: aperta dal foglio di un giorno, ci sta
+          sopra, e chiudendola si torna al foglio aggiornato. */}
+      {planTarget && (
+        <PlanModal
+          key={planTarget.plan?.id || planTarget.date}
+          date={planTarget.date}
+          plan={planTarget.plan || null}
+          plans={plans}
+          opponents={opponents}
+          runWorkouts={runWorkouts}
+          gymWorkouts={gymWorkouts}
+          trainings={trainings}
+          runs={runs}
+          gymSessions={gymSessions}
+          onSave={savePlan}
+          onDelete={removePlan}
+          onRegister={registerPlan}
+          onClose={() => setPlanTarget(null)}
+        />
+      )}
     </div>
   )
 }
@@ -269,18 +345,14 @@ function todayLabel() {
 
 // Sotto la settimana è una constatazione, sopra è un fatto da guardare in
 // faccia: cambia la frase, non solo il colore.
+// Il ritmo è di tennis, e la Home si apre anche con sole corse o palestra
+// (gate dell'onboarding): senza tennis va detto quale sessione manca.
 function idleText(sinceLast) {
-  if (sinceLast == null) return 'Nessuna sessione registrata.'
+  if (sinceLast == null) return 'Nessuna sessione di tennis registrata.'
   if (sinceLast === 0) return 'Hai giocato oggi.'
   if (sinceLast === 1) return 'Hai giocato ieri.'
   if (sinceLast >= IDLE_BAD) return `Sei fermo da ${sinceLast} giorni.`
   return `${sinceLast} giorni dall'ultima sessione.`
-}
-
-function streakText(weeks) {
-  if (!weeks) return 'Striscia interrotta: nessuna sessione nelle ultime due settimane.'
-  if (weeks === 1) return '1 settimana di fila con almeno una sessione.'
-  return `${weeks} settimane di fila con almeno una sessione.`
 }
 
 function careerText(c) {
@@ -290,22 +362,6 @@ function careerText(c) {
   if (c.minutes)   parts.push(`${c.estimated ? '~' : ''}${Math.round(c.minutes / 60)} h in campo`)
   if (c.matches)   parts.push(`${c.wins}V · ${c.draws}P · ${c.losses}S`)
   return parts.join(' · ')
-}
-
-function cellColor(match, training) {
-  if (match && training) return `linear-gradient(135deg, ${COLOR_MATCH} 50%, ${COLOR_TRAINING} 50%)`
-  if (match)    return COLOR_MATCH
-  if (training) return COLOR_TRAINING
-  return COLOR_EMPTY
-}
-
-function cellTitle(d) {
-  const label = new Date(d.day).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })
-  const what = d.match && d.training ? 'partita e allenamento'
-    : d.match ? 'partita'
-    : d.training ? 'allenamento'
-    : 'niente'
-  return `${label} — ${what}`
 }
 
 function joinList(items) {

@@ -225,7 +225,7 @@ function setIssue(set, mode) {
 // Il problema di un item (stringa) o null.
 export function itemIssue(item, index) {
   const ex = resolveExercise(item, index)
-  if (!item?.sets?.length) return `${ex.name}: aggiungi almeno una serie.`
+  if (!item?.sets?.length) return `${ex.name}: indica quante serie.`
   for (const s of item.sets) {
     const p = setIssue(s, ex.mode)
     if (p) return `${ex.name}: ${p.charAt(0).toLowerCase()}${p.slice(1)}`

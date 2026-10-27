@@ -141,20 +141,37 @@ function ExerciseCard({ item, index, onPatch, menu }) {
   const ex = resolveExercise(item, index)
   const sets = item.sets || []
   const issue = itemIssue(item, index)
-  const uniform = sets.length > 0 && sets.every(s => s.reps === sets[0].reps && s.kg === sets[0].kg && s.sec === sets[0].sec)
+  // Un elenco vuoto (campo "Serie" svuotato) conta come uniforme, così la riga
+  // delle serie uguali non sparisce mentre si riscrive il numero.
+  const uniform = sets.every(s => s.reps === sets[0].reps && s.kg === sets[0].kg && s.sec === sets[0].sec)
   const [detail, setDetail] = useState(false)
+  // Le serie che c'erano prima di svuotare il campo: riscrivendo il numero si
+  // ritrovano ripetizioni e carichi invece di ripartire da zero.
+  const [stash, setStash] = useState([])
   const perSet = detail || !uniform
+  const shown = sets.length ? sets : stash
 
   const setSets = (next) => onPatch({ sets: next })
   const patchSet = (i, patch) => setSets(sets.map((s, k) => (k === i ? { ...s, ...patch } : s)))
   const addSet = () => setSets([...sets, sets.length ? { ...sets[sets.length - 1] } : emptySet(ex.mode)])
   const removeSet = (i) => setSets(sets.filter((_, k) => k !== i))
-  // Serie uguali: cambiare il numero copia la prima; cambiare un valore lo scrive su tutte.
+  // Serie uguali: cambiare il numero copia l'ultima; cambiare un valore lo scrive su tutte.
+  // `null` = campo svuotato: le serie restano da parte e la scheda segnala che
+  // manca il numero, senza ripiegare su un valore deciso dall'app.
   const setCount = (n) => {
-    const base = sets[0] || emptySet(ex.mode)
-    setSets(Array.from({ length: n }, (_, k) => sets[k] || { ...base }))
+    if (n == null) {
+      if (sets.length) setStash(sets)
+      setSets([])
+      return
+    }
+    const count = Math.max(1, Math.min(LIMITS.sets.max, Math.round(n)))
+    const source = shown.length ? shown : [emptySet(ex.mode)]
+    setSets(Array.from({ length: count }, (_, k) => source[k] || { ...source[source.length - 1] }))
   }
-  const patchAll = (patch) => setSets(sets.map(s => ({ ...s, ...patch })))
+  const patchAll = (patch) => {
+    if (sets.length) setSets(sets.map(s => ({ ...s, ...patch })))
+    else setStash(stash.map(s => ({ ...s, ...patch })))
+  }
 
   const timeMode = ex.mode === 'time'
   const kgMode = ex.mode === 'reps-kg'
@@ -174,23 +191,23 @@ function ExerciseCard({ item, index, onPatch, menu }) {
       {!perSet ? (
         <div className="flex items-end gap-2">
           <Field label="Serie">
-            <NumberBox value={sets.length} onChange={v => setCount(Math.max(1, Math.min(LIMITS.sets.max, Math.round(v || 1))))} min={1} max={LIMITS.sets.max} />
+            <NumberBox value={sets.length || null} onChange={setCount} min={1} max={LIMITS.sets.max} />
           </Field>
           <span className="pb-3 text-xs" style={{ color: 'var(--color-slate)' }}>×</span>
           {timeMode ? (
             <Field label="Secondi">
-              <NumberBox value={sets[0]?.sec} onChange={v => patchAll({ sec: v })} min={LIMITS.sec.min} max={LIMITS.sec.max} />
+              <NumberBox value={shown[0]?.sec} onChange={v => patchAll({ sec: v })} min={LIMITS.sec.min} max={LIMITS.sec.max} />
             </Field>
           ) : (
             <Field label="Rip.">
-              <NumberBox value={sets[0]?.reps} onChange={v => patchAll({ reps: v })} min={LIMITS.reps.min} max={LIMITS.reps.max} />
+              <NumberBox value={shown[0]?.reps} onChange={v => patchAll({ reps: v })} min={LIMITS.reps.min} max={LIMITS.reps.max} />
             </Field>
           )}
           {kgMode && (
             <>
               <span className="pb-3 text-xs" style={{ color: 'var(--color-slate)' }}>@</span>
               <Field label="Kg">
-                <NumberBox value={sets[0]?.kg} onChange={v => patchAll({ kg: v })} min={LIMITS.kg.min} max={LIMITS.kg.max} step={LIMITS.kg.step} placeholder="—" />
+                <NumberBox value={shown[0]?.kg} onChange={v => patchAll({ kg: v })} min={LIMITS.kg.min} max={LIMITS.kg.max} step={LIMITS.kg.step} placeholder="—" />
               </Field>
             </>
           )}
@@ -244,16 +261,30 @@ function Field({ label, children }) {
   )
 }
 
+// Mentre si scrive il campo mostra la BOZZA, non il valore del chiamante: così
+// si può svuotare e riscrivere senza che qualcuno rimetta un numero al posto
+// del vuoto. Il valore esce subito (`null` se vuoto) perché la scheda lo
+// valuti e dica cosa manca; all'uscita dal campo un numero fuori scala viene
+// riportato dentro min/max. Il vuoto non si corregge: è un dato mancante, non
+// un valore, e lo dice la scheda (solo i kg lo ammettono: a corpo libero).
 function NumberBox({ value, onChange, min, max, step = 1, placeholder, suffix }) {
+  const [draft, setDraft] = useState(null)
+  const commit = () => {
+    setDraft(null)
+    if (typeof value !== 'number') return
+    const clamped = Math.min(max, Math.max(min, value))
+    if (clamped !== value) onChange(clamped)
+  }
   return (
     <div className="relative flex-1 min-w-0">
       <input
         type="number"
         inputMode="decimal"
-        value={value ?? ''}
+        value={draft ?? value ?? ''}
         min={min} max={max} step={step}
         placeholder={placeholder}
-        onChange={e => onChange(e.target.value === '' ? null : Number(e.target.value))}
+        onChange={e => { setDraft(e.target.value); onChange(e.target.value === '' ? null : Number(e.target.value)) }}
+        onBlur={commit}
         className="w-full p-3 rounded-xl text-sm outline-none text-center"
         style={{ background: 'var(--color-surface)', color: 'var(--color-white)', border: '1px solid transparent', fontFamily: 'var(--font-mono)', paddingRight: suffix ? 34 : undefined }}
       />

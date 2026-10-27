@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { WEEKDAY_INITIALS } from '../../lib/calendar'
+import { WEEKDAY_INITIALS, ABOVE_GRID } from '../../lib/calendar'
 import CalendarDay from './CalendarDay'
 import CalendarDaySheet from './CalendarDaySheet'
 import CalendarWeek from './CalendarWeek'
@@ -10,11 +10,12 @@ import CalendarWeek from './CalendarWeek'
 // `buildCalendar` (src/lib/calendar.js): qui non si ricava niente.
 //
 // La fiammella è l'ottava colonna della stessa griglia, così la barra resta
-// allineata alle righe senza misurarle: scende fino alla settimana corrente (e
-// riparte dall'alto a ogni mese) ed è accesa solo sulle righe che fanno parte
-// della serie. La fiamma è piena se la settimana in corso ha già un'attività,
-// attenuata se la serie viene dalla settimana scorsa e aspetta ancora questa,
-// spenta a zero.
+// allineata alle righe senza misurarle: la barra riparte dall'alto a ogni mese
+// ed è accesa solo sulle righe che fanno parte della serie. La fiamma sta sulla
+// settimana corrente, piena, se ha già un'attività; finché non ce l'ha resta
+// ferma sulla settimana precedente, attenuata, col numero già raggiunto. Se la
+// settimana corrente è la prima riga del mese (la precedente non è in griglia)
+// aspetta sopra la prima riga, nella colonna dell'intestazione. Grigia a zero.
 //
 // La settimana corrente non è una riga di cerchi ma sette card con il fatto e
 // il programmato (`CalendarWeek`), dentro la stessa griglia.
@@ -64,7 +65,7 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
             {d}
           </span>
         ))}
-        <span />
+        {streak.flameRow === ABOVE_GRID ? <FlameMark streak={streak} /> : <span />}
       </div>
 
       {weeks.map((week, i) => (
@@ -113,9 +114,9 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
 // Una cella della colonna della fiammella. Il segmento sborda di 3px sopra e
 // sotto per coprire il padding delle righe, così la barra è continua.
 function FlameCell({ row, streak }) {
-  if (row > streak.row) return <span />
+  if (row > streak.flameRow) return <span />
 
-  if (row < streak.row) {
+  if (row < streak.flameRow) {
     return (
       <span className="relative flex justify-center">
         <span className="absolute"
@@ -128,19 +129,33 @@ function FlameCell({ row, streak }) {
     )
   }
 
-  const tone = flameTone(streak)
   return (
-    <span className="relative flex flex-col items-center justify-center" title={flameTitle(streak)}>
+    <span className="relative flex flex-col items-center justify-center">
       {row > 0 && (
         <span className="absolute"
               style={{ top: -3, height: 'calc(50% - 7px)', width: 4, background: barColor(isLit(row - 1, streak) && isLit(row, streak)) }} />
       )}
+      <FlameMark streak={streak} bare />
+    </span>
+  )
+}
+
+// Fiamma + numero. Nella colonna dell'intestazione (caso "sopra la griglia")
+// è la cella stessa, con un po' d'aria sotto; dentro una riga (`bare`) la cella
+// c'è già e porta anche la barra.
+function FlameMark({ streak, bare = false }) {
+  const tone = flameTone(streak)
+  const mark = (
+    <>
       <span className="text-[13px] leading-none" style={{ opacity: tone.opacity, filter: tone.filter }}>🔥</span>
       <span className="text-[10px] font-bold leading-none mt-0.5"
             style={{ color: tone.color, fontFamily: 'var(--font-mono)' }}>
         {streak.weeks}
       </span>
-    </span>
+    </>
+  )
+  return (
+    <span className={`flex flex-col items-center ${bare ? '' : 'pb-1'}`} title={flameTitle(streak)}>{mark}</span>
   )
 }
 
@@ -156,14 +171,14 @@ function barColor(lit) {
 
 function flameTone(streak) {
   if (!streak.weeks) return { opacity: 0.35, filter: 'grayscale(1)', color: 'var(--color-slate)' }
-  if (!streak.activeThisWeek) return { opacity: 0.5, filter: 'none', color: 'var(--color-white)' }
+  if (streak.parked) return { opacity: 0.5, filter: 'none', color: 'var(--color-white)' }
   return { opacity: 1, filter: 'none', color: 'var(--color-flame)' }
 }
 
 function flameTitle(streak) {
   if (!streak.weeks) return 'Nessuna serie in corso: registra un\'attività per accenderla.'
   const n = streak.weeks === 1 ? '1 settimana di fila' : `${streak.weeks} settimane di fila`
-  return streak.activeThisWeek
-    ? `${n} con almeno un'attività.`
-    : `${n} con almeno un'attività: registrane una questa settimana per allungarla.`
+  return streak.parked
+    ? `${n} con almeno un'attività: registrane una questa settimana per allungarla.`
+    : `${n} con almeno un'attività.`
 }

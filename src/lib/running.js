@@ -539,6 +539,15 @@ export function parsePace(str) {
   return total > 0 ? total : null
 }
 
+// Maschera di scrittura per il tastierino numerico: tiene le sole cifre (al
+// massimo quattro) e mette i due punti davanti agli ultimi due, che sono i
+// secondi. "530" → "5:30", "1205" → "12:05"; con una o due cifre restano com'è
+// ("53"), perché non si sa ancora se sono minuti o l'inizio di "5:3x".
+export function maskPaceInput(str) {
+  const digits = String(str ?? '').replace(/\D/g, '').slice(0, 4)
+  return digits.length <= 2 ? digits : `${digits.slice(0, -2)}:${digits.slice(-2)}`
+}
+
 // 330 → "5:30"
 export function formatPace(sec) {
   if (!isNum(sec) || sec <= 0) return '—'

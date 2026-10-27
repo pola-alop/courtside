@@ -13,7 +13,7 @@ export default function TournamentCard({ run, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-2xl p-3 flex flex-col gap-2 overflow-hidden transition-all active:scale-[0.98]"
+      className="w-full text-left rounded-2xl p-3 flex flex-col items-stretch gap-2 overflow-hidden transition-all active:scale-[0.98]"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}
     >
       {/* Nome + esito. Nome e date vanno a capo (la card si allunga) e l'esito

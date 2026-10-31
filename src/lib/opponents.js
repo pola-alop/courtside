@@ -50,3 +50,52 @@ export const PLAYSTYLES = [
 
 export const PLAYSTYLE_BY_ID = Object.fromEntries(PLAYSTYLES.map(p => [p.id, p]))
 export const playstyleLabel = id => PLAYSTYLE_BY_ID[id]?.label || null
+
+// ── Nome e cognome ─────────────────────────────────────────
+// Lo stesso modulo tiene tutto ciò che deriva da Nome/Cognome (iniziali, forma
+// breve) così le card, i selettori e il punteggio non hanno più una propria
+// copia dell'euristica "l'ultima parola è il cognome".
+//
+// Sul documento `firstName` (obbligatorio) e `lastName` (facoltativo) sono la
+// fonte; `name` è la loro composizione, salvata a ogni scrittura, così ricerca,
+// programmi, calendario e Stats continuano a leggere un'unica stringa.
+
+// Divide un nome libero sul primo spazio: Nome = prima parola, Cognome = il
+// resto (i cognomi composti, "Di Gaetano", restano interi). Serve alla
+// migrazione dei documenti vecchi e come ripiego finché non sono migrati.
+export function splitName(name) {
+  const trimmed = (name || '').trim()
+  const match = trimmed.match(/^(\S+)\s+(.+)$/)
+  if (!match) return { firstName: trimmed, lastName: '' }
+  return { firstName: match[1], lastName: match[2].replace(/\s+/g, ' ') }
+}
+
+// I tre campi da scrivere insieme. Cognome vuoto → null.
+export function opponentNameFields(firstName, lastName) {
+  const first = (firstName || '').trim().replace(/\s+/g, ' ')
+  const last = (lastName || '').trim().replace(/\s+/g, ' ')
+  return { firstName: first, lastName: last || null, name: last ? `${first} ${last}` : first }
+}
+
+// Nome e cognome di un avversario, anche se il documento è ancora quello vecchio.
+export function opponentParts(opponent) {
+  const first = (opponent?.firstName || '').trim()
+  if (first) return { firstName: first, lastName: (opponent.lastName || '').trim() }
+  return splitName(opponent?.name)
+}
+
+// "MR"; con il cognome vuoto le prime due lettere del nome; "?" se non c'è nulla.
+export function opponentInitials(opponent) {
+  const { firstName, lastName } = opponentParts(opponent)
+  if (!firstName) return '?'
+  if (!lastName) return firstName.slice(0, 2).toUpperCase()
+  return (firstName[0] + lastName[0]).toUpperCase()
+}
+
+// "Di Gaetano M."; con il cognome vuoto il solo nome; null se non c'è nulla.
+export function opponentShortName(opponent) {
+  const { firstName, lastName } = opponentParts(opponent)
+  if (!firstName) return null
+  if (!lastName) return firstName
+  return `${lastName} ${firstName[0].toUpperCase()}.`
+}

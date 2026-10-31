@@ -204,6 +204,15 @@ function planStatuses(plans, sessionsByDay, today) {
   return byDay
 }
 
+// Gli stessi programmi con lo stato ricavato (`status`, `sessionId`,
+// `registrable`, `day`), in una lista piatta, per chi non ha bisogno della griglia:
+// la rotazione dei gruppi vuole solo sapere quali partite sono ancora "da fare".
+// È la regola di `planStatuses`, non una copia.
+export function plansWithStatus(plans = [], sessions = [], today = todayTime()) {
+  const byDay = planStatuses(plans, groupByDay(sessions), startOfDay(today))
+  return [...byDay.values()].flat()
+}
+
 function byPlanOrder(a, b) {
   const ta = a.time || null
   const tb = b.time || null

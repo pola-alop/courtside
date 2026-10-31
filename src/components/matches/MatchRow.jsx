@@ -33,6 +33,7 @@ export default function MatchRow({ match, onClick }) {
         format={match.format}
         retired={match.retired}
         opponentName={match.opponentName}
+        opponentShort={match.opponentShort}
         size="sm"
       />
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import MatchRow from './MatchRow'
-import { LEVELS, PLAYSTYLES, levelLabel, playstyleLabel, opponentParts, opponentNameFields, opponentInitials } from '../../lib/opponents'
+import { LEVELS, PLAYSTYLES, levelLabel, playstyleLabel, opponentParts, opponentNameFields, opponentInitials, groupsOf } from '../../lib/opponents'
 import { DEFAULT_PHONE_COUNTRY, formatPhone, phoneFields, phoneHref, phoneIssue, whatsappHref } from '../../lib/phone'
 import PhoneField from './PhoneField'
 
@@ -12,7 +12,8 @@ const HANDS = [
 const MAX_NOTE_LENGTH = 150
 
 export default function OpponentDetailModal({
-  opponent, record = null, matches = [], onClose, onUpdate, onDelete, onSelectMatch
+  opponent, record = null, matches = [], groups = [], onClose, onUpdate, onDelete, onSelectMatch,
+  onAddToGroup, onRemoveFromGroup
 }) {
   // view | edit | confirmDelete | addNote | editNote | confirmDeleteNote
   const [mode, setMode]         = useState('view')
@@ -202,6 +203,14 @@ export default function OpponentDetailModal({
               <Row label="Livello"       value={levelLabel(opponent.level)         || '—'} />
               <Row label="Stile di gioco" value={playstyleLabel(opponent.playstyle) || '—'} />
             </Section>
+
+            <GroupsSection
+              memberOf={groupsOf(opponent.id, groups)}
+              available={groups.filter(g => !(g.memberIds || []).includes(opponent.id))}
+              hasGroups={groups.length > 0}
+              onAdd={onAddToGroup}
+              onRemove={onRemoveFromGroup}
+            />
 
             <NotesSection notes={sortedNotes} onAdd={openAddNote} onEditNote={openEditNote} />
 
@@ -449,6 +458,70 @@ function Row({ label, value }) {
             style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
         {value}
       </span>
+    </div>
+  )
+}
+
+// Gruppi a cui appartiene l'avversario: chip con ✕ per toglierlo, e un
+// selettore per aggiungerlo a un gruppo ESISTENTE (i gruppi si creano dal tab
+// Avversari, non da qui).
+function GroupsSection({ memberOf, available, hasGroups, onAdd, onRemove }) {
+  const [busy, setBusy] = useState(false)
+
+  const run = async (fn) => {
+    if (busy) return
+    setBusy(true)
+    try { await fn() } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="mb-4">
+      <p className="text-xs font-semibold uppercase tracking-wider mb-2"
+         style={{ color: 'var(--color-teal)', fontFamily: 'var(--font-display)' }}>
+        Gruppi
+      </p>
+      <div className="rounded-2xl px-4 py-3 space-y-3" style={{ background: 'var(--color-surface-2)' }}>
+        {!hasGroups ? (
+          <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
+            Nessun gruppo. Creane uno dal tab Avversari con «+ Gruppo».
+          </p>
+        ) : (
+          <>
+            {memberOf.length === 0 ? (
+              <p className="text-xs" style={{ color: 'var(--color-slate)' }}>Non fa parte di nessun gruppo.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {memberOf.map(g => (
+                  <span key={g.id}
+                        className="flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full text-xs font-medium"
+                        style={{ background: 'var(--color-teal-dark)', color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                    {g.name}
+                    <button
+                      aria-label={`Togli da ${g.name}`}
+                      disabled={busy}
+                      onClick={() => run(() => onRemove(g.id))}
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+                      style={{ background: 'rgba(255,255,255,0.15)' }}>
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {available.length > 0 && (
+              <select
+                value=""
+                disabled={busy}
+                onChange={e => { const id = e.target.value; if (id) run(() => onAdd(id)) }}
+                className="w-full p-3 rounded-xl text-sm outline-none"
+                style={{ background: 'var(--color-surface)', color: 'var(--color-amber)', border: '1px solid transparent', fontFamily: 'var(--font-body)' }}>
+                <option value="">+ Aggiungi a un gruppo...</option>
+                {available.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

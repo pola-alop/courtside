@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useOpponents } from '../hooks/useOpponents'
+import { useOpponentGroups } from '../hooks/useOpponentGroups'
 import { useMatches } from '../hooks/useMatches'
 import { useTrainings } from '../hooks/useTrainings'
 import { useEquipment } from '../hooks/useEquipment'
@@ -15,6 +16,9 @@ import { usePlans } from '../hooks/usePlans'
 import OpponentCard from '../components/matches/OpponentCard'
 import AddOpponentModal from '../components/matches/AddOpponentModal'
 import OpponentDetailModal from '../components/matches/OpponentDetailModal'
+import GroupBar from '../components/matches/GroupBar'
+import GroupFormModal from '../components/matches/GroupFormModal'
+import GroupMembersModal from '../components/matches/GroupMembersModal'
 import MatchRow from '../components/matches/MatchRow'
 import AddMatchModal from '../components/matches/AddMatchModal'
 import MatchDetailModal from '../components/matches/MatchDetailModal'
@@ -38,6 +42,7 @@ import GymWorkoutLibrary from '../components/gym/GymWorkoutLibrary'
 import GymWorkoutEditModal from '../components/gym/GymWorkoutEditModal'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
+import { groupMembers } from '../lib/opponents'
 import { calibrateIntensity } from '../lib/fit'
 import {
   TRAINING_KINDS, INTENSITIES, FOCUS_CATEGORIES, FOCUS_BY_ID,
@@ -72,6 +77,7 @@ const RESULT_FILTERS = [
 
 export default function Matches() {
   const { opponents, loading: oppLoading, add: addOpponent, update: updateOpponent, remove: removeOpponent } = useOpponents()
+  const { groups, add: addGroup, rename: renameGroup, setMembers: setGroupMembers, remove: removeGroup } = useOpponentGroups()
   const { matches,   loading: matchLoading, add: addMatch, update: updateMatch, remove: removeMatch, reload: reloadMatches } = useMatches()
   const { trainings, loading: trainLoading, add: addTraining, update: updateTraining, remove: removeTraining } = useTrainings()
   const { equipment } = useEquipment()
@@ -170,6 +176,13 @@ export default function Matches() {
   const [selectedOpponentId, setSelectedOpponentId] = useState(null)
   const [oppSearch, setOppSearch] = useState('')
   const [oppDeleteToast, setOppDeleteToast] = useState(false)
+  // Gruppi: `selectedGroupId` null = "Tutti". `groupForm` è 'new' oppure l'id del
+  // gruppo che si sta rinominando; `groupMembersFor` è l'id del gruppo di cui si
+  // scelgono i membri.
+  const [selectedGroupId, setSelectedGroupId] = useState(null)
+  const [groupForm, setGroupForm] = useState(null)
+  const [groupMembersFor, setGroupMembersFor] = useState(null)
+  const [groupDeleteToast, setGroupDeleteToast] = useState(false)
 
   // Partite
   const [showAddMatch, setShowAddMatch] = useState(intent === 'match')
@@ -264,6 +277,11 @@ export default function Matches() {
 
   // Item selezionati derivati (pattern "selected item derivato")
   const selectedOpponent = selectedOpponentId ? opponents.find(o => o.id === selectedOpponentId) || null : null
+  // Come per l'avversario: il gruppo si deriva dall'id a ogni render. Se viene
+  // eliminato torna null, cioè "Tutti".
+  const selectedGroup = selectedGroupId ? groups.find(g => g.id === selectedGroupId) || null : null
+  const groupMembersGroup = groupMembersFor ? groups.find(g => g.id === groupMembersFor) || null : null
+  const groupFormGroup = groupForm && groupForm !== 'new' ? groups.find(g => g.id === groupForm) || null : null
   const selectedMatch    = selectedMatchId ? matches.find(m => m.id === selectedMatchId) || null : null
   const selectedTraining = selectedTrainingId ? trainings.find(t => t.id === selectedTrainingId) || null : null
   const selectedTournament = selectedTournamentId ? tournaments.find(t => t.id === selectedTournamentId) || null : null
@@ -403,7 +421,8 @@ export default function Matches() {
   }
 
   const oppQuery = oppSearch.trim().toLowerCase()
-  const visibleOpponents = oppQuery ? opponents.filter(o => o.name.toLowerCase().includes(oppQuery)) : opponents
+  const groupScope = selectedGroup ? groupMembers(selectedGroup, opponents) : opponents
+  const visibleOpponents = oppQuery ? groupScope.filter(o => o.name.toLowerCase().includes(oppQuery)) : groupScope
 
   // Nel tab Tornei il `+` apre comunque il wizard partita: un torneo non si
   // crea, nasce dalla prima partita che gli si attribuisce.
@@ -534,6 +553,20 @@ export default function Matches() {
             <EmptyState icon="👥" title="Nessun avversario." sub="Aggiungi chi affronti in campo per tenere traccia dei testa-a-testa." onAdd={() => setShowAddOpponent(true)} />
           ) : (
             <div className="space-y-3">
+              <GroupBar
+                groups={groups}
+                selectedGroup={selectedGroup}
+                memberCount={selectedGroup ? groupScope.length : 0}
+                onSelect={setSelectedGroupId}
+                onNew={() => setGroupForm('new')}
+                onMembers={() => setGroupMembersFor(selectedGroup.id)}
+                onRename={() => setGroupForm(selectedGroup.id)}
+                onDelete={async () => {
+                  await removeGroup(selectedGroup.id)
+                  setSelectedGroupId(null)
+                  setGroupDeleteToast(true)
+                }}
+              />
               <input
                 value={oppSearch}
                 onChange={e => setOppSearch(e.target.value)}
@@ -541,7 +574,16 @@ export default function Matches() {
                 className="w-full p-3 rounded-xl text-sm outline-none"
                 style={{ background: 'var(--color-surface)', color: 'var(--color-white)', border: '1px solid var(--color-surface-2)', fontFamily: 'var(--font-body)' }}
               />
-              {visibleOpponents.length === 0 ? (
+              {selectedGroup && groupScope.length === 0 ? (
+                <div className="text-center pt-6 space-y-3">
+                  <p className="text-sm" style={{ color: 'var(--color-slate)' }}>Il gruppo è vuoto.</p>
+                  <button onClick={() => setGroupMembersFor(selectedGroup.id)}
+                    className="px-5 py-2.5 rounded-2xl text-sm font-semibold"
+                    style={{ background: 'var(--color-amber)', color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}>
+                    Aggiungi membri
+                  </button>
+                </div>
+              ) : visibleOpponents.length === 0 ? (
                 <p className="text-sm text-center pt-8" style={{ color: 'var(--color-slate)' }}>Nessun avversario trovato.</p>
               ) : (
                 <div className="space-y-2">
@@ -667,9 +709,35 @@ export default function Matches() {
       {showAddOpponent && (
         <AddOpponentModal onClose={() => setShowAddOpponent(false)} onSave={async (data) => { await addOpponent(data) }} />
       )}
+      {groupForm && (groupForm === 'new' || groupFormGroup) && (
+        <GroupFormModal
+          group={groupFormGroup}
+          groups={groups}
+          onClose={() => setGroupForm(null)}
+          onSave={async (name) => {
+            if (groupFormGroup) await renameGroup(groupFormGroup.id, name)
+            else {
+              // Il gruppo nuovo si apre subito, vuoto, con l'invito ad aggiungere membri.
+              const id = await addGroup(name)
+              setSelectedGroupId(id)
+            }
+          }}
+        />
+      )}
+      {groupMembersGroup && (
+        <GroupMembersModal
+          group={groupMembersGroup}
+          opponents={opponents}
+          onClose={() => setGroupMembersFor(null)}
+          onSave={(diff) => setGroupMembers(groupMembersGroup.id, diff)}
+        />
+      )}
       {selectedOpponent && (
         <OpponentDetailModal
           opponent={selectedOpponent}
+          groups={groups}
+          onAddToGroup={(groupId) => setGroupMembers(groupId, { add: [selectedOpponent.id] })}
+          onRemoveFromGroup={(groupId) => setGroupMembers(groupId, { remove: [selectedOpponent.id] })}
           record={recordFor(selectedOpponent.id)}
           matches={matchesVs(selectedOpponent.id)}
           onClose={() => setSelectedOpponentId(null)}
@@ -862,6 +930,7 @@ export default function Matches() {
 
       {/* Toast eliminazione */}
       {oppDeleteToast && <Toast title="Avversario eliminato" sub="È stato rimosso dalla tua anagrafica." onClose={() => setOppDeleteToast(false)} />}
+      {groupDeleteToast && <Toast title="Gruppo eliminato" sub="Gli avversari sono rimasti in anagrafica." onClose={() => setGroupDeleteToast(false)} />}
       {matchDeleteToast && <Toast title="Partita eliminata" sub="È stata rimossa dallo storico." onClose={() => setMatchDeleteToast(false)} />}
       {trainingDeleteToast && <Toast title="Allenamento eliminato" sub="È stato rimosso dallo storico." onClose={() => setTrainingDeleteToast(false)} />}
       {runDeleteToast && <Toast title="Corsa eliminata" sub="È stata rimossa dallo storico." onClose={() => setRunDeleteToast(false)} />}

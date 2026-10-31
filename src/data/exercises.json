@@ -337,7 +337,8 @@
   "movement": "pull",
   "primary": [ "dorsali" ],
   "secondary": [ "trapezio", "bicipiti" ],
-  "garmin": "row"
+  "garmin": "row",
+  "unilateral": true
  },
  {
   "id": "rematore-t-bar",
@@ -517,7 +518,8 @@
   "movement": "pull",
   "primary": [ "bicipiti" ],
   "secondary": [],
-  "garmin": "curl"
+  "garmin": "curl",
+  "unilateral": true
  },
  {
   "id": "reverse-curl",
@@ -637,7 +639,8 @@
   "movement": "legs",
   "primary": [ "quadricipiti", "glutei" ],
   "secondary": [ "femorali", "adduttori" ],
-  "garmin": "lunge"
+  "garmin": "lunge",
+  "unilateral": true
  },
  {
   "id": "squat-corpo-libero",
@@ -707,7 +710,8 @@
   "movement": "legs",
   "primary": [ "quadricipiti", "glutei" ],
   "secondary": [ "femorali", "adduttori" ],
-  "garmin": "lunge"
+  "garmin": "lunge",
+  "unilateral": true
  },
  {
   "id": "affondi-camminata",
@@ -717,7 +721,8 @@
   "movement": "legs",
   "primary": [ "quadricipiti", "glutei" ],
   "secondary": [ "femorali", "adduttori" ],
-  "garmin": "lunge"
+  "garmin": "lunge",
+  "unilateral": true
  },
  {
   "id": "affondi-indietro",
@@ -727,7 +732,8 @@
   "movement": "legs",
   "primary": [ "quadricipiti", "glutei" ],
   "secondary": [ "femorali", "adduttori" ],
-  "garmin": "lunge"
+  "garmin": "lunge",
+  "unilateral": true
  },
  {
   "id": "step-up",
@@ -737,7 +743,8 @@
   "movement": "legs",
   "primary": [ "quadricipiti", "glutei" ],
   "secondary": [ "femorali", "polpacci" ],
-  "garmin": "lunge"
+  "garmin": "lunge",
+  "unilateral": true
  },
  {
   "id": "hip-thrust",
@@ -1027,7 +1034,8 @@
   "movement": "core",
   "primary": [ "obliqui" ],
   "secondary": [ "addominali", "glutei", "spalle" ],
-  "garmin": "plank"
+  "garmin": "plank",
+  "unilateral": true
  },
  {
   "id": "hollow-hold",

@@ -13,12 +13,20 @@
 //
 // ── Struttura (`items`) ──
 // Un array piatto di esercizi, in ordine di esecuzione:
-//   Item = { id, exerciseId, snapshot?, sets: [Set] }
+//   Item = { id, exerciseId, snapshot?, perSide?, sets: [Set] }
 //   Set  = { reps, kg }   per gli esercizi a ripetizioni con carico
 //        | { reps }       per quelli a corpo libero
 //        | { sec }        per quelli a tempo (plank, farmer walk...)
 // `kg` è facoltativo anche negli esercizi con carico: null = non registrato, e
 // quella serie non entra nel volume.
+//
+// ── Esercizi "per lato" ──
+// `perSide: true` sull'ITEM (non sulla serie) dice che ogni serie si fa un lato
+// alla volta: "2 × 8 per lato" = 8 dx, 8 sx, 8 dx, 8 sx. Assente = false, i
+// documenti vecchi non si migrano. Raddoppiano ripetizioni totali, volume e
+// tempo di esecuzione (`workoutTotals`); NON raddoppiano le serie, il punteggio
+// per muscolo, le fasce di ripetizioni, il massimale e i record: ogni lato fa
+// le sue serie, e i numeri della serie restano quelli di un lato.
 //
 // ── I muscoli NON si salvano sulla sessione ──
 // Si ricavano dall'esercizio, ogni volta che servono. Correggere un esercizio
@@ -124,6 +132,7 @@ export function buildExerciseIndex(customExercises = []) {
       movement: MOVEMENT_OF_MUSCLE[c.primary?.[0]] || 'other',
       primary: c.primary || [],
       secondary: c.secondary || [],
+      unilateral: !!c.unilateral,
     }
   })
   return index
@@ -166,6 +175,7 @@ export function normalizeCustomExercise(form) {
     mode: EXERCISE_MODES.some(m => m.id === form.mode) ? form.mode : 'reps-kg',
     primary,
     secondary,
+    unilateral: !!form.unilateral,
   }
 }
 
@@ -186,10 +196,12 @@ export const emptySet = (mode) => {
   return { reps: DEFAULT_REPS, kg: null }
 }
 
+// Un esercizio monolaterale per natura nasce già "per lato" (resta modificabile).
 export function emptyItem(exercise) {
   return {
     id: newId(),
     exerciseId: exercise.id,
+    ...(exercise.unilateral ? { perSide: true } : {}),
     sets: Array.from({ length: DEFAULT_SETS }, () => emptySet(exercise.mode)),
   }
 }
@@ -251,8 +263,9 @@ export function normalizeItems(items, index) {
       return { reps: Math.round(s.reps), kg: isNum(s.kg) ? Math.round(s.kg * 2) / 2 : null }
     })
     const out = { id: it.id, exerciseId: it.exerciseId, sets }
+    if (it.perSide) out.perSide = true
     if (isCustomId(it.exerciseId)) {
-      out.snapshot = { name: ex.name, equipment: ex.equipment, mode: ex.mode, movement: ex.movement, primary: ex.primary, secondary: ex.secondary }
+      out.snapshot = { name: ex.name, equipment: ex.equipment, mode: ex.mode, movement: ex.movement, primary: ex.primary, secondary: ex.secondary, unilateral: !!ex.unilateral }
     }
     return out
   })
@@ -260,7 +273,7 @@ export function normalizeItems(items, index) {
 
 // Uguaglianza strutturale delle liste (per "modificata rispetto alla scheda").
 export function sameItems(a, b) {
-  const strip = (items) => (items || []).map(it => ({ exerciseId: it.exerciseId, sets: it.sets }))
+  const strip = (items) => (items || []).map(it => ({ exerciseId: it.exerciseId, perSide: !!it.perSide, sets: it.sets }))
   return JSON.stringify(strip(a)) === JSON.stringify(strip(b))
 }
 
@@ -277,15 +290,18 @@ function setWorkSec(set, mode) {
   return Math.max(MIN_SET_SEC, (set.reps || 0) * SEC_PER_REP)
 }
 
+// Per lato: ripetizioni, volume e tempo di esecuzione contano due volte (dx e
+// sx); le serie e il recupero (uno per serie) no.
 export function workoutTotals(items, index) {
   let sets = 0, reps = 0, volumeKg = 0, sec = 0
   ;(items || []).forEach(it => {
     const ex = resolveExercise(it, index)
+    const sides = it.perSide ? 2 : 1
     ;(it.sets || []).forEach(s => {
       sets++
-      if (ex.mode !== 'time') reps += s.reps || 0
-      if (ex.mode === 'reps-kg' && isNum(s.kg)) volumeKg += (s.reps || 0) * s.kg
-      sec += setWorkSec(s, ex.mode) + REST_SEC
+      if (ex.mode !== 'time') reps += (s.reps || 0) * sides
+      if (ex.mode === 'reps-kg' && isNum(s.kg)) volumeKg += (s.reps || 0) * s.kg * sides
+      sec += setWorkSec(s, ex.mode) * sides + REST_SEC
     })
   })
   return { exercises: (items || []).length, sets, reps, volumeKg, estimatedSec: sec }
@@ -409,15 +425,21 @@ export function formatSet(set, mode) {
   return isNum(set.kg) ? `${set.reps} × ${formatKg(set.kg)}` : `${set.reps} rip.`
 }
 
-// "3 × 10 @ 40 kg" se le serie sono tutte uguali, altrimenti l'elenco.
-export function summarizeSets(sets, mode) {
+// "3 × 10 @ 40 kg" se le serie sono tutte uguali, altrimenti l'elenco. Per gli
+// esercizi per lato il suffisso "· per lato" dice che i numeri sono di un lato.
+export function summarizeSets(sets, mode, perSide = false) {
   if (!sets?.length) return '—'
   const first = sets[0]
   const uniform = sets.every(s => s.reps === first.reps && s.kg === first.kg && s.sec === first.sec)
+  let out
   if (uniform) {
-    if (mode === 'time') return `${sets.length} × ${formatSeconds(first.sec)}`
-    const base = `${sets.length} × ${first.reps}`
-    return mode === 'reps-kg' && isNum(first.kg) ? `${base} @ ${formatKg(first.kg)}` : base
+    if (mode === 'time') out = `${sets.length} × ${formatSeconds(first.sec)}`
+    else {
+      const base = `${sets.length} × ${first.reps}`
+      out = mode === 'reps-kg' && isNum(first.kg) ? `${base} @ ${formatKg(first.kg)}` : base
+    }
+  } else {
+    out = sets.map(s => formatSet(s, mode)).join(' · ')
   }
-  return sets.map(s => formatSet(s, mode)).join(' · ')
+  return perSide ? `${out} · per lato` : out
 }

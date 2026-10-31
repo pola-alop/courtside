@@ -29,7 +29,7 @@ export default function ExerciseEditor({ items, exerciseApi, onChange }) {
   // arrivati lì perché serviva. Ritorna un esercizio "minimo" (id + modalità).
   const createCustom = async (data) => {
     const docId = await exerciseApi.add(data)
-    return { id: CUSTOM_PREFIX + docId, mode: data.mode }
+    return { id: CUSTOM_PREFIX + docId, mode: data.mode, unilateral: data.unilateral }
   }
 
   const patchItem = (id, patch) => onChange(items.map(it => (it.id === id ? { ...it, ...patch } : it)))
@@ -239,6 +239,23 @@ function ExerciseCard({ item, index, onPatch, menu }) {
           </button>
         </div>
       )}
+
+      <div className="flex items-center gap-2">
+        <button onClick={() => onPatch({ perSide: !item.perSide })} aria-pressed={!!item.perSide}
+          className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0"
+          style={{
+            background: item.perSide ? 'var(--color-teal-dark)' : 'var(--color-surface)',
+            color: item.perSide ? 'var(--color-white)' : 'var(--color-slate)',
+            fontFamily: 'var(--font-display)',
+          }}>
+          {item.perSide ? '✓ Per lato' : 'Per lato'}
+        </button>
+        {item.perSide && (
+          <span className="text-[11px] min-w-0" style={{ color: 'var(--color-slate)' }}>
+            Ogni serie: prima un lato, poi l'altro.
+          </span>
+        )}
+      </div>
 
       <div className="flex items-center justify-between">
         {uniform ? (

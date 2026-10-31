@@ -15,6 +15,7 @@ export default function CustomExerciseForm({ initial = null, custom = [], onSave
   const [name, setName] = useState(initial?.name || '')
   const [mode, setMode] = useState(initial?.mode || 'reps-kg')
   const [equipment, setEquipment] = useState(initial?.equipment || 'altro')
+  const [unilateral, setUnilateral] = useState(!!initial?.unilateral)
   const [roles, setRoles] = useState(() => {
     const r = {}
     ;(initial?.primary || []).forEach(m => { r[m] = 'primary' })
@@ -40,7 +41,7 @@ export default function CustomExerciseForm({ initial = null, custom = [], onSave
   const handleSave = async () => {
     if (!canSave || saving) return
     setSaving(true)
-    await onSave(normalizeCustomExercise({ name, mode, equipment, primary, secondary }))
+    await onSave(normalizeCustomExercise({ name, mode, equipment, unilateral, primary, secondary }))
     setSaving(false)
   }
 
@@ -98,6 +99,15 @@ export default function CustomExerciseForm({ initial = null, custom = [], onSave
             <Choice key={e} compact active={equipment === e} onClick={() => setEquipment(e)}>{e}</Choice>
           ))}
         </div>
+      </div>
+
+      <div>
+        <Choice active={unilateral} onClick={() => setUnilateral(u => !u)}>
+          {unilateral ? '✓ ' : ''}Esercizio monolaterale (un lato alla volta)
+        </Choice>
+        <p className="text-[11px] mt-1" style={{ color: 'var(--color-slate)' }}>
+          Quando lo aggiungi a una scheda parte già «per lato». Si può cambiare esercizio per esercizio.
+        </p>
       </div>
 
       <div>

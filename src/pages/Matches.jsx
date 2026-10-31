@@ -42,7 +42,9 @@ import GymWorkoutLibrary from '../components/gym/GymWorkoutLibrary'
 import GymWorkoutEditModal from '../components/gym/GymWorkoutEditModal'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
-import { groupMembers } from '../lib/opponents'
+import { groupRotation, lastMatchText, plannedText } from '../lib/opponents'
+import { whatsappHref } from '../lib/phone'
+import { todayTime } from '../lib/activity'
 import { calibrateIntensity } from '../lib/fit'
 import {
   TRAINING_KINDS, INTENSITIES, FOCUS_CATEGORIES, FOCUS_BY_ID,
@@ -421,8 +423,13 @@ export default function Matches() {
   }
 
   const oppQuery = oppSearch.trim().toLowerCase()
-  const groupScope = selectedGroup ? groupMembers(selectedGroup, opponents) : opponents
+  // Dentro un gruppo l'ordine è quello di rotazione (chi è ora di chiamare per
+  // primo); "Tutti" resta la lista di sempre. La ricerca filtra senza riordinare.
+  const today = todayTime()
+  const rotation = selectedGroup ? groupRotation(selectedGroup, { opponents, matches, plans, today }) : null
+  const groupScope = rotation ? rotation.map(r => r.opponent) : opponents
   const visibleOpponents = oppQuery ? groupScope.filter(o => o.name.toLowerCase().includes(oppQuery)) : groupScope
+  const rotationOf = rotation ? new Map(rotation.map(r => [r.opponent.id, r])) : null
 
   // Nel tab Tornei il `+` apre comunque il wizard partita: un torneo non si
   // crea, nasce dalla prima partita che gli si attribuisce.
@@ -583,12 +590,20 @@ export default function Matches() {
                     Aggiungi membri
                   </button>
                 </div>
+              ) : selectedGroup && (matchLoading || planLoading) ? (
+                <Spinner />
               ) : visibleOpponents.length === 0 ? (
                 <p className="text-sm text-center pt-8" style={{ color: 'var(--color-slate)' }}>Nessun avversario trovato.</p>
               ) : (
                 <div className="space-y-2">
                   {visibleOpponents.map(o => (
-                    <OpponentCard key={o.id} opponent={o} record={recordFor(o.id)} onClick={() => setSelectedOpponentId(o.id)} />
+                    <OpponentCard key={o.id} opponent={o} record={recordFor(o.id)}
+                      rotation={rotationOf && {
+                        lastText: rotationOf.get(o.id).lastDay != null ? lastMatchText(rotationOf.get(o.id).lastDay, today) : null,
+                        plannedText: rotationOf.get(o.id).plannedDay != null ? plannedText(rotationOf.get(o.id).plannedDay, today) : null,
+                      }}
+                      contactHref={rotationOf && o.phone ? whatsappHref(o.phone) : null}
+                      onClick={() => setSelectedOpponentId(o.id)} />
                   ))}
                 </div>
               )}

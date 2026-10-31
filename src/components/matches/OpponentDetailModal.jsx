@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import MatchRow from './MatchRow'
 import { LEVELS, PLAYSTYLES, levelLabel, playstyleLabel, opponentParts, opponentNameFields, opponentInitials } from '../../lib/opponents'
+import { DEFAULT_PHONE_COUNTRY, formatPhone, phoneFields, phoneHref, phoneIssue, whatsappHref } from '../../lib/phone'
+import PhoneField from './PhoneField'
 
 const HANDS = [
   { id: 'destro',   label: 'Destro'  },
@@ -40,6 +42,7 @@ export default function OpponentDetailModal({
   const openEdit = () => {
     setEditForm({
       ...opponentParts(opponent),
+      phone:     { country: opponent.phone?.country || DEFAULT_PHONE_COUNTRY, number: opponent.phone?.number || '' },
       hand:      opponent.hand      || null,
       level:     opponent.level     || '',
       playstyle: opponent.playstyle || '',
@@ -48,12 +51,14 @@ export default function OpponentDetailModal({
   }
 
   const canSave = editForm && editForm.firstName.trim().length > 0
+    && !phoneIssue(editForm.phone.country, editForm.phone.number)
 
   const handleSaveEdit = async () => {
     if (!canSave || saving) return
     setSaving(true)
     await onUpdate(opponent.id, {
       ...opponentNameFields(editForm.firstName, editForm.lastName),
+      phone:     phoneFields(editForm.phone.country, editForm.phone.number),
       hand:      editForm.hand || null,
       level:     editForm.level     || null,
       playstyle: editForm.playstyle || null,
@@ -177,6 +182,21 @@ export default function OpponentDetailModal({
               ✏️ Modifica avversario
             </button>
 
+            {formatPhone(opponent.phone) && (
+              <Section title="Contatto">
+                <div className="px-4 py-3">
+                  <p className="text-sm mb-3"
+                     style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
+                    {formatPhone(opponent.phone)}
+                  </p>
+                  <div className="flex gap-2">
+                    <ContactLink href={phoneHref(opponent.phone)} label="📞 Chiama" />
+                    <ContactLink href={whatsappHref(opponent.phone)} label="💬 WhatsApp" external />
+                  </div>
+                </div>
+              </Section>
+            )}
+
             <Section title="Dettagli">
               <Row label="Mano"          value={handLabel(opponent.hand) || '—'} />
               <Row label="Livello"       value={levelLabel(opponent.level)         || '—'} />
@@ -225,6 +245,8 @@ export default function OpponentDetailModal({
                 <EditInput label="Nome *" value={editForm.firstName} onChange={v => setField('firstName', v)} placeholder="Es. Marco" />
                 <EditInput label="Cognome" value={editForm.lastName} onChange={v => setField('lastName', v)} placeholder="Es. Rossi" />
               </div>
+
+              <PhoneField value={editForm.phone} onChange={v => setField('phone', v)} />
 
               <div>
                 <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Mano</label>
@@ -396,6 +418,25 @@ function Section({ title, children }) {
         {children}
       </div>
     </div>
+  )
+}
+
+// Chiama / WhatsApp: veri link (`<a>`), non bottoni con un handler, così il
+// sistema li gestisce da solo. WhatsApp si apre in una scheda nuova.
+function ContactLink({ href, label, external = false }) {
+  return (
+    <a
+      href={href}
+      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+      className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-center transition-all active:scale-95"
+      style={{
+        background: 'var(--color-surface)',
+        color: 'var(--color-teal)',
+        border: '1px solid var(--color-teal-dark)',
+        fontFamily: 'var(--font-display)'
+      }}>
+      {label}
+    </a>
   )
 }
 

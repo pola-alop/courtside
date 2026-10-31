@@ -99,3 +99,31 @@ export function opponentShortName(opponent) {
   if (!lastName) return firstName
   return `${lastName} ${firstName[0].toUpperCase()}.`
 }
+
+// ── Gruppi di avversari ────────────────────────────────────
+// `users/{uid}/opponentGroups`: { name, memberIds: [opponentId] }. L'appartenenza
+// sta sul gruppo e non sull'avversario; gli id di avversari eliminati restano
+// nell'array e si ignorano in lettura.
+
+export const cleanGroupName = name => (name || '').trim().replace(/\s+/g, ' ')
+
+// Il problema di un nome di gruppo, o null: vuoto, oppure già usato (senza
+// distinguere le maiuscole). `excludeId` è il gruppo che si sta rinominando.
+export function groupNameIssue(name, groups, excludeId = null) {
+  const clean = cleanGroupName(name)
+  if (!clean) return 'Il nome del gruppo non può essere vuoto.'
+  const taken = groups.some(g => g.id !== excludeId && cleanGroupName(g.name).toLowerCase() === clean.toLowerCase())
+  return taken ? 'Esiste già un gruppo con questo nome.' : null
+}
+
+// Gli avversari membri del gruppo, nell'ordine di `opponents`; gli id che non
+// corrispondono più a un avversario si ignorano.
+export function groupMembers(group, opponents) {
+  const ids = new Set(group?.memberIds || [])
+  return opponents.filter(o => ids.has(o.id))
+}
+
+// I gruppi di cui fa parte un avversario.
+export function groupsOf(opponentId, groups) {
+  return groups.filter(g => (g.memberIds || []).includes(opponentId))
+}

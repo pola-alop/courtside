@@ -1,7 +1,7 @@
-import { levelLabel, playstyleLabel } from '../../lib/opponents'
+import { levelLabel, playstyleLabel, opponentInitials } from '../../lib/opponents'
 
 export default function OpponentCard({ opponent, record = null, onClick }) {
-  const initials = getInitials(opponent.name)
+  const initials = opponentInitials(opponent)
   const accent   = avatarAccent(opponent.name)
   const h2h      = getH2HInfo(record)
   const subtitle = getSubtitle(opponent)
@@ -64,13 +64,6 @@ function getH2HInfo(record) {
   if (wins > losses) return { label, bg: 'rgba(72,179,176,0.18)', color: 'var(--color-teal-light)' }
   if (losses > wins) return { label, bg: 'rgba(220,80,80,0.15)',  color: '#ff7070' }
   return { label, bg: 'rgba(244,163,0,0.15)', color: 'var(--color-amber-light)' }
-}
-
-function getInitials(name) {
-  const parts = (name || '').trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return '?'
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
 // Tinta avatar deterministica dal nome (stessa persona → sempre stesso colore)

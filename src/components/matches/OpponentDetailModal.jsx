@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import MatchRow from './MatchRow'
-import { LEVELS, PLAYSTYLES, levelLabel, playstyleLabel } from '../../lib/opponents'
+import { LEVELS, PLAYSTYLES, levelLabel, playstyleLabel, opponentParts, opponentNameFields, opponentInitials } from '../../lib/opponents'
 
 const HANDS = [
   { id: 'destro',   label: 'Destro'  },
@@ -39,7 +39,7 @@ export default function OpponentDetailModal({
   // così "Modifica" mostra sempre i dati aggiornati dopo un reload.
   const openEdit = () => {
     setEditForm({
-      name:      opponent.name      || '',
+      ...opponentParts(opponent),
       hand:      opponent.hand      || null,
       level:     opponent.level     || '',
       playstyle: opponent.playstyle || '',
@@ -47,13 +47,13 @@ export default function OpponentDetailModal({
     setMode('edit')
   }
 
-  const canSave = editForm && editForm.name.trim().length > 0
+  const canSave = editForm && editForm.firstName.trim().length > 0
 
   const handleSaveEdit = async () => {
     if (!canSave || saving) return
     setSaving(true)
     await onUpdate(opponent.id, {
-      name:      editForm.name.trim(),
+      ...opponentNameFields(editForm.firstName, editForm.lastName),
       hand:      editForm.hand || null,
       level:     editForm.level     || null,
       playstyle: editForm.playstyle || null,
@@ -126,7 +126,7 @@ export default function OpponentDetailModal({
                style={{ background: accent.bg }}>
             <span className="text-lg font-bold"
                   style={{ color: accent.fg, fontFamily: 'var(--font-display)' }}>
-              {getInitials(opponent.name)}
+              {opponentInitials(opponent)}
             </span>
           </div>
           <div className="flex-1 min-w-0">
@@ -221,7 +221,10 @@ export default function OpponentDetailModal({
                 Modifica avversario
               </p>
 
-              <EditInput label="Nome *" value={editForm.name} onChange={v => setField('name', v)} placeholder="Es. Marco Rossi" />
+              <div className="grid grid-cols-2 gap-3">
+                <EditInput label="Nome *" value={editForm.firstName} onChange={v => setField('firstName', v)} placeholder="Es. Marco" />
+                <EditInput label="Cognome" value={editForm.lastName} onChange={v => setField('lastName', v)} placeholder="Es. Rossi" />
+              </div>
 
               <div>
                 <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Mano</label>
@@ -587,13 +590,6 @@ function ConfirmBox({ message, confirmLabel, confirmColor, onCancel, onConfirm }
 }
 
 // ── Helpers condivisi con OpponentCard (duplicati localmente per convenzione) ──
-
-function getInitials(name) {
-  const parts = (name || '').trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return '?'
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-}
 
 const AVATAR_ACCENTS = [
   { bg: 'rgba(72,179,176,0.18)', fg: 'var(--color-teal-light)'  },

@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { LEVELS, PLAYSTYLES } from '../../lib/opponents'
+import { LEVELS, PLAYSTYLES, opponentNameFields } from '../../lib/opponents'
+import { DEFAULT_PHONE_COUNTRY, phoneFields, phoneIssue } from '../../lib/phone'
+import PhoneField from './PhoneField'
 
 const HANDS = [
   { id: 'destro',   label: 'Destro'  },
@@ -7,17 +9,21 @@ const HANDS = [
 ]
 
 export default function AddOpponentModal({ onClose, onSave }) {
-  const [form, setForm]     = useState({ name: '', hand: null, level: '', playstyle: '' })
+  const [form, setForm]     = useState({
+    firstName: '', lastName: '', phone: { country: DEFAULT_PHONE_COUNTRY, number: '' },
+    hand: null, level: '', playstyle: ''
+  })
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
-  const canSave = form.name.trim().length > 0
+  const canSave = form.firstName.trim().length > 0 && !phoneIssue(form.phone.country, form.phone.number)
 
   const handleSave = async () => {
     if (!canSave || saving) return
     setSaving(true)
     await onSave({
-      name:      form.name.trim(),
+      ...opponentNameFields(form.firstName, form.lastName),
+      phone:     phoneFields(form.phone.country, form.phone.number),
       hand:      form.hand || null,
       level:     form.level     || null,
       playstyle: form.playstyle || null,
@@ -57,12 +63,22 @@ export default function AddOpponentModal({ onClose, onSave }) {
 
         {/* Corpo scrollabile */}
         <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
-          <Input
-            label="Nome *"
-            value={form.name}
-            onChange={v => set('name', v)}
-            placeholder="Es. Marco Rossi"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Nome *"
+              value={form.firstName}
+              onChange={v => set('firstName', v)}
+              placeholder="Es. Marco"
+            />
+            <Input
+              label="Cognome"
+              value={form.lastName}
+              onChange={v => set('lastName', v)}
+              placeholder="Es. Rossi"
+            />
+          </div>
+
+          <PhoneField value={form.phone} onChange={v => set('phone', v)} />
 
           <HandSelector value={form.hand} onChange={v => set('hand', v)} />
 

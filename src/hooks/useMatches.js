@@ -4,6 +4,7 @@ import {
   getMatches, addMatch, updateMatch, deleteMatch
 } from '../firebase/matches'
 import { getOpponents } from '../firebase/opponents'
+import { opponentShortName } from '../lib/opponents'
 
 export function useMatches() {
   const { user } = useAuthState()
@@ -16,7 +17,8 @@ export function useMatches() {
     try {
       setLoading(true)
       const [data, opponents] = await Promise.all([getMatches(user.uid), getOpponents(user.uid)])
-      setMatches(await syncOpponentNames(user.uid, data, opponents))
+      const synced = await syncOpponentNames(user.uid, data, opponents)
+      setMatches(withOpponentShortNames(synced, opponents))
     } catch (e) {
       setError(e.message)
     } finally {
@@ -61,4 +63,17 @@ async function syncOpponentNames(userId, matches, opponents) {
 
   const staleIds = new Set(stale.map(m => m.id))
   return matches.map(m => staleIds.has(m.id) ? { ...m, opponentName: nameById.get(m.opponentId) } : m)
+}
+
+// La forma breve ("Di Gaetano M.") usata dal punteggio si deriva dall'anagrafica
+// per `opponentId`, come il nome aggiornato: non è un campo del documento e non
+// viene mai salvata (niente nuove copie da riallineare). Vive solo sulle partite
+// in memoria; senza avversario in anagrafica resta undefined e ScoreBoard ripiega
+// sull'euristica sulla stringa `opponentName`.
+function withOpponentShortNames(matches, opponents) {
+  const byId = new Map(opponents.map(o => [o.id, o]))
+  return matches.map(m => {
+    const opponent = byId.get(m.opponentId)
+    return opponent ? { ...m, opponentShort: opponentShortName(opponent) } : m
+  })
 }

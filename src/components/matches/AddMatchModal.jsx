@@ -14,7 +14,7 @@ import {
 // allenamenti: descrive lo sforzo di una SESSIONE, e una partita è una sessione.
 // Riusarla è meglio che duplicare tre etichette e tre colori.
 import { INTENSITIES } from '../../lib/training'
-import { levelLabel } from '../../lib/opponents'
+import { levelLabel, opponentInitials } from '../../lib/opponents'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 import FitImport from '../athletics/FitImport'
 import IntensitySuggestion from '../athletics/IntensitySuggestion'
@@ -318,7 +318,7 @@ function StepOpponent({ opponents, value, onChange }) {
                 <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                      style={{ background: 'rgba(255,255,255,0.08)' }}>
                   <span className="text-xs font-bold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-                    {initials(o.name)}
+                    {opponentInitials(o)}
                   </span>
                 </div>
                 <div className="min-w-0">
@@ -942,9 +942,4 @@ function StepTitle({ title, sub }) {
   )
 }
 
-function initials(name) {
-  const parts = (name || '').trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return '?'
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-}
+

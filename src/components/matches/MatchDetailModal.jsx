@@ -105,6 +105,7 @@ export default function MatchDetailModal({
               format={match.format}
               retired={match.retired}
               opponentName={match.opponentName}
+              opponentShort={match.opponentShort}
               size="md"
             />
           </div>

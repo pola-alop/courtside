@@ -3,7 +3,7 @@ import { useAuthState } from './useAuth'
 import {
   getOpponents, addOpponent, updateOpponent, deleteOpponent
 } from '../firebase/opponents'
-import { LEVEL_BY_ID, PLAYSTYLE_BY_ID } from '../lib/opponents'
+import { LEVEL_BY_ID, PLAYSTYLE_BY_ID, splitName, opponentNameFields } from '../lib/opponents'
 
 export function useOpponents() {
   const { user } = useAuthState()
@@ -16,7 +16,7 @@ export function useOpponents() {
     try {
       setLoading(true)
       const data = await getOpponents(user.uid)
-      const cleaned = await sanitizeLegacyFields(user.uid, data)
+      const cleaned = await splitLegacyNames(user.uid, await sanitizeLegacyFields(user.uid, data))
       const sorted = [...cleaned].sort((a, b) => a.name.localeCompare(b.name))
       setOpponents(sorted)
     } catch (e) {
@@ -69,4 +69,25 @@ async function sanitizeLegacyFields(userId, opponents) {
 
   const dirtyIds = new Set(dirty.map(o => o.id))
   return opponents.map(o => dirtyIds.has(o.id) ? { ...o, ...cleanedFields(o) } : o)
+}
+
+// `name` era un campo unico prima di Nome e Cognome separati: un documento
+// senza `firstName` viene diviso sul primo spazio (Nome = prima parola,
+// Cognome = il resto) e salvato con `name` ricomposto. I doppi nomi
+// ("Gian Marco Rossi") vengono divisi male e si correggono da "Modifica
+// avversario". Idempotente: dopo il salvataggio il documento ha `firstName`.
+async function splitLegacyNames(userId, opponents) {
+  const isLegacy = o => !(o.firstName || '').trim() && (o.name || '').trim()
+  const legacy = opponents.filter(isLegacy)
+  if (legacy.length === 0) return opponents
+
+  const fieldsFor = o => {
+    const { firstName, lastName } = splitName(o.name)
+    return opponentNameFields(firstName, lastName)
+  }
+
+  await Promise.all(legacy.map(o => updateOpponent(userId, o.id, fieldsFor(o))))
+
+  const legacyIds = new Set(legacy.map(o => o.id))
+  return opponents.map(o => legacyIds.has(o.id) ? { ...o, ...fieldsFor(o) } : o)
 }

@@ -204,6 +204,15 @@ function planStatuses(plans, sessionsByDay, today) {
   return byDay
 }
 
+// Gli stessi programmi con lo stato ricavato (`status`, `sessionId`,
+// `registrable`, `day`), in una lista piatta, per chi non ha bisogno della griglia:
+// la rotazione dei gruppi vuole solo sapere quali partite sono ancora "da fare".
+// È la regola di `planStatuses`, non una copia.
+export function plansWithStatus(plans = [], sessions = [], today = todayTime()) {
+  const byDay = planStatuses(plans, groupByDay(sessions), startOfDay(today))
+  return [...byDay.values()].flat()
+}
+
 function byPlanOrder(a, b) {
   const ta = a.time || null
   const tb = b.time || null
@@ -371,8 +380,8 @@ function monthRows(year, month) {
 // ma non azzera finché non è finita), applicata alle sessioni dei quattro
 // domini invece che al solo tennis. I programmi non contano.
 //
-// `row` è la riga della settimana corrente: la barra scende fin lì e riparte
-// dall'alto a ogni mese, mentre il numero continua.
+// `row` è la riga della settimana corrente; la barra riparte dall'alto a ogni
+// mese, mentre il numero continua.
 //
 // `fromRow`–`toRow` sono le righe del mese che fanno parte della serie, le sole
 // da colorare: con una serie di 2 settimane su 5 righe, una barra tutta accesa
@@ -380,6 +389,15 @@ function monthRows(year, month) {
 // finisce alla riga prima; se finisce prima del mese (o è zero) sono null.
 // Contano solo le sessioni fino a oggi, come per `activeThisWeek`: una data
 // futura per errore non accende la fiamma e non sposta le righe.
+//
+// `flameRow` è dove sta la fiamma. Con un'attività già svolta questa settimana
+// è `row`. Altrimenti resta PARCHEGGIATA sulla settimana precedente (`row - 1`,
+// `parked: true`, disegnata attenuata) finché non ne arriva una; se la settimana
+// corrente è la prima riga del mese quella precedente non è in griglia e
+// `flameRow` vale `ABOVE_GRID` (-1): la fiamma sta sopra la prima riga. Senza
+// serie (0 settimane) non c'è niente da parcheggiare: resta su `row`, grigia.
+export const ABOVE_GRID = -1
+
 function buildStreak(sessions, today, row) {
   const thisWeek = startOfWeek(today)
   const done = sessions.filter(s => s.day <= today)
@@ -387,10 +405,13 @@ function buildStreak(sessions, today, row) {
   const activeThisWeek = done.some(s => s.day >= thisWeek)
   const toRow = activeThisWeek ? row : row - 1
   const lit = weeks > 0 && toRow >= 0
+  const parked = weeks > 0 && !activeThisWeek
   return {
     weeks,
     row,
     activeThisWeek,
+    parked,
+    flameRow: parked ? (row > 0 ? row - 1 : ABOVE_GRID) : row,
     fromRow: lit ? Math.max(0, toRow - weeks + 1) : null,
     toRow: lit ? toRow : null,
   }

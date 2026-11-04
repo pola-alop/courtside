@@ -15,10 +15,13 @@ export default function RunRow({ run, workouts = [], running, onClick }) {
   const realKm = run.athletics?.distanceKm
   const pace = avgPaceSec(run.athletics)
 
+  // `items-stretch` esplicito: su iOS il `<button>` ha `align-items` di suo e
+  // senza questo i figli restano larghi quanto il contenuto, non quanto la card
+  // (il grafico delle fasi si riduceva a una striscia a sinistra).
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-2xl p-3 flex flex-col gap-2 transition-all active:scale-[0.98]"
+      className="w-full text-left rounded-2xl p-3 flex flex-col items-stretch gap-2 transition-all active:scale-[0.98]"
       style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}
     >
       <div className="flex items-center justify-between">

@@ -295,7 +295,7 @@ function ExercisesSection({ items, index }) {
           <div key={it.id} className="px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
             <p className="text-xs font-semibold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{ex.name}</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
-              {summarizeSets(it.sets, ex.mode)}
+              {summarizeSets(it.sets, ex.mode, it.perSide)}
             </p>
             <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>
               {ex.primary.map(muscleLabel).join(', ') || '—'}

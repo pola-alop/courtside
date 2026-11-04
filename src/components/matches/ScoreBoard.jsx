@@ -11,7 +11,7 @@ import { MATCH_FORMATS, setKind, setWinner, isTiebreakSet, hasScore } from '../.
 // di una sola parola più lungo della larghezza fissa veniva tagliato anche se
 // non c'era nessun cognome da compattare). Il nome per esteso resta comunque
 // disponibile via `title` quando viene compattato.
-export default function ScoreBoard({ sets, format, retired, opponentName, size = 'sm' }) {
+export default function ScoreBoard({ sets, format, retired, opponentName, opponentShort, size = 'sm' }) {
   const fmt = MATCH_FORMATS[format]
   if (!fmt) return null
 
@@ -25,7 +25,7 @@ export default function ScoreBoard({ sets, format, retired, opponentName, size =
   const nameCls = size === 'md' ? 'text-sm' : 'text-xs'
   const scoreCls = size === 'md' ? 'text-lg' : 'text-sm'
   const fullOpponentName = opponentName || 'Avversario'
-  const opponentDisplay = compactName(fullOpponentName)
+  const opponentDisplay = opponentShort || compactName(fullOpponentName)
   const colCount = Math.max(cells.length, 1)
 
   return (
@@ -97,8 +97,9 @@ function tbSuperscript(cell, who) {
   return tb == null ? null : tb
 }
 
-// "Nome Cognome" → "Cognome N." (stesso ordine nome/cognome atteso da
-// getInitials in OpponentCard.jsx). Nomi di una sola parola restano invariati.
+// Ripiego sulla stringa "Nome Cognome" → "Cognome N." (l'ultima parola è il
+// cognome) per le partite senza `opponentShort`, cioè senza avversario in
+// anagrafica da cui derivare la forma breve. Nomi di una sola parola restano invariati.
 function compactName(name) {
   const parts = (name || '').trim().split(/\s+/).filter(Boolean)
   if (parts.length <= 1) return name || 'Avversario'

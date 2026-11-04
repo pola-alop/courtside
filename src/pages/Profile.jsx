@@ -6,7 +6,7 @@ import { useProfile } from '../hooks/useProfile'
 import { HR_ZONES } from '../lib/athletics'
 import {
   DEFAULT_WALK, WEIGHT_LIMITS, emptyRunningProfile, runningProfileIssues,
-  isRunningReady, parsePace, formatPace,
+  isRunningReady, parsePace, formatPace, maskPaceInput,
 } from '../lib/running'
 
 const HANDS = [
@@ -419,17 +419,19 @@ function PaceRow({ label, fast, slow, onFast, onSlow }) {
   )
 }
 
-// Testo libero con tastierino decimale; all'uscita dal campo il valore viene
-// riscritto nel formato canonico ("5.3" → "5:30") se è un passo leggibile.
+// Tastierino numerico (il decimale di iOS ha la virgola, non i due punti): i
+// due punti li mette `maskPaceInput` mentre si scrive. All'uscita dal campo il
+// valore viene riscritto nel formato canonico ("5" → "5:00") se è un passo
+// leggibile.
 function PaceInput({ value, onChange, placeholder }) {
   const invalid = value.trim() !== '' && parsePace(value) === null
   return (
     <input
       type="text"
-      inputMode="decimal"
+      inputMode="numeric"
       value={value}
       placeholder={placeholder}
-      onChange={e => onChange(e.target.value)}
+      onChange={e => onChange(maskPaceInput(e.target.value))}
       onBlur={() => { const p = parsePace(value); if (p) onChange(formatPace(p)) }}
       className="w-16 p-2 rounded-xl text-sm text-center outline-none"
       style={{

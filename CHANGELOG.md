@@ -4,6 +4,21 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-04
+
+### Aggiunto
+- **Nome e Cognome separati** nell'anagrafica degli avversari: due box nei form (il cognome è facoltativo), forma breve del punteggio e iniziali calcolate dai campi separati, così "Marco Di Gaetano" non diventa più "Gaetano M.". Gli avversari già salvati vengono divisi da soli al primo caricamento sul primo spazio (nome = prima parola, cognome = il resto): i doppi nomi ("Gian Marco Rossi") possono venire divisi male e si correggono da "Modifica avversario".
+- **Telefono dell'avversario** (facoltativo), con il menu del prefisso per paese con bandiera e il numero in un box a fianco; la lunghezza accettata dipende dal paese scelto. Nel dettaglio compare solo se compilato, con i tasti **Chiama** e **WhatsApp**.
+- **Gruppi di avversari** nel tab Avversari: una riga di chip "Tutti · gruppi · + Gruppo" per creare, rinominare ed eliminare i gruppi (gli avversari non vengono toccati), aggiungere e togliere i membri dal gruppo o dal dettaglio dell'avversario. Un avversario può stare in più gruppi e i nomi dei gruppi sono unici.
+- **Rotazione degli avversari**: aprendo un gruppo la lista è in ordine di rotazione, per non giocare sempre con le stesse persone. Prima chi non hai mai affrontato, poi chi hai giocato meno di recente, in fondo chi ha già una partita in programma; ogni riga dice quando hai giocato l'ultima volta e ha il tasto WhatsApp. Contano solo le partite, non gli allenamenti.
+- **Esercizi "per lato" in palestra**: un interruttore sull'esercizio della scheda (anche per quelli a tempo) per quelli fatti un lato alla volta. "2 × 8 per lato" sono 16 ripetizioni per lato, 32 in tutto: raddoppiano ripetizioni totali, volume in kg e tempo stimato, mentre serie, manichino, fasce di ripetizioni, massimale stimato e record restano per lato. Otto esercizi monolaterali (rematore con manubrio, curl concentrato, squat bulgaro, i tre affondi, step-up, plank laterale) partono già con l'opzione attiva; negli esercizi personalizzati c'è la casella «monolaterale».
+
+### Corretto
+- **Tastierino delle zone di corsa nel Profilo**: su iPhone si apre il tastierino numerico e i due punti si inseriscono da soli mentre scrivi (`530` diventa `5:30`).
+- **Fiammella della Home** con la settimana in corso ancora vuota: resta, attenuata, sulla settimana precedente (a inizio mese in uno spazio sopra la prima riga) e passa alla settimana corrente alla prima attività svolta.
+- **Card delle corse e delle altre liste su iPhone**: il grafico delle fasi, il badge dell'intensità e la durata vanno da bordo a bordo, invece di restare stretti attorno al titolo.
+- **Numero di serie e altri campi numerici della scheda di palestra**: si possono svuotare mentre scrivi, senza che torni subito a 1; il campo vuoto resta vuoto e la scheda avvisa, un valore fuori scala viene riportato nei limiti all'uscita dal campo.
+
 ## [2.0.0] - 2026-10-05
 
 ### Aggiunto

@@ -379,6 +379,98 @@ Richiesta: ruotare gli avversari da contattare per le partite, senza giocare sem
 - [~] **Fase 6 — Corse e palestra nella Panoramica** (punto 1). **SALTATA (2026-10-31, decisione dell'utente)**: vedi la motivazione al punto 1.
 - Chiusura: seed di dev con nomi/cognomi separati, telefoni, gruppi ed esercizi per lato (vedi «Seed di dati sintetici»), prova sul telefono, CHANGELOG e rilascio 2.1.0. **CHANGELOG e versione PREPARATI (2026-11-04)**: `[2.1.0] - 2026-11-04` in `CHANGELOG.md`, `version` a `2.1.0` in `package.json` e `package-lock.json`, commit `release: prepare v2.1.0` su `dev`; lint e build verdi. Restano la PR `dev` → `main` (a cura dell'utente), il merge, il tag `v2.1.0` e la verifica dopo il deploy, come nella sezione «Rilascio». Nessuna novità per il deploy: nessuna dipendenza, `VITE_*`, workflow o regola Firestore toccati (la collection `opponentGroups` è coperta dalla wildcard).
 
+## Roadmap versione 2.2.0
+
+Feature e bug dettati dall'utente il 2026-11-21, con le decisioni prese in brainstorming lo stesso giorno. Come per le versioni precedenti: non implementare senza una richiesta esplicita per la fase; ogni fase segue piano → OK dell'utente → sviluppo → lint/build → commit su `dev` in inglese. Gli screenshot dei bug arrivano dall'utente durante la fase relativa. Quando un punto viene sviluppato, documenta l'implementazione nella sezione architetturale e segna qui lo stato. **Priorità**: l'utente gioca il suo primo torneo a squadre (gironi da 4) nelle prossime settimane, quindi genere → doppio → scontri → gironi vengono subito dopo i bug, prima del calendario e del riassunto.
+
+### 1. Bug da risolvere
+Screenshot di riferimento forniti dall'utente in fase. Le cause qui sotto sono ipotesi da verificare.
+1. **"Ultima partita" troncata nell'anagrafica avversari**: la riga «Ultima partita: … fa · gg/mm» di `OpponentCard` viene troncata. Un'informazione troncata non serve: deve comparire intera, andando a capo invece di troncare (stessa scelta di `TournamentCard`/`MatchRow`, bug 4.2 della 2.0.0). Ipotesi: `truncate` sulla riga.
+2. **La barra di scorrimento verticale finisce sopra la bottom nav**, in ogni pagina, quando si arriva in fondo. Deve fermarsi al bordo della nav, mai sovrapporsi. Ipotesi: scorre il documento intero e la nav è `fixed` sopra. Il rimedio vero è un contenitore di scroll tra il bordo alto e la nav: tocca il layout di tutte le pagine, va verificato su iOS (scroll, safe area, PWA standalone).
+3. **Box di giorno e orario attaccati su iOS 27.2**: nei form di programmazione i box data e ora non hanno più separazione, e quasi tutti i box (singoli o in coppia) arrivano al bordo della finestra. Deve esserci la spaziatura e il margine classici. Ipotesi: iOS ha cambiato larghezza intrinseca e stile dei controlli nativi `date`/`time`. Fix **unico e globale** (regola comune per gli input data/ora: `min-width: 0`, larghezza, aspetto) più spaziature e margini, non correzioni modale per modale.
+4. **"Sconfitte" non centrata** rispetto al box e al numero nel dettaglio avversario (`StatTile` di `OpponentDetailModal`).
+
+### 2. Versione dell'app nel Profilo
+Una scritta piccolissima (es. «Courtside v2.2.0», grigia, in fondo al Profilo). La versione si legge da `package.json` al build (`define` in `vite.config.js`, es. `__APP_VERSION__`, dichiarata tra i `globals` di ESLint): dato che `package.json` viene allineato al tag a ogni rilascio (sezione «Rilascio»), la scritta si aggiorna da sola.
+
+### 3. Genere dell'avversario
+Serve per le amichevoli e i doppi misti, dove si gioca anche con l'altro genere. **Decisioni (2026-11-21):**
+- Campo `gender: 'M'|'F'` sull'anagrafica. **Obbligatorio per i nuovi avversari** (in `AddOpponentModal` e in modifica). I documenti già salvati restano senza (`null`, «non indicato»): nessuna migrazione e nessun valore di default (vedi la regola «niente default silenziosi»), con un avviso nel dettaglio che invita a completarlo.
+- **Genere dell'utente nel Profilo** (`profile.gender`): senza, la categoria del doppio (maschile / femminile / misto) non si può ricavare.
+- **Nessun filtro per genere nelle statistiche** (non serve all'utente). Il genere serve a ricavare la categoria del doppio (punto 4).
+
+### 4. Partite di doppio
+Oggi si registra solo il singolo e il modello dà per scontato un solo avversario (`opponentId`). **Decisioni (2026-11-21):**
+- **Dati**: `discipline: 'singolo'|'doppio'` sul match; **assente = singolo** (le partite vecchie non si migrano). Il singolo resta identico (`opponentId`). Il doppio porta `partnerId` + `opponentIds: [id, id]`, tutti dalla stessa anagrafica (il tab «Avversari» diventa di fatto l'anagrafica dei giocatori, il nome del tab resta). Il nome da mostrare («Rossi / Bianchi») va **ricavato** dall'anagrafica oppure denormalizzato con il riallineamento di `syncOpponentNames` (regola del bug 4.1 della 2.0.0): da decidere nel piano della fase.
+- **Categoria** (maschile / femminile / misto) **ricavata** dai generi dei quattro giocatori, non salvata. Con un genere mancante la categoria non si mostra.
+- **Wizard**: scelta Singolo / Doppio in apertura, poi compagno + due avversari. Il punteggio non cambia: l'app registra i game, quindi killer point e super tie-break sono già coperti dai formati esistenti.
+- **Dove contano i doppi**:
+  - **sì** in carico, usura dell'attrezzatura, calendario e Attività (sono tempo in campo);
+  - **filtro Singolo / Doppio / Tutti in Rendimento, di default Singolo** (approvato dall'utente);
+  - **la rotazione dei gruppi conta solo il singolo** (approvato);
+  - nel dettaglio di ogni giocatore **tre record separati**: «in singolo» (l'H2H di oggi), «contro in doppio», «insieme in doppio».
+- Gli altri consumatori di `matches` (Panoramica, Fisico, Incroci, Tecnica, Tornei, Home, guard di eliminazione avversario con i nuovi riferimenti `partnerId`/`opponentIds`) vanno censiti nel piano della fase, decidendo modulo per modulo.
+- A sviluppo fatto, aggiorna la frase «Il doppio non è gestito in v1» in «Scopo del progetto».
+
+### 5. Scontri a squadre (2 singolari + 1 doppio)
+Diversamente dai tornei, uno scontro **non si può ricavare** dalle partite: contiene dati che le partite dell'utente non hanno (la squadra avversaria e i risultati degli incontri giocati dai compagni). **Decisioni (2026-11-21):**
+- **Collection `teamTies`** (pattern a tre livelli). Shape di massima: `{ date, competitionId|null, opponentTeam, home: bool, phase, round, rubbers: [{ slot: 'S1'|'S2'|…|'D1'|…, matchId|null, winner: 'us'|'them'|null, score|null }] }`.
+- **Incontri giocati dall'utente**: sono partite vere (`type: 'squadre'`, nuovo valore di `MATCH_TYPES`, più `tieId` e `slot`), quindi entrano in statistiche, H2H e usura.
+- **Incontri dei compagni**: un tap su vinto/perso, punteggio facoltativo. È lo stesso principio del tabellone dei tornei: niente inserimento pesante delle partite degli altri.
+- **Risultato dello scontro** (es. 2-1) **ricavato** dagli incontri, non salvato.
+- **Formula configurabile**: predefinita 2 singolari + 1 doppio, con altre formule possibili (es. 4S+2D). Con un numero pari di incontri il pareggio è possibile.
+- Il tipo `campionato` di oggi resta com'è, per i campionati individuali.
+
+### 6. Competizione a squadre con gironi
+Il caso dell'utente: torneo a squadre con gironi da 4, assimilabile a un campionato. Il regolamento non è disponibile: **valgono le regole proposte in brainstorming, approvate dall'utente.**
+- **Collection `teamCompetitions`**: nome, stagione, squadra dell'utente, squadre del girone, formula degli incontri, regole di classifica, fasi. Gli scontri si collegano con `competitionId`.
+- **Fase a gironi** all'italiana, solo andata oppure andata e ritorno (si sceglie alla creazione).
+- **Classifica** calcolata dagli scontri. Servono anche i risultati tra le altre squadre (es. B–C): **inserimento rapido facoltativo del solo risultato** (3 righe in un girone da 4 di sola andata). Senza quei risultati la classifica si dichiara **parziale**.
+- **Punti** per vittoria (ed eventuale pareggio) configurabili; default da proporre nel piano.
+- **Spareggi**: scontri diretti → differenza incontri → set → game. Set e game di scontri inseriti senza punteggio non ci sono: la classifica dichiara quando lo spareggio non è calcolabile.
+- **Fase finale** facoltativa (le prime del girone in un tabellone): gli scontri prendono un `round` di `ROUNDS` e si riusa la scala dei tornei (`TournamentLadder`).
+- **Interfaccia**: nel tab **Tornei**, sezione «A squadre» (card con la classifica in piccolo; dettaglio con classifica, calendario degli scontri e i propri incontri). Nessun tab nuovo.
+
+### 7. Scorrere i mesi nel calendario della Home
+La Home carica già tutte le sessioni e tutti i programmi: `buildCalendar` deve solo ricevere un mese diverso da quello corrente. **Decisioni (2026-11-21):**
+- **Solo frecce** ‹ › accanto al titolo, **niente swipe**. Tasto «Oggi» quando non si è sul mese corrente.
+- Avanti fino a **6 mesi**. Indietro fino al mese della prima sessione (proposta, da confermare nel piano).
+- **Mese corrente** invariato (card della settimana e fiammella).
+- **Mesi passati**: tutte le righe a cerchi, nella colonna della fiammella solo le barre delle settimane attive, senza fiamma né numero (riguardano il presente).
+- **Mesi futuri**: programmi tratteggiati e tap → nuovo programma, come oggi.
+
+### 8. Riassunto delle note e colpi suggeriti
+Richiesta: nell'allenamento **programmato** (`plans` con `kind: 'training'`, nella `PlanModal`) un riassunto generativo delle **sole note delle partite** giocate tra l'ultimo allenamento di tennis svolto e quello programmato, con i punti salienti e i **colpi suggeriti** da allenare. I colpi sono solo suggerimenti: li sceglie il maestro e li inserisce l'utente.
+
+**Vincolo dell'utente: costo zero assoluto.** Decisioni (2026-11-21):
+- **Strada scelta: Gemini Developer API tramite Firebase AI Logic** (SDK `firebase/ai`, già nel pacchetto `firebase`): nessun backend, nessuna chiave nel codice.
+  - Gratis sul piano **Spark**, su cui l'utente ha confermato che sono **entrambi i progetti, dev e prod**. Senza account di fatturazione collegato non può esserci addebito: oltre la quota la chiamata fallisce.
+  - **Regola da non rompere: non collegare mai un account di fatturazione né passare a Blaze**. Da quel momento ogni chiamata si pagherebbe.
+  - Protezione con **App Check** (reCAPTCHA, gratuito); una fonte lo dà come obbligatorio dal 2026-11-02, da verificare.
+  - Se serve una chiave di sito come `VITE_*`, va aggiunta ai secret di GitHub prima del rilascio (sezione «Rilascio»).
+- **Privacy accettata dall'utente**: nel tier gratuito Google può usare i testi inviati. Si inviano solo data, esito, punteggio, superficie e testo delle note, **mai il nome dell'avversario**.
+- **Alternative valutate**:
+  - Llama/Qwen open-weight su **Cloudflare Workers AI** (10.000 neuron gratuiti al giorno, ma serve un Worker proxy, cioè un pezzo di backend): seconda scelta, in gara nella prova.
+  - Groq: stesso problema del proxy.
+  - WebLLM sul telefono: scartato (1-2 GB da scaricare, crash di memoria in Safari, italiano debole a 1-3B).
+- **Output strutturato** (JSON vincolato): `{ summary, highlights: [...], suggestedFocus: [id] }` con gli id presi **solo** da `FOCUS_CATEGORIES` di `training.js`. Il prompt vieta di aggiungere cose che nelle note non ci sono.
+- **Generazione su richiesta** («Genera riassunto» nella `PlanModal`), salvata sul programma con le partite usate e la data. «Aggiorna» compare quando sono arrivate note nuove. Il riassunto dichiara da quali partite viene.
+- **Seconda fonte deterministica per i colpi**: i colpi trascurati di `technique.js`, mostrati accanto e dichiarati come tali. Con il modello giù, la quota esaurita o senza rete, la sezione non resta vuota.
+- I suggerimenti **non** vengono preselezionati nel wizard dell'allenamento.
+- **Prima dello sviluppo, una prova** (Fase 8) con le note reali dell'utente: Gemini contro Llama su Cloudflare, risultati affiancati, sceglie l'utente. Se vince Cloudflare, il piano della Fase 9 va rifatto (Worker proxy con verifica del token Firebase, deroga motivata alla regola «niente backend»).
+
+### Fasi di sviluppo
+- [ ] **Fase 1 — Bug di interfaccia + versione** (punti 1 e 2): i quattro bug con gli screenshot dell'utente, la scritta della versione nel Profilo. Verifica in Safari e a 360 px.
+- [ ] **Fase 2 — Genere** (punto 3): `gender` sull'anagrafica (obbligatorio nei nuovi, avviso sui vecchi), `profile.gender`, helper della categoria del doppio con il suo test.
+- [ ] **Fase 3 — Doppio: dati e wizard** (punto 4): `discipline`, `partnerId`/`opponentIds`, scelta nel wizard, punteggio e righe di lista con due nomi per lato, nomi da mostrare e riallineamento, guard di eliminazione avversario.
+- [ ] **Fase 4 — Doppio: statistiche e record** (punto 4): censimento dei consumatori di `matches`, filtro Singolo / Doppio / Tutti in Rendimento, rotazione solo singolo, tre record nel dettaglio giocatore.
+- [ ] **Fase 5 — Scontri a squadre** (punto 5): collection `teamTies`, tipo `squadre`, creazione dello scontro con formula, collegamento delle proprie partite agli incontri, esito degli incontri dei compagni, risultato ricavato.
+- [ ] **Fase 6 — Competizione a squadre** (punto 6): collection `teamCompetitions`, girone, risultati delle altre squadre, classifica con spareggi (modulo puro con test), fase finale con `TournamentLadder`, sezione «A squadre» nel tab Tornei.
+- [ ] **Fase 7 — Mesi nel calendario** (punto 7): frecce, «Oggi», limiti, resa di mesi passati e futuri.
+- [ ] **Fase 8 — Prova del riassunto** (punto 8): script usa-e-getta (fuori da `src/`, non committato) con le note reali dell'utente, Gemini contro Llama su Cloudflare. All'utente servono una chiave gratuita di Google AI Studio e, per la seconda strada, un account Cloudflare free. Esito e scelta del modello scritti qui. Indipendente dalle fasi precedenti: si può anticipare.
+- [ ] **Fase 9 — Riassunto e colpi suggeriti** (punto 8): Firebase AI Logic + App Check, modulo puro per periodo, raccolta delle note e prompt, salvataggio sul programma, sezione nella `PlanModal` con i suggerimenti dalle note e da `technique.js`.
+- Chiusura: seed di dev (generi, doppi, scontri, una competizione), prova sul telefono, CHANGELOG e rilascio 2.2.0.
+
 ## Rilascio (da `dev` a `main`)
 
 Si lavora e si committa **solo su `dev`**; `main` riceve codice **solo tramite una Pull Request `dev` → `main`** (mai commit diretti). Il deploy lo fa GitHub Actions al merge: non si lancia nessun `firebase deploy` a mano.

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { LEVELS, PLAYSTYLES, opponentNameFields } from '../../lib/opponents'
 import { DEFAULT_PHONE_COUNTRY, phoneFields, phoneIssue } from '../../lib/phone'
 import PhoneField from './PhoneField'
+import GenderField from '../GenderField'
 
 const HANDS = [
   { id: 'destro',   label: 'Destro'  },
@@ -11,12 +12,12 @@ const HANDS = [
 export default function AddOpponentModal({ onClose, onSave }) {
   const [form, setForm]     = useState({
     firstName: '', lastName: '', phone: { country: DEFAULT_PHONE_COUNTRY, number: '' },
-    hand: null, level: '', playstyle: ''
+    gender: null, hand: null, level: '', playstyle: ''
   })
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
-  const canSave = form.firstName.trim().length > 0 && !phoneIssue(form.phone.country, form.phone.number)
+  const canSave = form.firstName.trim().length > 0 && !!form.gender && !phoneIssue(form.phone.country, form.phone.number)
 
   const handleSave = async () => {
     if (!canSave || saving) return
@@ -24,6 +25,7 @@ export default function AddOpponentModal({ onClose, onSave }) {
     await onSave({
       ...opponentNameFields(form.firstName, form.lastName),
       phone:     phoneFields(form.phone.country, form.phone.number),
+      gender:    form.gender,
       hand:      form.hand || null,
       level:     form.level     || null,
       playstyle: form.playstyle || null,
@@ -77,6 +79,8 @@ export default function AddOpponentModal({ onClose, onSave }) {
               placeholder="Es. Rossi"
             />
           </div>
+
+          <GenderField required value={form.gender} onChange={v => set('gender', v)} />
 
           <PhoneField value={form.phone} onChange={v => set('phone', v)} />
 

@@ -2,7 +2,9 @@ import { useState } from 'react'
 import MatchRow from './MatchRow'
 import { LEVELS, PLAYSTYLES, levelLabel, playstyleLabel, opponentParts, opponentNameFields, opponentInitials, groupsOf } from '../../lib/opponents'
 import { DEFAULT_PHONE_COUNTRY, formatPhone, phoneFields, phoneHref, phoneIssue, whatsappHref } from '../../lib/phone'
+import { genderLabel, readGender } from '../../lib/gender'
 import PhoneField from './PhoneField'
+import GenderField from '../GenderField'
 
 const HANDS = [
   { id: 'destro',   label: 'Destro'  },
@@ -36,6 +38,9 @@ export default function OpponentDetailModal({
   // (serve alle statistiche future): l'anagrafica resta, si può solo modificare.
   const hasMatches = matches.length > 0
 
+  // I documenti salvati prima della 2.2.0 non hanno il genere: `null`.
+  const gender = readGender(opponent.gender)
+
   const setField = (k, v) => setEditForm(f => ({ ...f, [k]: v }))
 
   // Il form va ricalcolato da `opponent` all'apertura, non una volta al mount,
@@ -44,6 +49,7 @@ export default function OpponentDetailModal({
     setEditForm({
       ...opponentParts(opponent),
       phone:     { country: opponent.phone?.country || DEFAULT_PHONE_COUNTRY, number: opponent.phone?.number || '' },
+      gender,
       hand:      opponent.hand      || null,
       level:     opponent.level     || '',
       playstyle: opponent.playstyle || '',
@@ -51,7 +57,10 @@ export default function OpponentDetailModal({
     setMode('edit')
   }
 
+  // Il genere è obbligatorio anche in modifica: un avversario vecchio, senza,
+  // non si salva finché non lo si sceglie (nessun valore di ripiego).
   const canSave = editForm && editForm.firstName.trim().length > 0
+    && !!editForm.gender
     && !phoneIssue(editForm.phone.country, editForm.phone.number)
 
   const handleSaveEdit = async () => {
@@ -60,6 +69,7 @@ export default function OpponentDetailModal({
     await onUpdate(opponent.id, {
       ...opponentNameFields(editForm.firstName, editForm.lastName),
       phone:     phoneFields(editForm.phone.country, editForm.phone.number),
+      gender:    editForm.gender,
       hand:      editForm.hand || null,
       level:     editForm.level     || null,
       playstyle: editForm.playstyle || null,
@@ -140,9 +150,9 @@ export default function OpponentDetailModal({
                 style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
               {opponent.name}
             </h2>
-            {(opponent.hand || opponent.level) && (
+            {(gender || opponent.hand || opponent.level) && (
               <p className="text-sm mt-0.5 wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
-                {[handLabel(opponent.hand), levelLabel(opponent.level)].filter(Boolean).join(' · ')}
+                {[genderLabel(gender), handLabel(opponent.hand), levelLabel(opponent.level)].filter(Boolean).join(' · ')}
               </p>
             )}
           </div>
@@ -161,6 +171,22 @@ export default function OpponentDetailModal({
 
           {/* ── MODO VISUALIZZAZIONE ── */}
           {mode === 'view' && <>
+
+            {/* Avviso: avversario vecchio senza genere */}
+            {!gender && (
+              <div className="mb-4 p-3 rounded-2xl flex items-center gap-3"
+                   style={{ background: 'rgba(244,163,0,0.12)', border: '1px solid rgba(244,163,0,0.3)' }}>
+                <p className="flex-1 min-w-0 text-xs wrap-anywhere" style={{ color: 'var(--color-amber-light)' }}>
+                  Genere non indicato: serve per la categoria dei doppi.
+                </p>
+                <button
+                  onClick={openEdit}
+                  className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                  style={{ background: 'var(--color-amber)', color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}>
+                  Completa
+                </button>
+              </div>
+            )}
 
             {/* Blocco testa-a-testa */}
             <div className="grid grid-cols-4 gap-2 mb-5">
@@ -199,6 +225,7 @@ export default function OpponentDetailModal({
             )}
 
             <Section title="Dettagli">
+              <Row label="Genere"        value={genderLabel(gender) || '—'} />
               <Row label="Mano"          value={handLabel(opponent.hand) || '—'} />
               <Row label="Livello"       value={levelLabel(opponent.level)         || '—'} />
               <Row label="Stile di gioco" value={playstyleLabel(opponent.playstyle) || '—'} />
@@ -254,6 +281,8 @@ export default function OpponentDetailModal({
                 <EditInput label="Nome *" value={editForm.firstName} onChange={v => setField('firstName', v)} placeholder="Es. Marco" />
                 <EditInput label="Cognome" value={editForm.lastName} onChange={v => setField('lastName', v)} placeholder="Es. Rossi" />
               </div>
+
+              <GenderField required value={editForm.gender} onChange={v => setField('gender', v)} />
 
               <PhoneField value={editForm.phone} onChange={v => setField('phone', v)} />
 

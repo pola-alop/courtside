@@ -97,3 +97,29 @@ export function disciplineLabel(match) {
   const category = { maschile: 'maschile', femminile: 'femminile', misto: 'misto' }[match.category]
   return category ? `Doppio ${category}` : 'Doppio'
 }
+
+// ── Record di un giocatore ─────────────────────────────────
+// I tre record separati del dettaglio giocatore:
+//  · `single`         — i singoli contro di lui (l'H2H di sempre);
+//  · `againstDoubles` — i doppi in cui era uno dei due avversari;
+//  · `withDoubles`    — i doppi in cui era il compagno (il risultato è della coppia).
+// Ogni record porta V/P/S, `n` e l'elenco delle partite, nell'ordine ricevuto.
+// Un doppio senza `partnerId`/`opponentIds` validi non entra in nessun record.
+function recordOf(list) {
+  return {
+    wins:   list.filter(m => m.result === 'win').length,
+    draws:  list.filter(m => m.result === 'draw').length,
+    losses: list.filter(m => m.result === 'loss').length,
+    n: list.length,
+    matches: list,
+  }
+}
+
+export function playerRecords(matches, id) {
+  const all = Array.isArray(matches) ? matches : []
+  return {
+    single:         recordOf(all.filter(m => !isDoubles(m) && facedPlayer(m, id))),
+    againstDoubles: recordOf(all.filter(m => isDoubles(m) && facedPlayer(m, id))),
+    withDoubles:    recordOf(all.filter(m => wasPartner(m, id))),
+  }
+}

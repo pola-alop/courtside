@@ -9,11 +9,16 @@
 // contenitore) e chiedere all'utente di creare il torneo prima di registrarci
 // dentro una partita, cioè attrito prima ancora di aver giocato.
 //
+// La **disciplina** fa parte della chiave del cammino: un singolo e un doppio con
+// lo stesso `eventName` sono due cammini (un torneo di doppio ha il suo tabellone
+// e un compagno), e non si fondono in un'unica scala.
+//
 // L'unico dato nuovo che il match porta con sé è `round` (un tap nel wizard).
 // Da quello si ricava tutto il resto — dove sei entrato, dove sei uscito, quanto
 // mancava alla finale — senza trascrivere nemmeno una partita altrui.
 
 import { ROUNDS, ROUND_BY_ID, roundOrder, nextRound } from './tennis'
+import { isDoubles, matchDiscipline, disciplineLabel } from './doubles'
 
 // Due partite con lo stesso nome torneo ma distanti più di così sono due
 // EDIZIONI diverse ("Summer IV Roma" 2025 e 2026), non lo stesso cammino.
@@ -40,7 +45,7 @@ export function buildTournaments(matches = [], today = Date.now()) {
   matches
     .filter(m => m.type === 'torneo' && normalizeName(m.eventName))
     .forEach(m => {
-      const key = normalizeName(m.eventName)
+      const key = `${matchDiscipline(m)}|${normalizeName(m.eventName)}`
       if (!groups.has(key)) groups.set(key, [])
       groups.get(key).push(m)
     })
@@ -110,8 +115,13 @@ function makeRun(matches, today) {
   return {
     // Chiave stabile finché il torneo non viene rinominato o la sua prima
     // partita spostata di data: regge il pattern "selected item derivato".
-    id: `${normalizeName(name)}__${(startDate || '').slice(0, 10)}`,
+    // Il singolo tiene la chiave di sempre; il doppio ne aggiunge il suffisso, così
+    // due cammini con lo stesso nome e la stessa data d'inizio non si confondono.
+    id: `${normalizeName(name)}__${(startDate || '').slice(0, 10)}${isDoubles(matches[0]) ? '__doppio' : ''}`,
     name,
+    discipline: matchDiscipline(matches[0]),
+    // «Doppio misto» (dall'ultima partita), null per il singolo.
+    disciplineLabel: disciplineLabel(matches[matches.length - 1]),
     matches,
     path,
     undated,

@@ -89,7 +89,7 @@ export default function Profile() {
   const runningReady = isRunningReady(running)
 
   return (
-    <div className="px-6 pt-8 pb-4">
+    <div className="px-6 pt-8 pb-8">
       <h1 className="text-2xl font-bold mb-6"
           style={{ fontFamily: 'var(--font-display)', color: 'var(--color-white)' }}>
         Profile

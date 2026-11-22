@@ -442,7 +442,7 @@ export default function Matches() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+    <div style={{ background: 'var(--color-bg)' }}>
 
       {/* Header */}
       <div className="px-6 pt-12 pb-4 flex items-center justify-between">
@@ -485,7 +485,7 @@ export default function Matches() {
       </div>
 
       {/* Contenuto */}
-      <div className="px-6 pb-32">
+      <div className="px-6 pb-8">
 
         {/* ── PARTITE ── */}
         {activeTab === 'partite' && (

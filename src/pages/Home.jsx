@@ -142,7 +142,7 @@ export default function Home() {
   const { rhythm, idle, alerts, checks, last, career } = report
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+    <div style={{ background: 'var(--color-bg)' }}>
 
       {/* ── Header: chi sei e da quanto non giochi ── */}
       <div className="px-6 pt-12 pb-5">
@@ -228,7 +228,7 @@ export default function Home() {
       {/* ── Carriera: i totali di sempre, una riga sola ──
           Sono di tennis: con sole corse o palestra la riga è vuota e non c'è.
           Il padding in fondo resta, perché è lo spazio della bottom nav. */}
-      <div className="px-6 pb-32">
+      <div className="px-6 pb-8">
         {careerText(career) && (
           <p className="text-[11px] text-center leading-relaxed"
              style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>

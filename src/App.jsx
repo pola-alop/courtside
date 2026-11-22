@@ -13,9 +13,11 @@ const Equipment = lazy(() => import('./pages/Equipment'))
 const Stats     = lazy(() => import('./pages/Stats'))
 const Profile   = lazy(() => import('./pages/Profile'))
 
-function Spinner() {
+// `inShell`: dentro `main` riempie lo spazio che c'è, senza `min-h-screen`
+// (altrimenti `main` scorrerebbe anche solo per mostrare il caricamento).
+function Spinner({ inShell = false }) {
   return (
-    <div className="flex items-center justify-center min-h-screen"
+    <div className={`flex items-center justify-center ${inShell ? 'h-full' : 'min-h-screen'}`}
          style={{ background: 'var(--color-bg)' }}>
       <div className="text-center">
         <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3"
@@ -37,9 +39,12 @@ export default function App() {
   if (!user) return <Login />
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: 'var(--color-bg)' }}>
-      <main className="flex-1 pb-24">
-        <Suspense fallback={<Spinner />}>
+    // La shell è alta quanto la finestra e a scorrere è `main`, non il documento:
+    // la barra di scorrimento nasce e muore tra il bordo alto e la nav, che è un
+    // elemento normale in fondo alla colonna (non più `fixed` sopra il contenuto).
+    <div className="flex flex-col h-dvh overflow-hidden" style={{ background: 'var(--color-bg)' }}>
+      <main className="flex-1 min-h-0 overflow-y-auto">
+        <Suspense fallback={<Spinner inShell />}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/matches" element={<Matches />} />

@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom'
 
 export default function Onboarding({ name, profileDone, equipmentDone, addMatchTo, addTrainingTo }) {
   return (
-    <div className="px-6 pt-12 pb-32">
+    <div className="px-6 pt-12 pb-8">
 
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl mb-4"

@@ -258,7 +258,7 @@ export default function Stats() {
   }, [focusTarget, loading])
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+    <div style={{ background: 'var(--color-bg)' }}>
 
       {/* Header */}
       <div className="px-6 pt-12 pb-4">
@@ -329,7 +329,7 @@ export default function Stats() {
           </div>
 
           {/* Contenuto */}
-          <div className="px-6 pb-32">
+          <div className="px-6 pb-8">
             {activeTab === 'rendimento' ? (
               <Rendimento report={report} comparison={comparison} onDrill={openDrill} />
             ) : activeTab === 'attivita' ? (

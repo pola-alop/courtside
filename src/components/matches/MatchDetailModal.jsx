@@ -5,6 +5,7 @@ import { intensityMeta } from '../../lib/training'
 import AthleticsSection from '../athletics/AthleticsSection'
 import { isDoubles } from '../../lib/doubles'
 import { doublesCategoryLabel } from '../../lib/gender'
+import { slotLabel } from '../../lib/teamTies'
 
 const MAX_NOTE_LENGTH = 150
 
@@ -16,7 +17,7 @@ const EQUIP_TYPES = [
 ]
 
 export default function MatchDetailModal({
-  match, equipment = [], onClose, onEdit, onUpdate, onDelete
+  match, equipment = [], tie = null, onClose, onEdit, onUpdate, onDelete
 }) {
   // view | confirmDelete | addNote | editNote | confirmDeleteNote
   const [mode, setMode]     = useState('view')
@@ -141,6 +142,12 @@ export default function MatchDetailModal({
                 <Row label="Avversario" value={match.opponentName || '—'} />
               )}
               <Row label="Tipo" value={match.eventName ? `${typeLabel} · ${match.eventName}` : typeLabel} />
+              {/* Lo scontro a squadre e l'incontro. `tie` lo passa solo Matches
+                  (le liste degli scontri non sono caricate in Stats): lì la riga
+                  semplicemente non compare. */}
+              {match.type === 'squadre' && tie && (
+                <Row label="Scontro" value={`vs ${tie.opponentTeam}${match.slot ? ` · ${slotLabel(match.slot)}` : ''}`} />
+              )}
               {/* Solo i tornei hanno un turno; le partite di torneo registrate
                   prima che il campo esistesse non ce l'hanno e la riga non compare. */}
               {roundLabel(match.round) && <Row label="Turno" value={roundLabel(match.round)} />}

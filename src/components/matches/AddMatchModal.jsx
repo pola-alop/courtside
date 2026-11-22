@@ -16,6 +16,7 @@ import {
 import { INTENSITIES } from '../../lib/training'
 import { levelLabel, opponentInitials, opponentSurname } from '../../lib/opponents'
 import { DISCIPLINES, playersIssue, joinNames } from '../../lib/doubles'
+import { freeSlots, slotLabel, formulaText, homeLabel, sortTies } from '../../lib/teamTies'
 import DoublesPlayersPicker from './DoublesPlayersPicker'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 import FitImport from '../athletics/FitImport'
@@ -63,6 +64,10 @@ function initialForm(initial) {
     opponentIds: [initial?.opponentIds?.[0] || null, initial?.opponentIds?.[1] || null],
     type:       initial?.type || 'amichevole',
     eventName:  initial?.eventName || '',
+    // Solo per il tipo «Squadre»: lo scontro e l'incontro (S1, D1…) a cui la
+    // partita appartiene. Il legame sta sulla partita, non sullo scontro.
+    tieId:      initial?.tieId || null,
+    slot:       initial?.slot || null,
     // Solo per i tornei. Le partite registrate prima che il campo esistesse
     // partono a null: modificarle è la via (guidata) per assegnare il turno.
     round:      initial?.round || null,
@@ -92,7 +97,7 @@ function initialForm(initial) {
   }
 }
 
-export default function AddMatchModal({ initial = null, prefill = null, opponents = [], equipment = [], userGender = null, fitUse = null, intensityCalibration = null, onClose, onSave }) {
+export default function AddMatchModal({ initial = null, prefill = null, opponents = [], equipment = [], ties = [], matches = [], userGender = null, fitUse = null, intensityCalibration = null, onClose, onSave }) {
   const [step, setStep]   = useState(1)
   const [form, setForm]   = useState(() => initialForm(initial || prefill))
   const [saving, setSaving] = useState(false)
@@ -100,6 +105,12 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const typeMeta = MATCH_TYPES.find(t => t.id === form.type)
   const doubles  = form.discipline === 'doppio'
+  // Per «Squadre»: l'incontro scelto deve essere libero e della disciplina
+  // della partita (il singolare non si assegna a un doppio). La partita che si
+  // modifica non occupa il proprio incontro.
+  const tie = ties.find(t => t.id === form.tieId) || null
+  const slotOk = form.type !== 'squadre' || Boolean(tie && form.slot
+    && freeSlots(tie, matches, { discipline: form.discipline, excludeMatchId: initial?.id }).includes(form.slot))
   const outcome  = computeOutcome(form.sets, form.format, form.retired)
   const athIssues = athleticsIssues(form.athletics)
 
@@ -122,6 +133,7 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
       case 3: return Boolean(form.type)
         && (!typeMeta?.needsEvent || form.eventName.trim().length > 0)
         && (form.type !== 'torneo' || Boolean(form.round))
+        && slotOk
       case 4: return Boolean(form.surface)
       case 5: {
         const anyScore = form.sets.some(hasScore) || Boolean(form.retired)
@@ -173,6 +185,9 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
       type:         form.type,
       eventName:    typeMeta?.needsEvent ? form.eventName.trim() : null,
       round:        form.type === 'torneo' ? form.round : null,
+      // Cambiare tipo in modifica non lascia un legame orfano con lo scontro.
+      tieId:        form.type === 'squadre' ? form.tieId : null,
+      slot:         form.type === 'squadre' ? form.slot : null,
       surface:      form.surface,
       format:       form.format,
       sets:         cleanedSets,
@@ -229,7 +244,7 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
             ? <StepDoubles opponents={opponents} form={form} userGender={userGender}
                            onChange={({ partnerId, opponentIds }) => setForm(f => ({ ...f, partnerId, opponentIds }))} />
             : <StepOpponent opponents={opponents} value={form.opponentId} onChange={v => set('opponentId', v)} />)}
-          {step === 3 && <StepType form={form} set={set} />}
+          {step === 3 && <StepType form={form} set={set} ties={ties} matches={matches} excludeMatchId={initial?.id} />}
           {step === 4 && <StepSurface value={form.surface} onChange={v => set('surface', v)} />}
           {step === 5 && (
             <StepScore
@@ -421,12 +436,12 @@ function StepDoubles({ opponents, form, userGender, onChange }) {
 
 // ── Step 3 — Tipo ──────────────────────────────────────────
 
-function StepType({ form, set }) {
+function StepType({ form, set, ties, matches, excludeMatchId }) {
   const meta = MATCH_TYPES.find(t => t.id === form.type)
   return (
     <div className="space-y-3">
       <StepTitle title="Che tipo di partita?" />
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {MATCH_TYPES.map(t => {
           const active = form.type === t.id
           return (
@@ -444,6 +459,9 @@ function StepType({ form, set }) {
           )
         })}
       </div>
+      {form.type === 'squadre' && (
+        <TieSlotPicker form={form} set={set} ties={ties} matches={matches} excludeMatchId={excludeMatchId} />
+      )}
       {meta?.needsEvent && (
         <div>
           <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>
@@ -497,6 +515,101 @@ function StepType({ form, set }) {
       )}
     </div>
   )
+}
+
+// Scontro e incontro di una partita «Squadre». Si propongono gli scontri che
+// hanno ancora un incontro libero della disciplina scelta nello step 1 (più
+// quello della partita in modifica); l'incontro si sceglie tra quelli liberi.
+function TieSlotPicker({ form, set, ties, matches, excludeMatchId }) {
+  const discipline = form.discipline
+  const label = discipline === 'doppio' ? 'di doppio' : 'di singolare'
+  const options = sortTies(ties).map(t => ({
+    tie: t,
+    free: freeSlots(t, matches, { discipline, excludeMatchId }),
+  }))
+  const available = options.filter(o => o.free.length > 0)
+  const current = options.find(o => o.tie.id === form.tieId)
+
+  // Cambiare scontro azzera l'incontro: gli slot sono quelli di quello scontro.
+  const pickTie = (id) => { set('tieId', id); set('slot', null) }
+
+  if (ties.length === 0) {
+    return (
+      <div className="rounded-2xl px-4 py-4" style={{ background: 'var(--color-surface-2)' }}>
+        <p className="text-sm" style={{ color: 'var(--color-slate)' }}>
+          Nessuno scontro a squadre. Crealo prima dal tab Tornei, sezione «A squadre».
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Scontro *</label>
+        {available.length === 0 ? (
+          <p className="text-xs" style={{ color: 'var(--color-amber-light)' }}>
+            Nessuno scontro ha un incontro {label} libero.
+            {discipline === 'singolo' ? ' Per un doppio, scegli «Doppio» nel primo step.' : ' Per un singolo, scegli «Singolo» nel primo step.'}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {available.map(({ tie: t }) => {
+              const active = form.tieId === t.id
+              return (
+                <button key={t.id} type="button" onClick={() => pickTie(t.id)}
+                  className="w-full text-left rounded-2xl p-3 flex flex-col items-stretch transition-all"
+                  style={{
+                    background: active ? 'var(--color-teal-dark)' : 'var(--color-surface-2)',
+                    border: active ? '1px solid var(--color-teal)' : '1px solid transparent',
+                  }}>
+                  <span className="text-sm font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                    vs {t.opponentTeam}
+                  </span>
+                  <span className="text-xs wrap-anywhere" style={{ color: active ? 'var(--color-teal-light)' : 'var(--color-slate)' }}>
+                    {[formatTieDate(t.date), homeLabel(t.home), formulaText(t.formula)].filter(Boolean).join(' · ')}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {current && current.free.length > 0 && (
+        <div>
+          <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Incontro *</label>
+          <div className="grid grid-cols-2 gap-2">
+            {current.free.map(slot => {
+              const active = form.slot === slot
+              return (
+                <button key={slot} type="button" onClick={() => set('slot', slot)}
+                  className="py-2.5 rounded-xl text-xs font-semibold transition-all"
+                  style={{
+                    background: active ? 'var(--color-amber)' : 'var(--color-surface-2)',
+                    color:      active ? 'var(--color-bg)' : 'var(--color-slate)',
+                    border:     active ? '1px solid var(--color-amber)' : '1px solid transparent',
+                    fontFamily: 'var(--font-display)'
+                  }}>
+                  {slotLabel(slot)}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs mt-1" style={{ color: 'var(--color-slate)' }}>
+            Sono proposti solo gli incontri {label} ancora liberi. Un incontro a squadre deve concludersi con un vincitore.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function formatTieDate(dateStr) {
+  if (!dateStr) return null
+  try {
+    return new Date(dateStr).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+  } catch { return dateStr }
 }
 
 // ── Step 4 — Superficie ────────────────────────────────────

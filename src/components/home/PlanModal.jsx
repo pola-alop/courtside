@@ -325,9 +325,11 @@ function PlanForm({ form, set, setForm, todayKey, dateOk, conflict, conflictFor,
                 </Field>
               )}
 
+              {/* «Squadre» non si programma: lo scontro ha la sua data e le sue partite
+                  si collegano quando si registrano (vedi teamTies.js). */}
               <Field label="Tipo">
                 <div className="grid grid-cols-3 gap-2">
-                  {MATCH_TYPES.map(t => (
+                  {MATCH_TYPES.filter(t => t.id !== 'squadre').map(t => (
                     <Chip key={t.id} active={form.type === t.id} onClick={() => set('type', t.id)}>{t.label}</Chip>
                   ))}
                 </div>

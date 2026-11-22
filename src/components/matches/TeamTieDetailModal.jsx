@@ -9,8 +9,10 @@ import {
 // incontri: le mie partite (apribili) e gli esiti dei compagni, segnati qui con
 // un tap su Vinto / Perso e un punteggio facoltativo. Un incontro libero offre
 // anche «Ho giocato io», che apre il wizard già collegato a quell'incontro.
+// `context` («Girone · Andata», «Quarti») compare solo per gli scontri di una
+// competizione.
 export default function TeamTieDetailModal({
-  tie, matches = [], onClose, onSelectMatch, onRegister, onSetRubber, onEdit, onDelete,
+  tie, context = null, matches = [], onClose, onSelectMatch, onRegister, onSetRubber, onEdit, onDelete,
 }) {
   const [mode, setMode] = useState('view') // view | confirmDelete
   const [busy, setBusy] = useState(false)
@@ -21,7 +23,7 @@ export default function TeamTieDetailModal({
   const status  = tieStatus(tie, rubbers)
   const meta    = tieStatusMeta(status)
   const blocked = deleteIssue(tie, matches)
-  const details = [formatDate(tie.date), homeLabel(tie.home), formulaText(tie.formula)].filter(Boolean).join(' · ')
+  const details = [context, formatDate(tie.date), homeLabel(tie.home), formulaText(tie.formula)].filter(Boolean).join(' · ')
 
   // Le scritture partono in fila, una dopo l'altra: il punteggio che si salva
   // uscendo dal campo e il tap su Vinto/Perso subito dopo non si perdono a

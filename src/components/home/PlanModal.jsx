@@ -550,7 +550,7 @@ function StepButton({ disabled, onClick, children }) {
 
 function Field({ label, sub, children }) {
   return (
-    <div>
+    <div className="min-w-0">
       <SubTitle>{label}</SubTitle>
       {sub && <p className="text-[11px] -mt-1 mb-2" style={{ color: 'var(--color-slate)' }}>{sub}</p>}
       {children}

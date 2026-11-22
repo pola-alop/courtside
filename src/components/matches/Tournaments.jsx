@@ -5,7 +5,9 @@ import { palmares } from '../../lib/tournaments'
 // Presentazionale come `Overview` — i cammini arrivano già costruiti dalla
 // pagina, che è la stessa che deve derivare da quella lista il torneo
 // selezionato per il modale di dettaglio (pattern "selected item derivato").
-export default function Tournaments({ runs = [], onSelectTournament }) {
+// `teamSection` è la sezione «A squadre» (costruita dalla pagina), che sta
+// sotto il palmarès: gli scontri non entrano nel palmarès dei tornei.
+export default function Tournaments({ runs = [], teamSection = null, onSelectTournament }) {
   const p = palmares(runs)
   const groups = groupByYear(runs)
 
@@ -37,6 +39,8 @@ export default function Tournaments({ runs = [], onSelectTournament }) {
           </p>
         )}
       </div>
+
+      {teamSection}
 
       {groups.map(group => (
         <div key={group.year}>

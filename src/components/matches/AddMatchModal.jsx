@@ -15,12 +15,16 @@ import {
 // Riusarla è meglio che duplicare tre etichette e tre colori.
 import { INTENSITIES } from '../../lib/training'
 import { levelLabel, opponentInitials } from '../../lib/opponents'
+import { DISCIPLINES, playersIssue, joinNames } from '../../lib/doubles'
+import DoublesPlayersPicker from './DoublesPlayersPicker'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 import FitImport from '../athletics/FitImport'
 import IntensitySuggestion from '../athletics/IntensitySuggestion'
 import { intensityFromRpe } from '../../lib/fit'
 
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura', 'Atletica']
+// Nel doppio il secondo step sceglie tre giocatori, non un avversario.
+const stepLabels = doubles => STEPS.map((label, i) => (i === 1 && doubles ? 'Giocatori' : label))
 
 const EQUIP_TYPES = [
   { id: 'racchetta', label: 'Racchetta', icon: '🎾' },
@@ -36,7 +40,13 @@ const EQUIP_TYPES = [
 function initialForm(initial) {
   return {
     date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
+    // Singolo o doppio. Assente (partite vecchie) = singolo. Le due scelte
+    // convivono nel form: passare da una disciplina all'altra e tornare non
+    // perde ciò che si era scelto; al salvataggio vale solo quella attiva.
+    discipline: initial?.discipline === 'doppio' ? 'doppio' : 'singolo',
     opponentId: initial?.opponentId || null,
+    partnerId:  initial?.partnerId || null,
+    opponentIds: [initial?.opponentIds?.[0] || null, initial?.opponentIds?.[1] || null],
     type:       initial?.type || 'amichevole',
     eventName:  initial?.eventName || '',
     // Solo per i tornei. Le partite registrate prima che il campo esistesse
@@ -68,13 +78,14 @@ function initialForm(initial) {
   }
 }
 
-export default function AddMatchModal({ initial = null, prefill = null, opponents = [], equipment = [], fitUse = null, intensityCalibration = null, onClose, onSave }) {
+export default function AddMatchModal({ initial = null, prefill = null, opponents = [], equipment = [], userGender = null, fitUse = null, intensityCalibration = null, onClose, onSave }) {
   const [step, setStep]   = useState(1)
   const [form, setForm]   = useState(() => initialForm(initial || prefill))
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const typeMeta = MATCH_TYPES.find(t => t.id === form.type)
+  const doubles  = form.discipline === 'doppio'
   const outcome  = computeOutcome(form.sets, form.format, form.retired)
   const athIssues = athleticsIssues(form.athletics)
 
@@ -90,7 +101,7 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
   const stepValid = (() => {
     switch (step) {
       case 1: return Boolean(form.date)
-      case 2: return Boolean(form.opponentId)
+      case 2: return doubles ? !playersIssue(form) : Boolean(form.opponentId)
       // Il turno è obbligatorio SOLO per i tornei: è un tap su una griglia già
       // a schermo, e senza di esso la sezione Tornei non può ricostruire il
       // cammino (una partita senza turno è un buco nel tabellone).
@@ -125,6 +136,7 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
     if (!stepValid || saving) return
     setSaving(true)
     const opponent = opponents.find(o => o.id === form.opponentId)
+    const nameOf = id => opponents.find(o => o.id === id)?.name
     const cleanedSets = form.sets.filter(hasScore).map(s => ({
       me: s.me || 0, opp: s.opp || 0,
       tbMe: s.tbMe ?? null, tbOpp: s.tbOpp ?? null,
@@ -136,8 +148,14 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
     const fitDetails = athletics?.fitId && form.fitDetails?.fitId === athletics.fitId ? form.fitDetails : null
     await onSave({
       date:         new Date(form.date).toISOString(),
-      opponentId:   form.opponentId,
-      opponentName: opponent?.name || '—',
+      // Nel doppio `opponentId` resta null (vedi doubles.js) e `opponentName` è
+      // «Rossi / Bianchi»; i campi dell'altra disciplina si azzerano, così
+      // cambiare disciplina in modifica non lascia riferimenti orfani.
+      discipline:   form.discipline,
+      opponentId:   doubles ? null : form.opponentId,
+      partnerId:    doubles ? form.partnerId : null,
+      opponentIds:  doubles ? [...form.opponentIds] : null,
+      opponentName: doubles ? joinNames(form.opponentIds.map(nameOf)) : opponent?.name || '—',
       type:         form.type,
       eventName:    typeMeta?.needsEvent ? form.eventName.trim() : null,
       round:        form.type === 'torneo' ? form.round : null,
@@ -187,13 +205,16 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
               ✕
             </button>
           </div>
-          <StepIndicator step={step} />
+          <StepIndicator step={step} labels={stepLabels(doubles)} />
         </div>
 
         {/* Corpo scrollabile */}
         <div className="overflow-y-auto flex-1 px-6 py-4">
-          {step === 1 && <StepDate value={form.date} onChange={v => set('date', v)} />}
-          {step === 2 && <StepOpponent opponents={opponents} value={form.opponentId} onChange={v => set('opponentId', v)} />}
+          {step === 1 && <StepDate value={form.date} onChange={v => set('date', v)} discipline={form.discipline} onDiscipline={v => set('discipline', v)} />}
+          {step === 2 && (doubles
+            ? <StepDoubles opponents={opponents} form={form} userGender={userGender}
+                           onChange={({ partnerId, opponentIds }) => setForm(f => ({ ...f, partnerId, opponentIds }))} />
+            : <StepOpponent opponents={opponents} value={form.opponentId} onChange={v => set('opponentId', v)} />)}
           {step === 3 && <StepType form={form} set={set} />}
           {step === 4 && <StepSurface value={form.surface} onChange={v => set('surface', v)} />}
           {step === 5 && (
@@ -233,10 +254,10 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
 
 // ── Step indicator ─────────────────────────────────────────
 
-function StepIndicator({ step }) {
+function StepIndicator({ step, labels }) {
   return (
     <div className="flex items-center gap-1.5">
-      {STEPS.map((label, i) => {
+      {labels.map((label, i) => {
         const n = i + 1
         const active = n === step
         const done = n < step
@@ -258,10 +279,31 @@ function StepIndicator({ step }) {
 
 // ── Step 1 — Data ──────────────────────────────────────────
 
-function StepDate({ value, onChange }) {
+function StepDate({ value, onChange, discipline, onDiscipline }) {
   return (
     <div className="space-y-3">
       <StepTitle title="Quando hai giocato?" />
+      <div>
+        <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Disciplina</label>
+        <div className="grid grid-cols-2 gap-2">
+          {DISCIPLINES.map(d => {
+            const active = discipline === d.id
+            return (
+              <button key={d.id} type="button"
+                onClick={() => onDiscipline(d.id)}
+                className="py-3 rounded-2xl text-sm font-semibold transition-all"
+                style={{
+                  background: active ? 'var(--color-teal-dark)' : 'var(--color-surface-2)',
+                  color:      active ? 'var(--color-white)' : 'var(--color-slate)',
+                  border:     active ? '1px solid var(--color-teal)' : '1px solid transparent',
+                  fontFamily: 'var(--font-display)'
+                }}>
+                {d.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
       <div>
         <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Data</label>
         <input
@@ -337,6 +379,26 @@ function StepOpponent({ opponents, value, onChange }) {
             </div>
           )}
         </div>
+      )}
+    </div>
+  )
+}
+
+// Nel doppio: compagno e due avversari, tutti dall'anagrafica.
+function StepDoubles({ opponents, form, userGender, onChange }) {
+  const issue = playersIssue(form)
+  return (
+    <div className="space-y-3">
+      <StepTitle title="Con chi giochi e contro chi?" sub="Compagno e due avversari, dall'anagrafica." />
+      <DoublesPlayersPicker
+        opponents={opponents}
+        partnerId={form.partnerId}
+        opponentIds={form.opponentIds}
+        userGender={userGender}
+        onChange={onChange}
+      />
+      {issue && opponents.length > 0 && (
+        <p className="text-xs" style={{ color: 'var(--color-amber-light)' }}>{issue}</p>
       )}
     </div>
   )

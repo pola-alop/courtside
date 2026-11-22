@@ -43,6 +43,7 @@ import GymWorkoutEditModal from '../components/gym/GymWorkoutEditModal'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
 import { groupRotation, lastMatchText, plannedText } from '../lib/opponents'
+import { readGender } from '../lib/gender'
 import { whatsappHref } from '../lib/phone'
 import { todayTime } from '../lib/activity'
 import { calibrateIntensity } from '../lib/fit'
@@ -794,6 +795,7 @@ export default function Matches() {
           prefill={editingMatch ? null : prefillOf('match')}
           opponents={opponents}
           equipment={equipment}
+          userGender={readGender(profile?.gender)}
           fitUse={fitUseFor(editingMatch?.id)}
           intensityCalibration={intensityCalibration}
           onClose={closing(() => { setShowAddMatch(false); setEditingMatch(null); setPrefillFor(null) })}

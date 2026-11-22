@@ -409,9 +409,13 @@ export default function OpponentDetailModal({
 
 function StatTile({ label, value, color }) {
   return (
-    <div className="rounded-2xl px-2 py-3 text-center" style={{ background: 'var(--color-surface-2)' }}>
+    <div className="min-w-0 rounded-2xl px-0.5 py-3 text-center" style={{ background: 'var(--color-surface-2)' }}>
       <p className="text-2xl font-bold" style={{ color, fontFamily: 'var(--font-display)' }}>{value}</p>
-      <p className="text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--color-slate)' }}>{label}</p>
+      {/* "SCONFITTE" è la parola più larga e a 11px con la spaziatura larga
+          sforava il box (a 360 px) uscendo dal centro. Ora 10px, spaziatura
+          normale, mai a capo, e centrata con flex: se anche sporgesse, lo
+          farebbe in modo uguale da entrambi i lati. */}
+      <p className="flex justify-center text-[10px] mt-0.5 uppercase tracking-wide whitespace-nowrap" style={{ color: 'var(--color-slate)' }}>{label}</p>
     </div>
   )
 }

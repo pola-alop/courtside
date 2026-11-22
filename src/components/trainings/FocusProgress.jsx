@@ -59,7 +59,7 @@ function ProgressRow({ progress }) {
   return (
     <div className="rounded-2xl px-3 py-3" style={{ background: 'var(--color-surface-2)' }}>
       <div className="flex items-center justify-between gap-3 mb-2">
-        <p className="text-xs font-semibold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        <p className="text-xs font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {label}
         </p>
         <span className="flex items-center gap-1 text-xs font-bold shrink-0"

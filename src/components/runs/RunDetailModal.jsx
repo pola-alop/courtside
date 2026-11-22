@@ -88,7 +88,7 @@ export default function RunDetailModal({
               <p className="text-xs" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
                 {formatDate(run.date)}
               </p>
-              <h2 className="text-lg font-bold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+              <h2 className="text-lg font-bold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 🏃 {runDisplayName(run, workouts)}
               </h2>
               {intensity && (
@@ -275,7 +275,7 @@ function StepLine({ step, running }) {
             {formatStepDuration(step.duration)}
           </span>
         </div>
-        <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>{formatTarget(step.target, running)}</p>
+        <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{formatTarget(step.target, running)}</p>
         {step.notes && <p className="text-[11px] italic" style={{ color: 'var(--color-teal-light)' }}>{step.notes}</p>}
       </div>
     </div>

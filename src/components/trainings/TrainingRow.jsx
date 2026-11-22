@@ -40,7 +40,7 @@ export default function TrainingRow({ training, onClick }) {
           tipo di allenamento, come 🏃 sulle card di RunRow: nella lista unica
           del tab Allenamenti il tipo si riconosce a colpo d'occhio. */}
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm font-semibold truncate"
+        <p className="text-sm font-semibold wrap-anywhere"
            style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           🎾 {blocksSummary(training.blocks) || 'Allenamento'}
         </p>
@@ -72,7 +72,7 @@ export default function TrainingRow({ training, onClick }) {
       {/* Bottom — superficie + con chi */}
       <div className="flex items-center gap-1.5">
         <span className="text-xs">{surfaceIcon(training.surface)}</span>
-        <span className="text-xs truncate" style={{ color: 'var(--color-slate)' }}>
+        <span className="text-xs wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
           {[cap(training.surface), training.withWhom?.label].filter(Boolean).join(' · ')}
         </span>
         {training.brokeStrings && <span className="text-xs shrink-0" title="Corde rotte">💥</span>}

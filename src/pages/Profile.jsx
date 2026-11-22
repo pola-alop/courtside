@@ -107,11 +107,11 @@ export default function Profile() {
           </span>
         </div>
         <div className="min-w-0">
-          <p className="text-lg font-bold truncate"
+          <p className="text-lg font-bold wrap-anywhere"
              style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
             {user?.displayName || 'Giocatore'}
           </p>
-          <p className="text-sm truncate" style={{ color: 'var(--color-slate)' }}>
+          <p className="text-sm wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
             {user?.email}
           </p>
         </div>
@@ -411,7 +411,7 @@ function RunningZonesForm({ form, setForm, issues, saving, onCancel, onSave }) {
 function PaceRow({ label, fast, slow, onFast, onSlow }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="flex-1 min-w-0 text-xs truncate" style={{ color: 'var(--color-slate)' }}>{label}</span>
+      <span className="flex-1 min-w-0 text-xs wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{label}</span>
       <PaceInput value={fast} onChange={onFast} placeholder="5:00" />
       <span className="w-2 text-center text-xs" style={{ color: 'var(--color-slate)' }}>–</span>
       <PaceInput value={slow} onChange={onSlow} placeholder="5:30" />

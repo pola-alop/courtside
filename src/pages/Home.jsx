@@ -281,11 +281,11 @@ function AlertRow({ alert }) {
       style={{ background: tone.bg, border: '1px solid var(--color-surface-2)' }}>
       <span className="text-sm shrink-0">{alert.icon}</span>
       <span className="flex-1 min-w-0">
-        <span className="text-xs block truncate"
+        <span className="text-xs block wrap-anywhere"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {alert.title}
         </span>
-        <span className="text-[10px] block truncate" style={{ color: tone.color }}>{alert.sub}</span>
+        <span className="text-[10px] block wrap-anywhere" style={{ color: tone.color }}>{alert.sub}</span>
       </span>
       <span className="text-sm shrink-0" style={{ color: 'var(--color-slate)' }}>›</span>
     </Link>

@@ -118,10 +118,10 @@ function PlanRow({ plan, subject, onClick }) {
       }}>
       <span className="text-lg shrink-0" style={{ opacity: done ? 1 : 0.6 }}>{meta.icon}</span>
       <span className="flex-1 min-w-0">
-        <span className="text-sm font-semibold block truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        <span className="text-sm font-semibold block wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {meta.label}{subject ? ` · ${subject}` : ''}
         </span>
-        <span className="text-[11px] block truncate" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+        <span className="text-[11px] block wrap-anywhere" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
           {[plan.time, plan.notes].filter(Boolean).join(' · ') || 'Senza orario'}
         </span>
       </span>

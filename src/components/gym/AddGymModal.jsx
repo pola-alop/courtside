@@ -141,7 +141,7 @@ export default function AddGymModal({ initial = null, prefill = null, workouts =
                   ← Indietro
                 </button>
               )}
-              <h2 className="text-lg font-bold truncate" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-white)' }}>
+              <h2 className="text-lg font-bold wrap-anywhere" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-white)' }}>
                 {step > 1 && form.name ? form.name : initial ? 'Modifica allenamento' : 'Nuova palestra'}
               </h2>
             </div>
@@ -294,7 +294,7 @@ function StepWorkout({ form, set, workouts, sessions, index, onPick, onPickNew }
                 className="w-full text-left rounded-2xl p-3 transition-all"
                 style={{ background: 'var(--color-surface-2)', border: active ? '1px solid var(--color-teal)' : '1px solid transparent' }}>
                 <div className="flex items-baseline justify-between gap-2 mb-1">
-                  <span className="text-sm font-semibold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                  <span className="text-sm font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                     {w.name}
                   </span>
                   <span className="text-[11px] shrink-0" style={{ color: 'var(--color-slate)' }}>

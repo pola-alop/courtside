@@ -120,7 +120,7 @@ function Highlight({ kind, row }) {
       </p>
       {row ? (
         <>
-          <p className="text-xs font-semibold truncate mt-1"
+          <p className="text-xs font-semibold wrap-anywhere mt-1"
              style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
             {row.label}
           </p>
@@ -142,7 +142,7 @@ function TrendRow({ row }) {
   return (
     <div className="rounded-xl px-3 py-2.5" style={{ background: 'var(--color-surface-2)' }}>
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <span className="text-[11px] font-semibold truncate min-w-0"
+        <span className="text-[11px] font-semibold wrap-anywhere min-w-0"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {row.categoryIcon} {row.label}
         </span>

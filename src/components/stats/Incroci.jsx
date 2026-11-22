@@ -431,7 +431,7 @@ function DevRow({ bucket, max }) {
   return (
     <div style={{ opacity: bucket.enough ? 1 : 0.45 }}>
       <div className="flex items-baseline gap-2">
-        <span className="text-[11px] flex-1 min-w-0 truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        <span className="text-[11px] flex-1 min-w-0 wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {bucket.label}
         </span>
         <span className="text-[11px] shrink-0 font-semibold" style={{ color, fontFamily: 'var(--font-mono)' }}>
@@ -466,7 +466,7 @@ function CorrelationRow({ c }) {
   return (
     <div>
       <div className="flex items-baseline gap-2">
-        <span className="text-[11px] flex-1 min-w-0 truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        <span className="text-[11px] flex-1 min-w-0 wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {where}
         </span>
         <span className="text-[11px] shrink-0 font-semibold"

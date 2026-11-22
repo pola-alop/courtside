@@ -136,12 +136,12 @@ export default function OpponentDetailModal({
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold truncate"
+            <h2 className="text-xl font-bold wrap-anywhere"
                 style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
               {opponent.name}
             </h2>
             {(opponent.hand || opponent.level) && (
-              <p className="text-sm mt-0.5 truncate" style={{ color: 'var(--color-slate)' }}>
+              <p className="text-sm mt-0.5 wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
                 {[handLabel(opponent.hand), levelLabel(opponent.level)].filter(Boolean).join(' · ')}
               </p>
             )}

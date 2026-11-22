@@ -116,7 +116,7 @@ function CoverageRow({ icon, label, side }) {
     <div>
       <div className="flex items-baseline gap-2 mb-1.5">
         <span className="text-[11px] shrink-0">{icon}</span>
-        <span className="text-[11px] flex-1 min-w-0 truncate"
+        <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {label}
         </span>
@@ -264,7 +264,7 @@ function RateRow({ row, domain, overall, onClick }) {
     <button onClick={onClick} className="w-full text-left transition-all active:scale-[0.99]"
             style={{ opacity: row.enough ? 1 : 0.5 }}>
       <div className="flex items-baseline gap-2">
-        <span className="text-[11px] flex-1 min-w-0 truncate"
+        <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {row.label}
         </span>

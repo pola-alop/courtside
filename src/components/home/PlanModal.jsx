@@ -125,7 +125,7 @@ export default function PlanModal({
               </p>
               <h2 className="text-lg font-bold mt-0.5 flex items-center gap-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-white)' }}>
                 {mode === 'view' && <span>{KIND_META[plan.kind]?.icon}</span>}
-                <span className="truncate">{title}</span>
+                <span className="wrap-anywhere">{title}</span>
               </h2>
               {mode === 'view' && <StatusBadge plan={plan} />}
             </div>

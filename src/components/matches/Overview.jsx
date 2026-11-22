@@ -163,7 +163,7 @@ function StatTile({ label, value, color, delta }) {
   return (
     <div className="rounded-2xl px-1 py-2.5 text-center min-w-0"
          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
-      <p className="text-lg font-bold truncate" style={{ color, fontFamily: 'var(--font-display)' }}>{value}</p>
+      <p className="text-lg font-bold wrap-anywhere" style={{ color, fontFamily: 'var(--font-display)' }}>{value}</p>
       <p className="text-[9px] uppercase tracking-wide leading-tight mt-0.5" style={{ color: 'var(--color-slate)' }}>{label}</p>
       {delta && (
         <p className="text-[9px] font-medium mt-1" style={{ color: delta.color, fontFamily: 'var(--font-mono)' }}>
@@ -184,10 +184,10 @@ function WearAlert({ item, wear }) {
       style={{ background: meta.boxBg, border: '1px solid var(--color-surface-2)' }}>
       <span className="text-sm shrink-0">{meta.emoji}</span>
       <span className="flex-1 min-w-0">
-        <span className="text-xs block truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        <span className="text-xs block wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {itemName(item)}
         </span>
-        <span className="text-[10px] block truncate" style={{ color: meta.color }}>{wear.label}</span>
+        <span className="text-[10px] block wrap-anywhere" style={{ color: meta.color }}>{wear.label}</span>
       </span>
       <span className="text-xs shrink-0 font-semibold" style={{ color: meta.color, fontFamily: 'var(--font-mono)' }}>
         {wear.percent}%
@@ -246,7 +246,7 @@ function TopFocusCard({ items }) {
         {items.map(([id, count]) => (
           <div key={id}>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[10px] flex-1 min-w-0 truncate"
+              <span className="text-[10px] flex-1 min-w-0 wrap-anywhere"
                     style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {focusLabel(id)}
               </span>

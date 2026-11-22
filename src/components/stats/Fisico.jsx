@@ -132,7 +132,7 @@ function CoverageCard({ report, periodLabel }) {
         <div className="space-y-2">
           {c.fields.map(f => (
             <div key={f.id} className="flex items-center gap-2">
-              <span className="text-[10px] w-24 shrink-0 truncate"
+              <span className="text-[10px] w-24 shrink-0 wrap-anywhere"
                     style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {f.label}
               </span>
@@ -236,7 +236,7 @@ function ZonesCard({ report }) {
                     style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {zone.label}
               </span>
-              <span className="text-[11px] flex-1 truncate" style={{ color: 'var(--color-slate)' }}>{zone.name}</span>
+              <span className="text-[11px] flex-1 wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{zone.name}</span>
               <span className="text-[11px] shrink-0" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
                 {formatDuration(z.all.secs[i])}
               </span>
@@ -305,7 +305,7 @@ function SideBar({ label, side, className = '' }) {
   return (
     <div className={className}>
       <div className="flex items-baseline gap-2 mb-1.5">
-        <span className="text-[11px] flex-1 min-w-0 truncate"
+        <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {label}
         </span>
@@ -638,7 +638,7 @@ function ThirdsBody({ sessions, byId }) {
         {shown.map(r => (
           <div key={r.id}>
             <div className="flex items-baseline gap-2">
-              <span className="text-[11px] flex-1 min-w-0 truncate"
+              <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
                     style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {r.label}
               </span>

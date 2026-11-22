@@ -157,14 +157,14 @@ function StepCard({ step, running, onClick, menu }) {
         <p className="text-xs" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
           {formatStepDuration(step.duration)}
         </p>
-        <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>
+        <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
           {formatTarget(step.target, running)}
         </p>
         {estimate && (
           <p className="text-[11px]" style={{ color: 'var(--color-slate)' }}>{estimate}</p>
         )}
         {step.notes && (
-          <p className="text-[11px] italic truncate" style={{ color: 'var(--color-teal-light)' }}>{step.notes}</p>
+          <p className="text-[11px] italic wrap-anywhere" style={{ color: 'var(--color-teal-light)' }}>{step.notes}</p>
         )}
         {issue && <p className="text-[11px]" style={{ color: 'var(--color-loss)' }}>⚠ {issue}</p>}
       </button>

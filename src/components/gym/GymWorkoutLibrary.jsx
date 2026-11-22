@@ -38,7 +38,7 @@ export default function GymWorkoutLibrary({ workouts, sessions, index, onSelect,
                 className="w-full text-left rounded-xl p-3 transition-all active:scale-[0.98]"
                 style={{ background: 'var(--color-surface-2)' }}>
                 <div className="flex items-baseline justify-between gap-2 mb-1">
-                  <span className="text-sm font-semibold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                  <span className="text-sm font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                     {w.name}
                   </span>
                   <span className="text-[11px] shrink-0" style={{ color: 'var(--color-slate)' }}>

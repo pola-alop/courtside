@@ -322,11 +322,11 @@ function StepOpponent({ opponents, value, onChange }) {
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                  <p className="text-sm font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                     {o.name}
                   </p>
                   {(o.hand || o.level) && (
-                    <p className="text-xs truncate" style={{ color: active ? 'var(--color-teal-light)' : 'var(--color-slate)' }}>
+                    <p className="text-xs wrap-anywhere" style={{ color: active ? 'var(--color-teal-light)' : 'var(--color-slate)' }}>
                       {[o.hand === 'destro' ? 'Destro' : o.hand === 'sinistro' ? 'Mancino' : null, levelLabel(o.level)].filter(Boolean).join(' · ')}
                     </p>
                   )}
@@ -871,7 +871,7 @@ function ZoneRow({ zone, seconds, onChange }) {
           <p className="text-xs font-semibold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
             {zone.label}
           </p>
-          <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>{zone.name}</p>
+          <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{zone.name}</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">

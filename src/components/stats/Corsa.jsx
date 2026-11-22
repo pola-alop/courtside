@@ -140,7 +140,7 @@ function CoverageCard({ report }) {
         <div className="space-y-2">
           {c.fields.map(f => (
             <div key={f.id} className="flex items-center gap-2">
-              <span className="text-[10px] w-24 shrink-0 truncate"
+              <span className="text-[10px] w-24 shrink-0 wrap-anywhere"
                     style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {f.label}
               </span>
@@ -340,7 +340,7 @@ function PaceCard({ report }) {
             {schemes.map(s => (
               <div key={s.key}>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-[11px] flex-1 min-w-0 truncate"
+                  <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
                         style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                     {s.name}
                   </span>
@@ -565,7 +565,7 @@ function HoldBody({ sessions, byId }) {
         {shown.map(r => (
           <div key={r.id}>
             <div className="flex items-baseline gap-2">
-              <span className="text-[11px] flex-1 min-w-0 truncate"
+              <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
                     style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {r.label}
               </span>
@@ -613,7 +613,7 @@ function HoldBody({ sessions, byId }) {
                 {/* Il valore è cambiato di segno: la linea sale quando la tenuta migliora. */}
                 <Sparkline points={sc.points.map(pt => ({ value: -pt.value }))} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{sc.name}</p>
+                  <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{sc.name}</p>
                   <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
                     {sc.n} esecuzioni · {signed(sc.first)}% → {signed(sc.last)}%
                   </p>
@@ -723,7 +723,7 @@ function DriftBody({ sessions, byId }) {
         {shown.map(r => (
           <div key={r.id}>
             <div className="flex items-baseline gap-2">
-              <span className="text-[11px] flex-1 min-w-0 truncate"
+              <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
                     style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {r.label}
               </span>
@@ -807,7 +807,7 @@ function IntensityCard({ report }) {
                   <span className="text-[11px] font-semibold shrink-0" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                     {zone.label}
                   </span>
-                  <span className="text-[11px] flex-1 truncate" style={{ color: 'var(--color-slate)' }}>{zone.name}</span>
+                  <span className="text-[11px] flex-1 wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{zone.name}</span>
                   <span className="text-[11px] shrink-0" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
                     {formatDuration(it.secs[i])}
                   </span>
@@ -928,7 +928,7 @@ function DynamicsCard({ report }) {
           {d.rows.filter(r => r.enough).map(r => (
             <div key={r.id}>
               <div className="flex items-baseline gap-2">
-                <span className="text-[11px] flex-1 min-w-0 truncate"
+                <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
                       style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                   {r.label}
                 </span>
@@ -991,7 +991,7 @@ function RecordsCard({ report }) {
                   style={{ background: 'var(--color-surface-2)' }}>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px]" style={{ color: 'var(--color-slate)' }}>{r.label}</p>
-                <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--color-white)' }}>
+                <p className="text-[11px] wrap-anywhere mt-0.5" style={{ color: 'var(--color-white)' }}>
                   {r.name} · {dayLabel(r.day)}
                   {r.inPeriod && <span style={{ color: 'var(--color-win)' }}> · nel periodo 🏅</span>}
                 </p>

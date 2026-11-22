@@ -482,7 +482,7 @@ function LegendItem({ color, label, sub, align = 'left' }) {
   return (
     <span className={`flex items-center gap-1.5 min-w-0 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
       <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: color }} />
-      <span className="text-[9px] truncate" style={{ color: 'var(--color-slate)' }}>
+      <span className="text-[9px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
         {label} <span style={{ fontFamily: 'var(--font-mono)' }}>{sub}</span>
       </span>
     </span>

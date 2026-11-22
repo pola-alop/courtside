@@ -53,7 +53,7 @@ export default function PhaseCompare({ items, laps, running }) {
                    style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                 <span className="w-1.5 h-8 rounded-full shrink-0 mt-0.5" style={{ background: type.color }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate" style={{ color: 'var(--color-white)' }}>
+                  <p className="text-xs font-medium wrap-anywhere" style={{ color: 'var(--color-white)' }}>
                     {type.label}{repeatId ? ` ${iteration + 1}` : ''}
                   </p>
                   <p className="text-[11px]" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>

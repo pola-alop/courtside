@@ -38,7 +38,7 @@ export default function RunRow({ run, workouts = [], running, onClick }) {
       </div>
 
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        <p className="text-sm font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           🏃 {runDisplayName(run, workouts)}
         </p>
         <span className="text-sm font-bold shrink-0" style={{ color: 'var(--color-draw)', fontFamily: 'var(--font-mono)' }}>
@@ -48,7 +48,7 @@ export default function RunRow({ run, workouts = [], running, onClick }) {
 
       <WorkoutChart items={run.items} running={running} compact showTotals={false} />
 
-      <p className="text-xs truncate" style={{ color: 'var(--color-slate)' }}>
+      <p className="text-xs wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
         {typeof realKm === 'number'
           ? [formatKm(realKm, 2), pace ? `${formatPace(pace)} /km` : null].filter(Boolean).join(' · ')
           : `~${formatKm(plan.km)} pianificati`}

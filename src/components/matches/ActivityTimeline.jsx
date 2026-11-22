@@ -131,7 +131,7 @@ function MatchLine({ match, onClick }) {
     <button onClick={onClick}
       className="w-full flex items-center gap-2 text-left transition-all active:scale-[0.99]">
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: meta.color }} />
-      <span className="text-xs flex-1 min-w-0 truncate"
+      <span className="text-xs flex-1 min-w-0 wrap-anywhere"
             style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
         {match.opponentName || 'Avversario'}
       </span>
@@ -156,7 +156,7 @@ function TrainingLine({ training, onClick }) {
     <button onClick={onClick} className="w-full text-left transition-all active:scale-[0.99]">
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: COLOR_TRAINING }} />
-        <span className="text-xs flex-1 min-w-0 truncate"
+        <span className="text-xs flex-1 min-w-0 wrap-anywhere"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {sessionSummary(training)}
         </span>
@@ -166,7 +166,7 @@ function TrainingLine({ training, onClick }) {
         )}
       </div>
       {focusLine && (
-        <p className="text-[10px] truncate" style={{ paddingLeft: 14, color: 'var(--color-slate)' }}>
+        <p className="text-[10px] wrap-anywhere" style={{ paddingLeft: 14, color: 'var(--color-slate)' }}>
           {focusLine}
         </p>
       )}

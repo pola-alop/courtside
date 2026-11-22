@@ -100,7 +100,7 @@ function HeatmapCard({ report, periodLabel }) {
                     style={{ gap: 2 }}>
               <span className="flex items-center gap-1 shrink-0 text-left" style={{ width: LABEL_W }}>
                 <span className="text-[9px] leading-none">{row.icon}</span>
-                <span className="text-[9px] truncate"
+                <span className="text-[9px] wrap-anywhere"
                       style={{ color: open === row.id ? 'var(--color-teal)' : 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                   {row.short}
                 </span>
@@ -175,7 +175,7 @@ function CategoryDetail({ category }) {
           {category.voci.map(v => (
             <div key={v.id}>
               <div className="flex items-baseline gap-2">
-                <span className="text-[11px] flex-1 min-w-0 truncate"
+                <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
                       style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                   {v.label}
                 </span>
@@ -266,7 +266,7 @@ function RadarCard({ report }) {
         {sorted.map(c => (
           <div key={c.id} className="flex items-baseline gap-2">
             <span className="text-[11px] shrink-0">{c.icon}</span>
-            <span className="text-[11px] flex-1 min-w-0 truncate"
+            <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
                   style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
               {c.label}
             </span>

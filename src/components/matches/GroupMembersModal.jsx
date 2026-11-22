@@ -46,7 +46,7 @@ export default function GroupMembersModal({ group, opponents, onClose, onSave })
             <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--color-white)' }}>
               Membri
             </h2>
-            <p className="text-xs truncate" style={{ color: 'var(--color-slate)' }}>
+            <p className="text-xs wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
               {group.name} · {selected.size} selezionati
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function GroupMembersModal({ group, opponents, onClose, onSave })
                     {opponentInitials(o)}
                   </span>
                 </div>
-                <p className="flex-1 min-w-0 text-sm font-semibold truncate self-center"
+                <p className="flex-1 min-w-0 text-sm font-semibold wrap-anywhere self-center"
                    style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                   {o.name}
                 </p>

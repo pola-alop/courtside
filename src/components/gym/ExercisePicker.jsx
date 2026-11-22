@@ -95,12 +95,12 @@ export default function ExercisePicker({ index, custom, onPick, onCreate, onUpda
               {shown.map(e => (
                 <div key={e.id} className="flex items-stretch rounded-xl" style={{ background: 'var(--color-surface-2)' }}>
                   <button onClick={() => onPick(e)} className="flex-1 min-w-0 text-left px-3 py-2.5">
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                    <p className="text-sm font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                       {e.name}
                       {e.custom && <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
                                          style={{ background: 'var(--color-teal-dark)', color: 'var(--color-white)' }}>tuo</span>}
                     </p>
-                    <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>
+                    <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
                       {e.equipment}
                       {' · '}
                       <span style={{ color: 'var(--color-amber)' }}>{e.primary.map(muscleLabel).join(', ') || '—'}</span>

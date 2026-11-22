@@ -182,7 +182,7 @@ function MusclesCard({ report }) {
           </div>
           {contributors.slice(0, 6).map(c => (
             <div key={c.exercise.id} className="flex items-baseline justify-between gap-2 mt-1.5">
-              <span className="text-[11px] truncate" style={{ color: 'var(--color-white)' }}>{c.exercise.name}</span>
+              <span className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-white)' }}>{c.exercise.name}</span>
               <span className="text-[11px] shrink-0" style={{ color: 'var(--color-slate)' }}>
                 {c.sets} serie · {c.role === 'primary' ? 'principale' : 'secondario'}
               </span>
@@ -362,7 +362,7 @@ function ProgressCard({ report }) {
           {rows.map(p => (
             <div key={p.exercise.id}>
               <div className="flex items-baseline gap-2">
-                <span className="text-[11px] flex-1 min-w-0 truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                <span className="text-[11px] flex-1 min-w-0 wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                   {p.exercise.name}
                 </span>
                 <span className="text-[11px] shrink-0 font-semibold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
@@ -438,7 +438,7 @@ function RecordsCard({ report }) {
             <div key={r.exercise.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                  style={{ background: 'var(--color-surface-2)' }}>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                   {r.exercise.name} 🏅
                 </p>
                 <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-slate)' }}>
@@ -522,7 +522,7 @@ function WatchCard({ report }) {
                         <span className="text-[11px] font-semibold shrink-0" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                           {zone.label}
                         </span>
-                        <span className="text-[11px] flex-1 truncate" style={{ color: 'var(--color-slate)' }}>{zone.name}</span>
+                        <span className="text-[11px] flex-1 wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{zone.name}</span>
                         <span className="text-[11px] shrink-0" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
                           {formatDuration(z.secs[i])}
                         </span>

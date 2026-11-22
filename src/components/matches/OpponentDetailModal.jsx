@@ -14,7 +14,7 @@ const HANDS = [
 const MAX_NOTE_LENGTH = 150
 
 export default function OpponentDetailModal({
-  opponent, record = null, matches = [], doublesCount = 0, groups = [], onClose, onUpdate, onDelete, onSelectMatch,
+  opponent, records = null, matches = [], groups = [], onClose, onUpdate, onDelete, onSelectMatch,
   onAddToGroup, onRemoveFromGroup
 }) {
   // view | edit | confirmDelete | addNote | editNote | confirmDeleteNote
@@ -27,18 +27,21 @@ export default function OpponentDetailModal({
   const [noteDraft, setNoteDraft]   = useState('')
   const [noteTarget, setNoteTarget] = useState(null)
 
-  const wins   = record?.wins   ?? 0
-  const losses = record?.losses ?? 0
-  const draws  = record?.draws  ?? 0
+  // Tre record separati (vedi `playerRecords`): i quattro box sono il singolo,
+  // «contro in doppio» e «insieme in doppio» sono due righe sotto, solo se ce ne sono.
+  const single = records?.single
+  const wins   = single?.wins   ?? 0
+  const losses = single?.losses ?? 0
+  const draws  = single?.draws  ?? 0
+  const doublesCount = (records?.againstDoubles.n ?? 0) + (records?.withDoubles.n ?? 0)
 
   const notes = opponent.notes || []
   const sortedNotes = [...notes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   // Un avversario con almeno una partita all'attivo non può essere eliminato
   // (serve alle statistiche future): l'anagrafica resta, si può solo modificare.
-  // Contano anche i doppi in cui compare (come compagno o avversario), che non
-  // sono nell'elenco `matches` (di singolo) ma lo tengono nell'anagrafica.
-  const linkedCount = matches.length + doublesCount
+  // `matches` sono le partite in cui compare in qualsiasi ruolo, doppi compresi.
+  const linkedCount = matches.length
   const hasMatches = linkedCount > 0
 
   // I documenti salvati prima della 2.2.0 non hanno il genere: `null`.
@@ -191,13 +194,29 @@ export default function OpponentDetailModal({
               </div>
             )}
 
-            {/* Blocco testa-a-testa */}
-            <div className="grid grid-cols-4 gap-2 mb-5">
+            {/* Blocco testa-a-testa: il record in singolo */}
+            <p className="text-[10px] uppercase tracking-wider mb-2"
+               style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
+              In singolo
+            </p>
+            <div className={`grid grid-cols-4 gap-2 ${doublesCount > 0 ? 'mb-3' : 'mb-5'}`}>
               <StatTile label="Vittorie"  value={wins}                  color="var(--color-teal-light)" />
               <StatTile label="Pareggi"   value={draws}                 color="var(--color-draw)" />
               <StatTile label="Sconfitte" value={losses}                color="#ff7070" />
               <StatTile label="Scontri"   value={wins + losses + draws} color="var(--color-white)" />
             </div>
+
+            {doublesCount > 0 && (
+              <div className="mb-5 rounded-2xl overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
+                {records.againstDoubles.n > 0 && (
+                  <DoublesRecordRow label="Contro in doppio" record={records.againstDoubles} />
+                )}
+                {records.withDoubles.n > 0 && (
+                  <DoublesRecordRow label="Insieme in doppio" record={records.withDoubles}
+                                    divider={records.againstDoubles.n > 0} />
+                )}
+              </div>
+            )}
 
             {/* Bottone modifica */}
             <button
@@ -452,6 +471,27 @@ function StatTile({ label, value, color }) {
   )
 }
 
+// Una riga dei record di doppio: etichetta a sinistra, «2V · 1P · 3S» e il numero
+// di partite a destra. Il testo va a capo, non si tronca.
+function DoublesRecordRow({ label, record, divider = false }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3"
+         style={divider ? { borderTop: '1px solid var(--color-surface)' } : undefined}>
+      <span className="min-w-0 text-xs wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        {label}
+      </span>
+      <span className="shrink-0 text-right">
+        <span className="block text-sm font-semibold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
+          {record.wins}V{record.draws > 0 ? ` · ${record.draws}P` : ''} · {record.losses}S
+        </span>
+        <span className="block text-[10px]" style={{ color: 'var(--color-slate)' }}>
+          {record.n} {record.n === 1 ? 'partita' : 'partite'}
+        </span>
+      </span>
+    </div>
+  )
+}
+
 function Section({ title, children }) {
   return (
     <div className="mb-4">
@@ -640,9 +680,11 @@ function NoteTextArea({ value, onChange }) {
   )
 }
 
-// Storico scontri: solo le ultime 3 partite, giusto per un colpo d'occhio
-// sull'andamento recente — lo storico completo è già consultabile dal tab
-// Partite filtrando per questo avversario, niente bisogno di duplicarlo qui.
+// Ultime partite: solo le ultime 3, in qualsiasi ruolo (singolo, contro in
+// doppio, insieme in doppio: la riga porta già «Doppio misto»), giusto per un
+// colpo d'occhio sull'andamento recente — lo storico completo è già consultabile
+// dal tab Partite filtrando per questo giocatore (il filtro non include però le
+// partite in cui è stato compagno).
 const MATCH_HISTORY_LIMIT = 3
 
 function MatchHistorySection({ matches, onSelectMatch }) {
@@ -652,12 +694,12 @@ function MatchHistorySection({ matches, onSelectMatch }) {
     <div className="mb-4">
       <p className="text-xs font-semibold uppercase tracking-wider mb-2"
          style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-        Ultimi scontri
+        Ultime partite
       </p>
       {recent.length === 0 ? (
         <div className="rounded-2xl px-4 py-4 text-center" style={{ background: 'var(--color-surface-2)' }}>
           <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
-            Nessuna partita registrata contro questo avversario.
+            Nessuna partita registrata con questo giocatore.
           </p>
         </div>
       ) : (

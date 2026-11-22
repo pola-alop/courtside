@@ -44,7 +44,7 @@ import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
 import { groupRotation, lastMatchText, plannedText } from '../lib/opponents'
 import { readGender } from '../lib/gender'
-import { DISCIPLINES, isDoubles, involvesPlayer, facedPlayer, matchDiscipline } from '../lib/doubles'
+import { DISCIPLINES, isDoubles, involvesPlayer, facedPlayer, matchDiscipline, playerRecords } from '../lib/doubles'
 import { whatsappHref } from '../lib/phone'
 import { todayTime } from '../lib/activity'
 import { calibrateIntensity } from '../lib/fit'
@@ -304,11 +304,10 @@ export default function Matches() {
       draws:  played.filter(m => m.result === 'draw').length,
     }
   }
-  const matchesVs = (opponentId) => matches.filter(m => m.opponentId === opponentId)
-  // I doppi in cui il giocatore compare (compagno o avversario): non entrano
-  // nell'H2H né in `matchesVs`, che restano di singolo, ma tengono bloccata
-  // l'eliminazione: un riferimento orfano romperebbe il nome della partita.
-  const doublesWith = (opponentId) => matches.filter(m => isDoubles(m) && involvesPlayer(m, opponentId)).length
+  // Le partite del dettaglio giocatore, in qualsiasi ruolo (singolo, contro in
+  // doppio, insieme in doppio), già dalla più recente. Servono anche al guard di
+  // eliminazione: un riferimento orfano romperebbe il nome della partita.
+  const matchesWith = (opponentId) => matches.filter(m => involvesPlayer(m, opponentId))
 
   // ── Filtri partite ──
   const eventOptions = (fType === 'campionato' || fType === 'torneo')
@@ -777,9 +776,8 @@ export default function Matches() {
           groups={groups}
           onAddToGroup={(groupId) => setGroupMembers(groupId, { add: [selectedOpponent.id] })}
           onRemoveFromGroup={(groupId) => setGroupMembers(groupId, { remove: [selectedOpponent.id] })}
-          record={recordFor(selectedOpponent.id)}
-          matches={matchesVs(selectedOpponent.id)}
-          doublesCount={doublesWith(selectedOpponent.id)}
+          records={playerRecords(matches, selectedOpponent.id)}
+          matches={matchesWith(selectedOpponent.id)}
           onClose={() => setSelectedOpponentId(null)}
           onSelectMatch={(matchId) => setSelectedMatchId(matchId)}
           onUpdate={async (id, data) => {
@@ -790,7 +788,7 @@ export default function Matches() {
           onDelete={async (id) => {
             // Guard difensiva: il bottone di eliminazione è già nascosto nel
             // modale quando ci sono match collegati, ma non fidarsi solo della UI.
-            if (matchesVs(id).length > 0 || doublesWith(id) > 0) return
+            if (matchesWith(id).length > 0) return
             await removeOpponent(id)
             setSelectedOpponentId(null)
             setOppDeleteToast(true)

@@ -14,7 +14,7 @@ import {
 // allenamenti: descrive lo sforzo di una SESSIONE, e una partita è una sessione.
 // Riusarla è meglio che duplicare tre etichette e tre colori.
 import { INTENSITIES } from '../../lib/training'
-import { levelLabel, opponentInitials } from '../../lib/opponents'
+import { levelLabel, opponentInitials, opponentSurname } from '../../lib/opponents'
 import { DISCIPLINES, playersIssue, joinNames } from '../../lib/doubles'
 import DoublesPlayersPicker from './DoublesPlayersPicker'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
@@ -25,6 +25,20 @@ import { intensityFromRpe } from '../../lib/fit'
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura', 'Atletica']
 // Nel doppio il secondo step sceglie tre giocatori, non un avversario.
 const stepLabels = doubles => STEPS.map((label, i) => (i === 1 && doubles ? 'Giocatori' : label))
+
+// Le scritte dello step «Punteggio». Nel singolo i lati sono «Tu» e «Avversario»;
+// nel doppio sono due coppie, quindi «Noi» e «Avversari» e un ritiro di coppia
+// (se uno dei due si ferma, perde la coppia: non si registra chi). I dati non
+// cambiano: `me`/`opp` e `retired: 'me'|'opp'` sono sempre il nostro lato e il
+// loro. `sides` dice chi sono i due lati, con le forme brevi del punteggio.
+function scoreLabels(doubles, form, opponents) {
+  if (!doubles) return { me: 'Tu', opp: 'Avversario', retireMe: 'Mi ritiro', retireOpp: 'Si ritira lui', sides: null }
+  const surname = id => opponentSurname(opponents.find(o => o.id === id))
+  return {
+    me: 'Noi', opp: 'Avversari', retireMe: 'Ci ritiriamo', retireOpp: 'Si ritirano loro',
+    sides: `Noi: ${joinNames(['Tu', surname(form.partnerId)])} · Avversari: ${joinNames(form.opponentIds.map(surname))}`,
+  }
+}
 
 const EQUIP_TYPES = [
   { id: 'racchetta', label: 'Racchetta', icon: '🎾' },
@@ -221,6 +235,7 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
             <StepScore
               form={form} setForm={setForm}
               outcome={outcome} allowsDraw={typeMeta?.allowsDraw}
+              labels={scoreLabels(doubles, form, opponents)}
             />
           )}
           {step === 6 && <StepEquipment equipment={equipment} value={form.equipment} onChange={v => set('equipment', v)} />}
@@ -515,7 +530,7 @@ function StepSurface({ value, onChange }) {
 
 // ── Step 5 — Punteggio ─────────────────────────────────────
 
-function StepScore({ form, setForm, outcome, allowsDraw }) {
+function StepScore({ form, setForm, outcome, allowsDraw, labels }) {
   const fmt = MATCH_FORMATS[form.format]
 
   const setFormat = (key) => setForm(f => ({ ...f, format: key, sets: [emptySet()], retired: null }))
@@ -541,7 +556,7 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
 
   return (
     <div className="space-y-4">
-      <StepTitle title="Formato e punteggio" />
+      <StepTitle title="Formato e punteggio" sub={labels.sides} />
 
       {/* Scelta formato */}
       <div className="grid grid-cols-2 gap-2">
@@ -567,7 +582,7 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
         {shown.map((s, i) => {
           const kind = setKind(fmt, i)
           return (
-            <SetInput key={i} index={i} set={s} kind={kind} fmt={fmt}
+            <SetInput key={i} index={i} set={s} kind={kind} fmt={fmt} labels={labels}
               invalid={!isTiebreakValid(s, kind, fmt, form.retired)}
               onChange={patch => updateSet(i, patch)} />
           )
@@ -582,8 +597,8 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
         <div className="flex gap-2">
           {[
             { id: null,  label: 'Nessuno' },
-            { id: 'me',  label: 'Mi ritiro' },
-            { id: 'opp', label: 'Si ritira lui' },
+            { id: 'me',  label: labels.retireMe },
+            { id: 'opp', label: labels.retireOpp },
           ].map(opt => {
             const active = (form.retired || null) === opt.id
             return (
@@ -630,7 +645,7 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
   )
 }
 
-function SetInput({ index, set, kind, fmt, invalid, onChange }) {
+function SetInput({ index, set, kind, fmt, labels, invalid, onChange }) {
   const isSuper = kind === 'superTb'
   const maxGames = isSuper ? 99 : 7
   const showTb = !isSuper && isTiebreakSet(set)
@@ -641,8 +656,8 @@ function SetInput({ index, set, kind, fmt, invalid, onChange }) {
         {isSuper ? `Super tie-break (a ${fmt.superTbTarget})` : `Set ${index + 1}`}
       </p>
       <div className="space-y-2">
-        <ScoreStepper label="Tu"          value={set.me}  onChange={v => onChange({ me: v })}  max={maxGames} />
-        <ScoreStepper label="Avversario"  value={set.opp} onChange={v => onChange({ opp: v })} max={maxGames} />
+        <ScoreStepper label={labels.me}  value={set.me}  onChange={v => onChange({ me: v })}  max={maxGames} />
+        <ScoreStepper label={labels.opp} value={set.opp} onChange={v => onChange({ opp: v })} max={maxGames} />
       </div>
       {isSuper && invalid && (
         <p className="text-[11px] mt-2" style={{ color: 'var(--color-loss)' }}>
@@ -655,8 +670,8 @@ function SetInput({ index, set, kind, fmt, invalid, onChange }) {
             Punti tie-break {invalid && '— scarto minimo 2 punti, il vincitore deve coincidere con il set'}
           </p>
           <div className="space-y-2">
-            <ScoreStepper label="Tu"         value={set.tbMe  ?? 0} onChange={v => onChange({ tbMe: v })}  max={99} small />
-            <ScoreStepper label="Avversario" value={set.tbOpp ?? 0} onChange={v => onChange({ tbOpp: v })} max={99} small />
+            <ScoreStepper label={labels.me}  value={set.tbMe  ?? 0} onChange={v => onChange({ tbMe: v })}  max={99} small />
+            <ScoreStepper label={labels.opp} value={set.tbOpp ?? 0} onChange={v => onChange({ tbOpp: v })} max={99} small />
           </div>
         </div>
       )}

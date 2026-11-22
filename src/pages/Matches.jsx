@@ -4,6 +4,7 @@ import { useOpponents } from '../hooks/useOpponents'
 import { useOpponentGroups } from '../hooks/useOpponentGroups'
 import { useMatches } from '../hooks/useMatches'
 import { useTeamTies } from '../hooks/useTeamTies'
+import { useTeamCompetitions } from '../hooks/useTeamCompetitions'
 import { useTrainings } from '../hooks/useTrainings'
 import { useEquipment } from '../hooks/useEquipment'
 import { useRuns } from '../hooks/useRuns'
@@ -29,6 +30,8 @@ import TournamentDetailModal from '../components/matches/TournamentDetailModal'
 import TeamTies from '../components/matches/TeamTies'
 import TeamTieDetailModal from '../components/matches/TeamTieDetailModal'
 import TeamTieFormModal from '../components/matches/TeamTieFormModal'
+import TeamCompetitionDetailModal from '../components/matches/TeamCompetitionDetailModal'
+import TeamCompetitionFormModal from '../components/matches/TeamCompetitionFormModal'
 import TrainingRow from '../components/trainings/TrainingRow'
 import AddTrainingModal from '../components/trainings/AddTrainingModal'
 import TrainingDetailModal from '../components/trainings/TrainingDetailModal'
@@ -47,6 +50,7 @@ import GymWorkoutEditModal from '../components/gym/GymWorkoutEditModal'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
 import { slotKind, deleteIssue } from '../lib/teamTies'
+import { withCompetitionNames, tieContext, competitionDeleteIssue } from '../lib/teamCompetitions'
 import { groupRotation, lastMatchText, plannedText } from '../lib/opponents'
 import { readGender } from '../lib/gender'
 import { DISCIPLINES, isDoubles, involvesPlayer, facedPlayer, matchDiscipline, playerRecords } from '../lib/doubles'
@@ -88,7 +92,15 @@ export default function Matches() {
   const { opponents, loading: oppLoading, add: addOpponent, update: updateOpponent, remove: removeOpponent } = useOpponents()
   const { groups, add: addGroup, rename: renameGroup, setMembers: setGroupMembers, remove: removeGroup } = useOpponentGroups()
   const { matches,   loading: matchLoading, add: addMatch, update: updateMatch, remove: removeMatch, reload: reloadMatches } = useMatches()
-  const { ties, loading: tieLoading, add: addTie, update: updateTie, setRubber, remove: removeTie } = useTeamTies()
+  const { ties: rawTies, loading: tieLoading, add: addTie, update: updateTie, setRubber, remove: removeTie } = useTeamTies()
+  const {
+    competitions, loading: competitionLoading, add: addCompetition, update: updateCompetition,
+    setResult, clearResult, remove: removeCompetition,
+  } = useTeamCompetitions()
+  // Il nome della squadra avversaria di uno scontro di girone è quello ATTUALE
+  // della competizione (la copia salvata resta di ripiego): derivato qui, una
+  // volta, e usato da tutta la pagina.
+  const ties = useMemo(() => withCompetitionNames(rawTies, competitions), [rawTies, competitions])
   const { trainings, loading: trainLoading, add: addTraining, update: updateTraining, remove: removeTraining } = useTrainings()
   const { equipment } = useEquipment()
   const { runs, loading: runLoading, add: addRun, update: updateRun, remove: removeRun } = useRuns()
@@ -215,6 +227,10 @@ export default function Matches() {
   const [selectedTieId, setSelectedTieId] = useState(null)
   const [tieForm, setTieForm] = useState(null)
   const [tieRegister, setTieRegister] = useState(null)
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState(null)
+  const [competitionForm, setCompetitionForm] = useState(null) // null | 'new' | id
+  // Scontro nuovo dentro una competizione: { competitionId, phase, leg?, opponentTeamId? }
+  const [tieSlot, setTieSlot] = useState(null)
 
   // Allenamenti — "+ Allenamento" apre prima la scelta del tipo (tennis/corsa)
   // Con una precompilazione il tipo è già deciso (tennis): niente scelta.
@@ -303,11 +319,23 @@ export default function Matches() {
   // La sezione «A squadre» sta nel tab Tornei, sotto il palmarès (o in cima se
   // non c'è ancora nessun torneo).
   const teamTiesSection = (
-    <TeamTies ties={ties} matches={matches} onSelect={setSelectedTieId} onAdd={() => setTieForm('new')} />
+    <TeamTies
+      competitions={competitions} ties={ties} matches={matches}
+      onSelect={setSelectedTieId} onAdd={() => setTieForm('new')}
+      onSelectCompetition={setSelectedCompetitionId} onAddCompetition={() => setCompetitionForm('new')}
+    />
   )
 
   const selectedTie = selectedTieId ? ties.find(t => t.id === selectedTieId) || null : null
   const tieFormTie  = tieForm && tieForm !== 'new' ? ties.find(t => t.id === tieForm) || null : null
+  const selectedCompetition = selectedCompetitionId ? competitions.find(c => c.id === selectedCompetitionId) || null : null
+  const competitionFormComp = competitionForm && competitionForm !== 'new' ? competitions.find(c => c.id === competitionForm) || null : null
+  // La competizione dello scontro: quella dello scontro in modifica o, per uno
+  // nuovo, quella da cui si è partiti.
+  const tieCompetition = (tieFormTie?.competitionId || tieSlot?.competitionId)
+    ? competitions.find(c => c.id === (tieFormTie?.competitionId || tieSlot?.competitionId)) || null
+    : null
+  const closeTieForm = () => { setTieForm(null); setTieSlot(null) }
   // «Ho giocato io»: il wizard parte già sul tipo Squadre, con scontro,
   // incontro, disciplina (dal tipo di incontro) e data dello scontro.
   const registerTie = tieRegister ? ties.find(t => t.id === tieRegister.tieId) || null : null
@@ -587,7 +615,7 @@ export default function Matches() {
 
         {/* ── TORNEI ── */}
         {activeTab === 'tornei' && (
-          (matchLoading || tieLoading) ? (
+          (matchLoading || tieLoading || competitionLoading) ? (
             <Spinner />
           ) : tournaments.length === 0 ? (
             <div className="space-y-5">
@@ -839,12 +867,47 @@ export default function Matches() {
         />
       )}
 
+      {/* La competizione sta prima degli scontri: dal suo dettaglio si apre uno
+          scontro (o il form per crearlo) sopra di lei, senza chiuderla. */}
+      {selectedCompetition && (
+        <TeamCompetitionDetailModal
+          competition={selectedCompetition}
+          ties={ties}
+          matches={matches}
+          onClose={() => setSelectedCompetitionId(null)}
+          onSelectTie={setSelectedTieId}
+          onCreateTie={(slot) => { setTieSlot({ competitionId: selectedCompetition.id, ...slot }); setTieForm('new') }}
+          onSetResult={(entry) => setResult(selectedCompetition.id, entry)}
+          onClearResult={(a, b, leg) => clearResult(selectedCompetition.id, a, b, leg)}
+          onEdit={() => setCompetitionForm(selectedCompetition.id)}
+          onDelete={async () => {
+            // Ripete il controllo del pulsante: una competizione con scontri
+            // non si elimina.
+            if (competitionDeleteIssue(selectedCompetition, ties)) return
+            await removeCompetition(selectedCompetition.id)
+            setSelectedCompetitionId(null)
+          }}
+        />
+      )}
+      {(competitionForm === 'new' || competitionFormComp) && (
+        <TeamCompetitionFormModal
+          competition={competitionFormComp}
+          ties={ties}
+          onClose={() => setCompetitionForm(null)}
+          onSave={async (data) => {
+            if (competitionFormComp) await updateCompetition(competitionFormComp.id, data)
+            else setSelectedCompetitionId(await addCompetition(data))
+          }}
+        />
+      )}
+
       {/* Lo scontro sta prima dei modali partita, come il torneo: dal suo
           dettaglio si apre una partita (o il wizard già collegato a un
           incontro) sopra di lui, senza chiuderlo. */}
       {selectedTie && (
         <TeamTieDetailModal
           tie={selectedTie}
+          context={tieContext(selectedTie, competitions.find(c => c.id === selectedTie.competitionId) || null)}
           matches={matches}
           onClose={() => setSelectedTieId(null)}
           onSelectMatch={(matchId) => setSelectedMatchId(matchId)}
@@ -863,8 +926,10 @@ export default function Matches() {
       {(tieForm === 'new' || tieFormTie) && (
         <TeamTieFormModal
           tie={tieFormTie}
+          competition={tieCompetition}
+          slot={tieSlot}
           matches={matches}
-          onClose={() => setTieForm(null)}
+          onClose={closeTieForm}
           onSave={async (data) => {
             if (tieFormTie) await updateTie(tieFormTie.id, data)
             else setSelectedTieId(await addTie(data))

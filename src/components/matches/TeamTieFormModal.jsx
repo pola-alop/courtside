@@ -281,7 +281,7 @@ function PairInput({ label, pair, onChange }) {
   )
 }
 
-function Stepper({ label, value, limits, onChange }) {
+export function Stepper({ label, value, limits, onChange }) {
   const btn = (disabled) => ({
     background: 'var(--color-surface-2)',
     color: disabled ? 'var(--color-slate)' : 'var(--color-white)',

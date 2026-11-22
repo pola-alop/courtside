@@ -17,6 +17,7 @@ import { INTENSITIES } from '../../lib/training'
 import { levelLabel, opponentInitials, opponentSurname } from '../../lib/opponents'
 import { DISCIPLINES, playersIssue, joinNames } from '../../lib/doubles'
 import { freeSlots, slotLabel, formulaText, homeLabel, sortTies } from '../../lib/teamTies'
+import { tieContext } from '../../lib/teamCompetitions'
 import DoublesPlayersPicker from './DoublesPlayersPicker'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 import FitImport from '../athletics/FitImport'
@@ -567,7 +568,7 @@ function TieSlotPicker({ form, set, ties, matches, excludeMatchId }) {
                     vs {t.opponentTeam}
                   </span>
                   <span className="text-xs wrap-anywhere" style={{ color: active ? 'var(--color-teal-light)' : 'var(--color-slate)' }}>
-                    {[formatTieDate(t.date), homeLabel(t.home), formulaText(t.formula)].filter(Boolean).join(' · ')}
+                    {[tieContext(t), formatTieDate(t.date), homeLabel(t.home), formulaText(t.formula)].filter(Boolean).join(' · ')}
                   </span>
                 </button>
               )

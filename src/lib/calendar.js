@@ -26,6 +26,7 @@
 import { dayTime } from './stats'
 import { todayTime, startOfWeek, addDays, currentRhythm, MONTHS_SHORT } from './activity'
 import { emptyBlock } from './training'
+import { isDoubles, joinNames } from './doubles'
 
 export const WEEKDAY_INITIALS = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
 export const MONTHS = [
@@ -263,8 +264,15 @@ export function planSubject(plan, { opponents = [], runWorkouts = [], gymWorkout
   const d = plan?.details || {}
   const byId = (list, id) => (id ? (list || []).find(x => x.id === id) : null)
   switch (plan?.kind) {
-    case 'match':
-      return byId(opponents, d.opponentId)?.name || d.opponentName || null
+    case 'match': {
+      if (!isDoubles(d)) return byId(opponents, d.opponentId)?.name || d.opponentName || null
+      // Doppio: i due avversari, «Rossi / Bianchi». Se uno non è più in
+      // anagrafica vale la copia salvata, che li ha entrambi.
+      const ids = planOpponentIds(plan)
+      const known = ids.map(id => byId(opponents, id)?.name).filter(Boolean)
+      if (known.length > 0 && known.length === ids.length) return joinNames(known)
+      return d.opponentName || (known.length > 0 ? joinNames(known) : null)
+    }
     case 'training':
       return byId(opponents, d.withWhom?.opponentId)?.name || d.withWhom?.label || null
     case 'run':
@@ -275,6 +283,20 @@ export function planSubject(plan, { opponents = [], runWorkouts = [], gymWorkout
       return null
   }
 }
+
+// Il compagno di un programma di doppio (nome attuale, altrimenti la copia
+// salvata); null per ogni altro programma o se non è ancora stato scelto.
+export function planPartner(plan, { opponents = [] } = {}) {
+  const d = plan?.details || {}
+  if (plan?.kind !== 'match' || !isDoubles(d)) return null
+  const known = d.partnerId ? opponents.find(o => o.id === d.partnerId) : null
+  return known?.name || d.partnerName || null
+}
+
+// Gli avversari scelti di un programma di doppio, da 0 a 2 id. Il doppio vive
+// in `details` come in una partita: `discipline`, `partnerId`, `opponentIds`,
+// con `opponentId` sempre null; assente = singolo.
+const planOpponentIds = plan => (Array.isArray(plan?.details?.opponentIds) ? plan.details.opponentIds : []).filter(Boolean)
 
 // ── Precompilazione dei wizard ─────────────────────────────
 // "Registra" apre il wizard della sessione già riempito con ciò che il
@@ -296,6 +318,21 @@ export function planPrefill(plan, { opponents = [], runWorkouts = [], gymWorkout
 
   switch (plan.kind) {
     case 'match':
+      // Doppio: compagno e avversari passano solo se esistono ancora, come
+      // l'avversario del singolo; il wizard riparte dal primo passo e chiede
+      // ciò che manca.
+      if (isDoubles(d)) {
+        return {
+          date,
+          discipline: 'doppio',
+          opponentId: null,
+          partnerId:   exists(opponents, d.partnerId),
+          opponentIds: planOpponentIds(plan).map(id => exists(opponents, id)).filter(Boolean),
+          type:       d.type || null,
+          eventName:  d.eventName || '',
+          surface:    d.surface || null,
+        }
+      }
       return {
         date,
         opponentId: exists(opponents, d.opponentId),

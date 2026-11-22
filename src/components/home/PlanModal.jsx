@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
-  KIND_META, planConflict, plansOnDay, planStatusLabel, planSubject, keyToDay, dayKey,
+  KIND_META, planConflict, plansOnDay, planStatusLabel, planSubject, planPartner, keyToDay, dayKey,
 } from '../../lib/calendar'
+import { DISCIPLINES, isDoubles, joinNames } from '../../lib/doubles'
 import { todayTime } from '../../lib/activity'
 import { MATCH_TYPES, SURFACES, surfaceIcon } from '../../lib/tennis'
 import { DEFAULT_BLOCK_MINUTES, formatMinutes, focusLabel, recentFocusIds } from '../../lib/training'
@@ -9,6 +10,7 @@ import { sortWorkoutsByUse as sortRunWorkouts } from '../../lib/running'
 import { sortWorkoutsByUse as sortGymWorkouts } from '../../lib/gym'
 import FocusPicker from '../trainings/FocusPicker'
 import OpponentSearchField from '../matches/OpponentSearchField'
+import DoublesPlayersPicker from '../matches/DoublesPlayersPicker'
 
 // La modale dei programmi: l'unica "di proprietà" della Home, perché i
 // programmi esistono solo qui (le sessioni invece vivono in Matches e la Home
@@ -54,6 +56,12 @@ function initialForm(date, plan) {
     kind:       plan?.kind || null,
     notes:      plan?.notes || '',
     opponentId: plan?.kind === 'match' ? d.opponentId || null : null,
+    // Solo per le partite: singolo o doppio (assente = singolo). Le due scelte
+    // convivono nel form e al salvataggio vale quella attiva. I giocatori del
+    // doppio sono tutti facoltativi, come l'avversario del singolo.
+    discipline: plan?.kind === 'match' && d.discipline === 'doppio' ? 'doppio' : 'singolo',
+    partnerId:  plan?.kind === 'match' ? d.partnerId || null : null,
+    opponentIds: [plan?.kind === 'match' ? d.opponentIds?.[0] || null : null, plan?.kind === 'match' ? d.opponentIds?.[1] || null : null],
     surface:    d.surface || null,
     type:       d.type || 'amichevole',
     eventName:  d.eventName || '',
@@ -67,7 +75,7 @@ function initialForm(date, plan) {
 
 export default function PlanModal({
   date, plan = null, plans = [], opponents = [], runWorkouts = [], gymWorkouts = [],
-  trainings = [], runs = [], gymSessions = [], onSave, onDelete, onRegister, onClose,
+  trainings = [], runs = [], gymSessions = [], userGender = null, onSave, onDelete, onRegister, onClose,
 }) {
   // view | form | confirmDelete
   const [mode, setMode]     = useState(plan ? 'view' : 'form')
@@ -189,6 +197,7 @@ export default function PlanModal({
               runWorkouts={sortRunWorkouts(runWorkouts, runs)}
               gymWorkouts={sortGymWorkouts(gymWorkouts, gymSessions)}
               recentFocus={recentFocusIds(trainings)}
+              userGender={userGender}
             />
           )}
         </div>
@@ -223,7 +232,7 @@ export default function PlanModal({
 
 // ── Modulo ─────────────────────────────────────────────────
 
-function PlanForm({ form, set, setForm, todayKey, dateOk, conflict, conflictFor, opponents, runWorkouts, gymWorkouts, recentFocus }) {
+function PlanForm({ form, set, setForm, todayKey, dateOk, conflict, conflictFor, opponents, runWorkouts, gymWorkouts, recentFocus, userGender }) {
   const typeMeta = MATCH_TYPES.find(t => t.id === form.type)
   const needsTime = TENNIS_KINDS.includes(form.kind)
 
@@ -275,20 +284,46 @@ function PlanForm({ form, set, setForm, todayKey, dateOk, conflict, conflictFor,
 
           {form.kind === 'match' && (
             <>
-              <Field label="Avversario" sub="Facoltativo — può essere ancora da definire">
-                {opponents.length > 0 ? (
-                  <OpponentSearchField
-                    opponents={opponents}
-                    valueId={form.opponentId}
-                    onSelect={o => set('opponentId', o.id)}
-                    onClear={() => set('opponentId', null)}
-                  />
-                ) : (
-                  <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
-                    Nessun avversario in anagrafica: lo aggiungi quando registri la partita.
-                  </p>
-                )}
+              <Field label="Disciplina">
+                <div className="grid grid-cols-2 gap-2">
+                  {DISCIPLINES.map(d => (
+                    <Chip key={d.id} active={form.discipline === d.id} onClick={() => set('discipline', d.id)}>{d.label}</Chip>
+                  ))}
+                </div>
               </Field>
+
+              {form.discipline === 'doppio' ? (
+                <Field label="Giocatori" sub="Facoltativi — possono essere ancora da definire">
+                  {opponents.length > 0 ? (
+                    <DoublesPlayersPicker
+                      opponents={opponents}
+                      partnerId={form.partnerId}
+                      opponentIds={form.opponentIds}
+                      userGender={userGender}
+                      onChange={({ partnerId, opponentIds }) => setForm(f => ({ ...f, partnerId, opponentIds }))}
+                    />
+                  ) : (
+                    <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
+                      Nessun giocatore in anagrafica: li aggiungi quando registri la partita.
+                    </p>
+                  )}
+                </Field>
+              ) : (
+                <Field label="Avversario" sub="Facoltativo — può essere ancora da definire">
+                  {opponents.length > 0 ? (
+                    <OpponentSearchField
+                      opponents={opponents}
+                      valueId={form.opponentId}
+                      onSelect={o => set('opponentId', o.id)}
+                      onClear={() => set('opponentId', null)}
+                    />
+                  ) : (
+                    <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
+                      Nessun avversario in anagrafica: lo aggiungi quando registri la partita.
+                    </p>
+                  )}
+                </Field>
+              )}
 
               <Field label="Tipo">
                 <div className="grid grid-cols-3 gap-2">
@@ -384,7 +419,12 @@ function PlanSummary({ plan, names }) {
 
   if (plan.time) rows.push(['Orario', plan.time])
   if (plan.kind === 'match') {
-    rows.push(['Avversario', subject || 'Da definire'])
+    if (isDoubles(d)) {
+      rows.push(['Compagno', planPartner(plan, names) || 'Da definire'])
+      rows.push(['Avversari', subject || 'Da definire'])
+    } else {
+      rows.push(['Avversario', subject || 'Da definire'])
+    }
     const type = MATCH_TYPES.find(t => t.id === d.type)?.label
     if (type) rows.push(['Tipo', d.eventName ? `${type} · ${d.eventName}` : type])
   }
@@ -596,9 +636,18 @@ function toPlanDoc(form, opponents, runWorkouts, gymWorkouts) {
   let details = {}
   if (kind === 'match') {
     const meta = MATCH_TYPES.find(t => t.id === form.type)
+    const doubles = form.discipline === 'doppio'
+    const nameOf = id => opponents.find(o => o.id === id)?.name
+    const faced = form.opponentIds.filter(Boolean)
+    // Come per la partita, nel doppio `opponentId` resta null; i nomi sono solo
+    // il ripiego di `planSubject`/`planPartner` se l'anagrafica non li avesse più.
     details = {
-      opponentId:   form.opponentId || null,
-      opponentName: opponents.find(o => o.id === form.opponentId)?.name || null,
+      discipline:   form.discipline,
+      opponentId:   doubles ? null : form.opponentId || null,
+      opponentName: doubles ? joinNames(faced.map(nameOf)) || null : nameOf(form.opponentId) || null,
+      partnerId:    doubles ? form.partnerId || null : null,
+      partnerName:  doubles ? nameOf(form.partnerId) || null : null,
+      opponentIds:  doubles ? faced : null,
       surface:      form.surface || null,
       type:         form.type,
       eventName:    meta?.needsEvent ? form.eventName.trim() || null : null,

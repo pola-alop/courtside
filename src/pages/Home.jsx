@@ -19,6 +19,7 @@ import MatchRow from '../components/matches/MatchRow'
 import TrainingRow from '../components/trainings/TrainingRow'
 import { buildHome, ALERT_TONES, IDLE_BAD } from '../lib/home'
 import { buildCalendar } from '../lib/calendar'
+import { readGender } from '../lib/gender'
 import { formatDaysAgo } from '../lib/technique'
 
 // Home — "adesso".
@@ -251,6 +252,7 @@ export default function Home() {
           trainings={trainings}
           runs={runs}
           gymSessions={gymSessions}
+          userGender={readGender(profile?.gender)}
           onSave={savePlan}
           onDelete={removePlan}
           onRegister={registerPlan}

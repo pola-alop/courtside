@@ -1,21 +1,25 @@
 import { useState } from 'react'
-import { opponentInitials } from '../../lib/opponents'
+import { opponentInitials, opponentShortName } from '../../lib/opponents'
 import { readGender, doublesCategory, doublesCategoryLabel } from '../../lib/gender'
 
 // Scelta dei tre giocatori di un doppio, condivisa dal wizard partita e da
 // PlanModal: tre slot (compagno, due avversari) sopra un'unica lista con
 // ricerca. Un tap sulla lista riempie lo slot attivo e passa al primo vuoto;
 // un giocatore già scelto resta in lista con il suo ruolo e non si può riusare.
+// Nei chip degli slot, larghi un terzo della riga, il giocatore è scritto nella
+// forma breve («Di Gaetano M.», come nel punteggio): il nome intero andrebbe a
+// capo dentro la parola; in lista c'è sempre per esteso.
 // Gli slot si svuotano con la ✕. Il componente non valida: chi lo usa decide se
 // gli slot vuoti bloccano il salvataggio (wizard) o no (programma).
 //
 // `onChange({ partnerId, opponentIds })`, con `opponentIds` sempre di due posti
 // (null = vuoto). `userGender` serve solo alla nota sulla categoria.
 
+// `short` è l'etichetta dentro i chip, larghi un terzo della riga.
 const SLOTS = [
-  { label: 'Compagno'    },
-  { label: 'Avversario 1' },
-  { label: 'Avversario 2' },
+  { label: 'Compagno',     short: 'Compagno' },
+  { label: 'Avversario 1', short: 'Avv. 1'   },
+  { label: 'Avversario 2', short: 'Avv. 2'   },
 ]
 
 const slotIds = (partnerId, opponentIds) => [partnerId || null, opponentIds?.[0] || null, opponentIds?.[1] || null]
@@ -72,13 +76,13 @@ export default function DoublesPlayersPicker({ opponents, partnerId, opponentIds
                   background: player ? 'var(--color-teal-dark)' : 'var(--color-surface-2)',
                   border: isActive ? '1px solid var(--color-amber)' : player ? '1px solid var(--color-teal)' : '1px solid transparent',
                 }}>
-                <span className="block text-[10px] font-semibold"
-                      style={{ color: isActive ? 'var(--color-amber-light)' : 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-                  {slot.label}
+                <span className="block text-[10px] font-semibold pr-4"
+                      style={{ color: isActive ? 'var(--color-amber-light)' : player ? 'var(--color-teal-light)' : 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
+                  {slot.short}
                 </span>
-                <span className="block text-xs font-semibold wrap-anywhere pr-4"
+                <span className="block text-xs font-semibold wrap-anywhere"
                       style={{ color: player ? 'var(--color-white)' : 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-                  {player ? player.name : ids[i] ? '—' : 'Scegli'}
+                  {player ? opponentShortName(player) : ids[i] ? '—' : 'Scegli'}
                 </span>
               </button>
               {ids[i] && (

@@ -112,6 +112,7 @@ function MatchStepCard({ match, onClick }) {
         retired={match.retired}
         opponentName={match.opponentName}
         opponentShort={match.opponentShort}
+        partnerShort={match.partnerShort}
         size="sm"
       />
     </Wrapper>

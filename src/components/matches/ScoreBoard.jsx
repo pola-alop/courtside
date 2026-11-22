@@ -11,7 +11,9 @@ import { MATCH_FORMATS, setKind, setWinner, isTiebreakSet, hasScore } from '../.
 // di una sola parola più lungo della larghezza fissa veniva tagliato anche se
 // non c'era nessun cognome da compattare). Il nome per esteso resta comunque
 // disponibile via `title` quando viene compattato.
-export default function ScoreBoard({ sets, format, retired, opponentName, opponentShort, size = 'sm' }) {
+// Nel doppio `opponentShort` è già «Rossi / Bianchi» e `partnerShort` aggiunge il
+// compagno alla riga dell'utente («Tu / Verdi»): due nomi per lato, solo cognomi.
+export default function ScoreBoard({ sets, format, retired, opponentName, opponentShort, partnerShort, size = 'sm' }) {
   const fmt = MATCH_FORMATS[format]
   if (!fmt) return null
 
@@ -33,7 +35,7 @@ export default function ScoreBoard({ sets, format, retired, opponentName, oppone
          style={{ gridTemplateColumns: `max-content repeat(${colCount}, max-content) max-content` }}>
       <PlayerRow
         row={1}
-        name="Tu"
+        name={partnerShort ? `Tu / ${partnerShort}` : 'Tu'}
         cells={cells}
         who="me"
         retired={retired === 'me'}
@@ -101,6 +103,8 @@ function tbSuperscript(cell, who) {
 // cognome) per le partite senza `opponentShort`, cioè senza avversario in
 // anagrafica da cui derivare la forma breve. Nomi di una sola parola restano invariati.
 function compactName(name) {
+  // Un nome di doppio («Rossi / Bianchi») è già nella forma giusta.
+  if ((name || '').includes(' / ')) return name
   const parts = (name || '').trim().split(/\s+/).filter(Boolean)
   if (parts.length <= 1) return name || 'Avversario'
   const surname = parts[parts.length - 1]

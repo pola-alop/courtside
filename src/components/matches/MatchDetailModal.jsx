@@ -3,6 +3,8 @@ import ScoreBoard from './ScoreBoard'
 import { RESULT_META, MATCH_FORMATS, MATCH_TYPES, surfaceIcon, roundLabel } from '../../lib/tennis'
 import { intensityMeta } from '../../lib/training'
 import AthleticsSection from '../athletics/AthleticsSection'
+import { isDoubles } from '../../lib/doubles'
+import { doublesCategoryLabel } from '../../lib/gender'
 
 const MAX_NOTE_LENGTH = 150
 
@@ -106,6 +108,7 @@ export default function MatchDetailModal({
               retired={match.retired}
               opponentName={match.opponentName}
               opponentShort={match.opponentShort}
+              partnerShort={match.partnerShort}
               size="md"
             />
           </div>
@@ -128,7 +131,15 @@ export default function MatchDetailModal({
             )}
 
             <Section title="Dettagli">
-              <Row label="Avversario" value={match.opponentName || '—'} />
+              {/* Nel doppio: compagno, i due avversari e la categoria (ricavata
+                  dai generi, assente se ne manca uno). */}
+              {isDoubles(match) ? <>
+                <Row label="Compagno" value={match.partnerName || '—'} />
+                <Row label="Avversari" value={match.opponentName || '—'} />
+                {doublesCategoryLabel(match.category) && <Row label="Categoria" value={doublesCategoryLabel(match.category)} />}
+              </> : (
+                <Row label="Avversario" value={match.opponentName || '—'} />
+              )}
               <Row label="Tipo" value={match.eventName ? `${typeLabel} · ${match.eventName}` : typeLabel} />
               {/* Solo i tornei hanno un turno; le partite di torneo registrate
                   prima che il campo esistesse non ce l'hanno e la riga non compare. */}
@@ -228,8 +239,8 @@ function Row({ label, value, subValue }) {
   return (
     <div className="flex justify-between items-center px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
       <span className="text-xs" style={{ color: 'var(--color-slate)' }}>{label}</span>
-      <span className="text-right">
-        <span className="block text-xs font-medium" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>{value}</span>
+      <span className="text-right min-w-0 pl-3">
+        <span className="block text-xs font-medium wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>{value}</span>
         {subValue && (
           <span className="block text-[11px] mt-0.5" style={{ color: 'var(--color-white)', opacity: 0.6, fontFamily: 'var(--font-mono)' }}>{subValue}</span>
         )}

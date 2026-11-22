@@ -1,5 +1,6 @@
 import ScoreBoard from './ScoreBoard'
 import { RESULT_META, surfaceIcon, MATCH_TYPES, roundMeta } from '../../lib/tennis'
+import { disciplineLabel } from '../../lib/doubles'
 
 // Riga compatta della lista partite: data + avversario, bollino esito con
 // etichetta, punteggio stile tennis, superficie e tipo. Tap → dettaglio.
@@ -8,6 +9,8 @@ export default function MatchRow({ match, onClick }) {
   const typeLabel = MATCH_TYPES.find(t => t.id === match.type)?.label || match.type
   const eventSuffix = match.eventName ? ` · ${match.eventName}` : ''
   const round = roundMeta(match.round)
+  // «Doppio misto · » davanti al tipo; per il singolo non compare nulla.
+  const discipline = disciplineLabel(match)
 
   return (
     <button
@@ -34,6 +37,7 @@ export default function MatchRow({ match, onClick }) {
         retired={match.retired}
         opponentName={match.opponentName}
         opponentShort={match.opponentShort}
+        partnerShort={match.partnerShort}
         size="sm"
       />
 
@@ -46,7 +50,7 @@ export default function MatchRow({ match, onClick }) {
         <div className="flex items-start gap-1.5 min-w-0">
           <span className="text-xs shrink-0">{surfaceIcon(match.surface)}</span>
           <span className="text-xs break-words min-w-0" style={{ color: 'var(--color-slate)' }}>
-            {cap(match.surface)} · {typeLabel}{eventSuffix}
+            {cap(match.surface)} · {discipline ? `${discipline} · ` : ''}{typeLabel}{eventSuffix}
           </span>
         </div>
         {round && (

@@ -17,6 +17,14 @@ import CalendarWeek from './CalendarWeek'
 // settimana corrente è la prima riga del mese (la precedente non è in griglia)
 // aspetta sopra la prima riga, nella colonna dell'intestazione. Grigia a zero.
 //
+// Le frecce ‹ › scorrono i mesi (`onMonth`, l'offset lo tiene la pagina): fino a
+// 24 mesi indietro e 6 avanti, «Oggi» riporta al mese corrente. Fiammella e card
+// della settimana sono del presente, quindi solo nel mese corrente. In un mese
+// PASSATO la colonna della fiammella ha solo la barra delle settimane con
+// almeno un'attività (niente fiamma né numero, nessuna barra sulle vuote); in un
+// mese FUTURO è vuota. I giorni passati mostrano il fatto, quelli futuri il
+// programmato, e il tap è lo stesso ovunque.
+//
 // La settimana corrente non è una riga di cerchi ma sette card con il fatto e
 // il programmato (`CalendarWeek`), dentro la stessa griglia.
 //
@@ -33,9 +41,9 @@ import CalendarWeek from './CalendarWeek'
 const FLAME_COL = 22
 const COLUMN_GAP = 3
 
-export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents, index, running, onOpen, onPlan, onRegister }) {
+export default function Calendar({ calendar, onMonth, runWorkouts, gymWorkouts, opponents, index, running, onOpen, onPlan, onRegister }) {
   const [openKey, setOpenKey] = useState(null)
-  const { weeks, streak } = calendar
+  const { weeks, streak, offset, bounds, isCurrentMonth } = calendar
 
   const openDay = openKey
     ? weeks.flatMap(w => w.days).find(d => d.key === openKey) || null
@@ -53,10 +61,23 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
   return (
     <div className="rounded-2xl p-3"
          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
-      <p className="text-sm font-semibold mb-2 px-1"
-         style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
-        {calendar.title}
-      </p>
+      <div className="flex items-center justify-between mb-1 gap-2">
+        <div className="flex items-center">
+          <MonthArrow dir="prev" disabled={offset <= bounds.min} onClick={() => onMonth(offset - 1)} />
+          <p className="text-sm font-semibold text-center wrap-anywhere"
+             style={{ minWidth: '8.5rem', color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+            {calendar.title}
+          </p>
+          <MonthArrow dir="next" disabled={offset >= bounds.max} onClick={() => onMonth(offset + 1)} />
+        </div>
+        {!isCurrentMonth && (
+          <button type="button" onClick={() => onMonth(0)}
+                  className="text-xs font-semibold rounded-full px-3 py-1.5"
+                  style={{ color: 'var(--color-teal)', border: '1px solid var(--color-teal)', fontFamily: 'var(--font-display)' }}>
+            Oggi
+          </button>
+        )}
+      </div>
 
       <div className="mb-1 px-1" style={{ display: 'grid', gridTemplateColumns: columns, columnGap: COLUMN_GAP }}>
         {WEEKDAY_INITIALS.map((d, i) => (
@@ -65,7 +86,7 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
             {d}
           </span>
         ))}
-        {streak.flameRow === ABOVE_GRID ? <FlameMark streak={streak} /> : <span />}
+        {streak && streak.flameRow === ABOVE_GRID ? <FlameMark streak={streak} /> : <span />}
       </div>
 
       {weeks.map((week, i) => (
@@ -86,7 +107,9 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
             {week.days.map(day => (
               <CalendarDay key={day.key} day={day} onClick={() => tapDay(day)} />
             ))}
-            <FlameCell row={i} streak={streak} />
+            {streak
+              ? <FlameCell row={i} streak={streak} />
+              : <ActivityBar weeks={weeks} row={i} />}
           </div>
         )
       ))}
@@ -110,6 +133,44 @@ export default function Calendar({ calendar, runWorkouts, gymWorkouts, opponents
 }
 
 // ── Componenti interni ─────────────────────────────────────
+
+// Freccia del mese: area di tocco da 36px, spenta ai limiti.
+function MonthArrow({ dir, disabled, onClick }) {
+  const prev = dir === 'prev'
+  return (
+    <button type="button" onClick={onClick} disabled={disabled}
+            aria-label={prev ? 'Mese precedente' : 'Mese successivo'}
+            className="flex items-center justify-center rounded-full text-2xl leading-none"
+            style={{
+              width: 36, height: 36,
+              color: 'var(--color-white)',
+              opacity: disabled ? 0.25 : 1,
+              cursor: disabled ? 'default' : 'pointer',
+            }}>
+      {prev ? '‹' : '›'}
+    </button>
+  )
+}
+
+// La colonna della fiammella fuori dal mese corrente: solo la barra delle
+// settimane attive, senza fiamma né numero. Le righe attive contigue fanno una
+// linea sola (sbordano di 3px come nel mese corrente) e ogni tratto ha gli
+// estremi tondi dove finisce.
+function ActivityBar({ weeks, row }) {
+  if (!weeks[row].active) return <span />
+  const joinsUp = row > 0 && weeks[row - 1].active
+  const joinsDown = row < weeks.length - 1 && weeks[row + 1].active
+  return (
+    <span className="relative flex justify-center">
+      <span className="absolute"
+            style={{
+              top: joinsUp ? -3 : 0, bottom: joinsDown ? -3 : 0, width: 4,
+              background: barColor(true),
+              borderRadius: `${joinsUp ? 0 : 2}px ${joinsUp ? 0 : 2}px ${joinsDown ? 0 : 2}px ${joinsDown ? 0 : 2}px`,
+            }} />
+    </span>
+  )
+}
 
 // Una cella della colonna della fiammella. Il segmento sborda di 3px sopra e
 // sotto per coprire il padding delle righe, così la barra è continua.

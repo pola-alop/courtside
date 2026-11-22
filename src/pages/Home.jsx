@@ -76,6 +76,9 @@ export default function Home() {
   const { opponents, loading: opponentLoading } = useOpponents()
   // { date: 'YYYY-MM-DD', plan?: programma da vedere/modificare } o null.
   const [planTarget, setPlanTarget] = useState(null)
+  // Il mese del calendario rispetto a quello di oggi (0 = corrente). Sta in
+  // memoria e riparte da oggi a ogni ingresso nella Home: la pagina è "adesso".
+  const [monthOffset, setMonthOffset] = useState(0)
 
   const report = useMemo(
     () => buildHome({
@@ -86,8 +89,8 @@ export default function Home() {
   )
 
   const calendar = useMemo(
-    () => buildCalendar({ matches, trainings, runs, gymSessions, plans }),
-    [matches, trainings, runs, gymSessions, plans]
+    () => buildCalendar({ matches, trainings, runs, gymSessions, plans, monthOffset }),
+    [matches, trainings, runs, gymSessions, plans, monthOffset]
   )
 
   // `kind` è già il nome del parametro del deep link (match|training|run|gym).
@@ -179,11 +182,14 @@ export default function Home() {
 
       {/* ── Calendario: il mese corrente, il fatto e la serie di settimane ──
           Ha preso il posto della striscia di continuità: dice la stessa cosa
-          meglio, e la serie conta tutti i domini, non solo il tennis. */}
+          meglio, e la serie conta tutti i domini, non solo il tennis. Dalla
+          2.2.0 si scorre con le frecce (indietro il fatto, avanti il
+          programmato); si riparte sempre dal mese corrente. */}
       <div className="px-6 pb-6">
         <SectionTitle>Calendario</SectionTitle>
         <Calendar
           calendar={calendar}
+          onMonth={setMonthOffset}
           runWorkouts={runWorkouts}
           gymWorkouts={gymWorkouts}
           opponents={opponents}

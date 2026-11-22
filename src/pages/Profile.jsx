@@ -275,6 +275,11 @@ export default function Profile() {
       >
         Sign out
       </button>
+
+      <p className="mt-4 text-center text-[10px]"
+         style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+        Courtside v{__APP_VERSION__}
+      </p>
     </div>
   )
 }

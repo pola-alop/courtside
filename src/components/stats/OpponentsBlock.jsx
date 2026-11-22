@@ -29,7 +29,7 @@ export default function OpponentsBlock({ report, onDrill }) {
       <div className="grid grid-cols-3 gap-2">
         <Tile label="Avversari" value={String(distinct)} sub="affrontati" />
         <Tile label="Top 3" value={formatPct(top3Share)} sub="delle partite" />
-        <Tile label="Media" value={(report.core.n / Math.max(1, distinct)).toLocaleString('it-IT', { maximumFractionDigits: 1 })} sub="partite a testa" />
+        <Tile label="Media" value={(report.opponents.n / Math.max(1, distinct)).toLocaleString('it-IT', { maximumFractionDigits: 1 })} sub="partite a testa" />
       </div>
 
       <div className="space-y-3 mt-4">

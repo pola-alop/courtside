@@ -29,6 +29,12 @@ export const isDoubles = match => match?.discipline === 'doppio'
 
 export const matchDiscipline = match => (isDoubles(match) ? 'doppio' : 'singolo')
 
+// Il filtro Singolo | Doppio | Tutti di Rendimento (`'all'` = nessun taglio).
+export const DISCIPLINE_FILTERS = [...DISCIPLINES, { id: 'all', label: 'Tutti' }]
+
+export const filterDiscipline = (matches, filter) =>
+  (filter === 'singolo' || filter === 'doppio' ? matches.filter(m => matchDiscipline(m) === filter) : matches)
+
 // Id valido = stringa non vuota; il resto (null, undefined, '') non è un giocatore.
 const validId = id => (typeof id === 'string' && id ? id : null)
 

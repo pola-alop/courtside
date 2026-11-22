@@ -23,6 +23,7 @@ import MatchDetailModal from '../components/matches/MatchDetailModal'
 import {
   PERIODS, DEFAULT_PERIOD, MIN_CORE, buildRendimento, coreStats, filterPeriod, periodRange,
 } from '../lib/stats'
+import { filterDiscipline } from '../lib/doubles'
 import { buildActivity } from '../lib/activity'
 import { buildTechnique } from '../lib/technique'
 import { buildPhysical } from '../lib/physical'
@@ -97,6 +98,9 @@ export default function Stats() {
 
   const [activeTab, setActiveTab] = useState(() => initialTab(searchParams))
   const [period, setPeriod] = useState(DEFAULT_PERIOD)
+  // Disciplina di Rendimento: di default il singolo, perché il GW% di coppia non
+  // è confrontabile con quello da solo. Governa solo la tab Rendimento.
+  const [discipline, setDiscipline] = useState('singolo')
   const [drill, setDrill] = useState(null)              // { title, sub, matches }
   const [selectedMatchId, setSelectedMatchId] = useState(null)
 
@@ -119,9 +123,19 @@ export default function Stats() {
     }
   }, [matches, trainings, period])
 
+  // Rendimento legge le partite della disciplina scelta; il ponte riceve anche
+  // le altre come sessioni precedenti (sono carico a tutti gli effetti).
+  const rendimentoMatches = useMemo(
+    () => filterDiscipline(scoped.matches, discipline),
+    [scoped, discipline]
+  )
+
   const report = useMemo(
-    () => buildRendimento({ matches: scoped.matches, trainings: scoped.trainings, opponents }),
-    [scoped, opponents]
+    () => buildRendimento({
+      matches: rendimentoMatches, sessionMatches: scoped.matches,
+      trainings: scoped.trainings, opponents,
+    }),
+    [rendimentoMatches, scoped, opponents]
   )
 
   // Attività riceve anche i dati NON filtrati: ACWR, striscia attiva e giorni
@@ -216,10 +230,12 @@ export default function Stats() {
   // Su "Sempre" non esiste un prima, e se il periodo precedente ha pochi dati il
   // confronto sarebbe rumore: in entrambi i casi il delta non compare.
   const comparison = useMemo(() => {
-    if (!previous || previous.matches.length < MIN_CORE) return null
-    const rate = coreStats(previous.matches).gameWinRate
+    if (!previous) return null
+    const prevMatches = filterDiscipline(previous.matches, discipline)
+    if (prevMatches.length < MIN_CORE) return null
+    const rate = coreStats(prevMatches).gameWinRate
     return rate == null ? null : { rate, label: 'periodo precedente' }
-  }, [previous])
+  }, [previous, discipline])
 
   // Gli insight sono di PAGINA, non di sezione: si concatenano le liste delle
   // sezioni implementate e si riordina per peso, così una frase sul carico può
@@ -331,7 +347,8 @@ export default function Stats() {
           {/* Contenuto */}
           <div className="px-6 pb-8">
             {activeTab === 'rendimento' ? (
-              <Rendimento report={report} comparison={comparison} onDrill={openDrill} />
+              <Rendimento report={report} comparison={comparison} onDrill={openDrill}
+                          discipline={discipline} onDiscipline={setDiscipline} />
             ) : activeTab === 'attivita' ? (
               <Attivita report={activity} periodLabel={PERIODS.find(p => p.id === period)?.label} />
             ) : activeTab === 'tecnica' ? (

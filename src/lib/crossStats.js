@@ -28,6 +28,7 @@
 
 import { toSessions, loadStatus, LOAD_RPE, DEFAULT_RPE, ACWR_MIN, ACWR_MAX } from './activity'
 import { coreStats, dayTime, filterPeriod, MIN_BRIDGE } from './stats'
+import { filterDiscipline } from './doubles'
 import { runMinutes } from './running'
 import { gymMinutes, muscleScores, MUSCLES_BY_ID } from './gym'
 import { TRAINED_POINTS } from './gymStats'
@@ -433,8 +434,13 @@ export function buildCross({ matches = [], trainings = [], loadSessions = [], al
   }
   if (!enough) { report.insights = []; return report }
 
-  report.matches   = matchesAfter(matches, offByDay, factorTotals)
-  report.byLoad    = matchesByLoad(matches, loadSessions)
+  // I due blocchi sul GW% (dopo corsa/palestra e per carico) leggono i soli
+  // singoli: il game vinti % di coppia non è confrontabile. Tutto il resto di
+  // Incroci (carico, corpo, allenamenti, calibrazione) conta ogni partita.
+  const singles = filterDiscipline(matches, 'singolo')
+  const doublesLeft = matches.length - singles.length
+  report.matches   = { ...matchesAfter(singles, offByDay, factorTotals), doublesLeft }
+  report.byLoad    = { ...matchesByLoad(singles, loadSessions), doublesLeft }
   report.trainings = trainingsAfter(trainings, offByDay, factorTotals)
   report.body      = conditionAfter(athletic, offByDay, factorTotals, offAll)
   report.perceived = perceivedVsWatch(periodLoad)

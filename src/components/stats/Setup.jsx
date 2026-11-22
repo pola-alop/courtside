@@ -234,6 +234,14 @@ function ComparisonBlock({ report, onDrill }) {
 
       <Verdict d={d} />
 
+      {report.comparison.doublesLeft > 0 && (
+        <Note>
+          {report.comparison.doublesLeft} {report.comparison.doublesLeft === 1 ? 'partita di doppio non compare' : 'partite di doppio non compaiono'} nel
+          confronto: i game vinti di coppia non sono confrontabili con quelli da solo. Contano invece
+          per l'usura di corde e scarpe.
+        </Note>
+      )}
+
       {d.undeclared > 0 && (
         <Note>
           {d.undeclared} {d.undeclared === 1 ? 'partita non è classificabile' : 'partite non sono classificabili'} su

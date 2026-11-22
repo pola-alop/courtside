@@ -215,9 +215,21 @@ function MatchesCard({ report, factor }) {
             che si assorbe: se la prima va peggio e la seconda meglio della media, il carico si paga
             subito e rende dopo.
           </Note>
+          <DoublesNote n={m.doublesLeft} />
         </>
       )}
     </Card>
+  )
+}
+
+// Dice quanti doppi del periodo non compaiono nei blocchi sul GW%.
+function DoublesNote({ n }) {
+  if (!n) return null
+  return (
+    <p className="text-[9px] mt-3" style={{ color: 'var(--color-slate)' }}>
+      {n} {n === 1 ? 'partita di doppio non compare' : 'partite di doppio non compaiono'} qui:
+      i game vinti di coppia non sono confrontabili con quelli da solo.
+    </p>
   )
 }
 
@@ -279,6 +291,7 @@ function LoadCard({ report }) {
                missing={`Nessun confronto leggibile: servono almeno ${MIN_BRIDGE} partite sia con il carico alto sia con quello ottimale.`} />
         </>
       )}
+      <DoublesNote n={l.doublesLeft} />
       {l.skipped > 0 && l.used > 0 && (
         <p className="text-[9px] mt-3" style={{ color: 'var(--color-slate)' }}>
           {l.skipped} {l.skipped === 1 ? 'partita esclusa' : 'partite escluse'}: meno di 28 giorni di storico o di

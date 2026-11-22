@@ -41,6 +41,7 @@
 
 import { gamesInMatch } from './tennis'
 import { dayTime, gamesOf } from './stats'
+import { filterDiscipline } from './doubles'
 import { todayTime } from './activity'
 import {
   trainingGameEquivalents, surfaceFactor, computeWear,
@@ -645,7 +646,10 @@ export function buildSetup({ matches = [], trainings = [], equipment = [] }) {
 
   lives.sort((a, b) => b.time - a.time)
 
-  const comparison = setupComparison(matches, equipment, mountsByRacket)
+  // Il confronto sul GW% legge i soli singoli (il game vinti % di coppia non è
+  // confrontabile con quello da solo); vita corde, scarpe e copertura contano ogni partita.
+  const singles    = filterDiscipline(matches, 'singolo')
+  const comparison = { ...setupComparison(singles, equipment, mountsByRacket), doublesLeft: matches.length - singles.length }
   const cal        = calibration(lives)
 
   const report = {

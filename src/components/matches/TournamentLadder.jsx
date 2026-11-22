@@ -13,7 +13,11 @@ import { runLadder } from '../../lib/tournaments'
 // contesto del tabellone senza chiedere all'utente di trascrivere le partite
 // altrui. "Uscito ai quarti" da solo non dice quanto mancava; due gradini
 // spenti sopra la propria uscita lo dicono a colpo d'occhio.
-export default function TournamentLadder({ run, onSelectMatch }) {
+//
+// Serve anche la fase finale di una competizione a squadre: lì i gradini
+// portano scontri e non partite, e `renderItem(item)` ne disegna la card al
+// posto di quella della partita (`pending` = ancora da giocare).
+export default function TournamentLadder({ run, onSelectMatch, renderItem = null }) {
   const steps = runLadder(run)
   if (steps.length === 0) return null
 
@@ -26,13 +30,14 @@ export default function TournamentLadder({ run, onSelectMatch }) {
           run={run}
           isLast={i === steps.length - 1}
           onSelectMatch={onSelectMatch}
+          renderItem={renderItem}
         />
       ))}
     </div>
   )
 }
 
-function LadderStep({ step, run, isLast, onSelectMatch }) {
+function LadderStep({ step, run, isLast, onSelectMatch, renderItem }) {
   const { round, matches, state } = step
   const isTitle   = round.id === 'finale' && run.status === 'champion'
   // Il primo gradino sopra l'uscita di un cammino ancora aperto non è "non
@@ -77,7 +82,9 @@ function LadderStep({ step, run, isLast, onSelectMatch }) {
         </div>
 
         {state === 'played' && matches.map(m => (
-          <MatchStepCard key={m.id} match={m} onClick={onSelectMatch ? () => onSelectMatch(m.id) : null} />
+          renderItem
+            ? <div key={m.id}>{renderItem(m)}</div>
+            : <MatchStepCard key={m.id} match={m} onClick={onSelectMatch ? () => onSelectMatch(m.id) : null} />
         ))}
 
         {state === 'bye' && <GhostBox text="Bye o ingresso diretto — nessuna partita" />}
@@ -143,6 +150,10 @@ function nodeStyle(state, matches, isTitle, isNextUp) {
     return { bg: 'rgba(244,163,0,0.18)', border: 'var(--color-amber)', fg: 'var(--color-amber)', glyph: '🏆', dashed: false }
   }
   if (state === 'played') {
+    // Uno scontro di fase finale ancora da giocare: né vinto né perso.
+    if (matches.some(m => m.pending)) {
+      return { bg: 'transparent', border: 'var(--color-teal-dark)', fg: 'var(--color-teal)', glyph: '', dashed: true }
+    }
     const won = matches.every(m => m.result === 'win')
     return won
       ? { bg: 'var(--color-win-bg)',  border: 'var(--color-win)',  fg: 'var(--color-win)',  glyph: '✓', dashed: false }

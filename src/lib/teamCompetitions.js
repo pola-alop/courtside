@@ -369,14 +369,14 @@ export function buildStandings(competition, ties = [], matches = [], today = new
 // La fase finale nella forma che `runLadder`/`TournamentLadder` leggono per un
 // torneo: `path` (uno scontro per turno, in ordine di tabellone), `lastRoundId`,
 // `status`, `nextRoundId`. Un gradino porta lo scontro (`tie`) e `result`:
-// 'win'|'loss' se deciso, null se ancora da giocare. `null` se non ci sono scontri.
+// 'win'|'loss' se deciso, null (e `pending`) se ancora da giocare. `null` se non ci sono scontri.
 export function finalsRun(competition, ties = [], matches = [], today = new Date()) {
   const path = finalTies(competition, ties)
     .filter(t => ROUND_BY_ID[t.round]?.depth != null)
     .map(t => {
       const info = describeTie(t, matches, today)
       const result = info.status === 'won' ? 'win' : info.status === 'lost' ? 'loss' : null
-      return { id: t.id, round: t.round, date: t.date, tie: t, info, result, opponentName: t.opponentTeam }
+      return { id: t.id, round: t.round, date: t.date, tie: t, info, result, pending: result === null, opponentName: t.opponentTeam }
     })
     .sort((a, b) => roundOrder(a.round) - roundOrder(b.round) || new Date(a.date) - new Date(b.date))
   if (path.length === 0) return null

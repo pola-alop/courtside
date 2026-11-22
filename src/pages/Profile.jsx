@@ -4,6 +4,8 @@ import { auth } from '../firebase/config'
 import { useAuthState } from '../hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { HR_ZONES } from '../lib/athletics'
+import { genderLabel, readGender } from '../lib/gender'
+import GenderField from '../components/GenderField'
 import {
   DEFAULT_WALK, WEIGHT_LIMITS, emptyRunningProfile, runningProfileIssues,
   isRunningReady, parsePace, formatPace, maskPaceInput,
@@ -33,6 +35,7 @@ export default function Profile() {
   const openEdit = () => {
     setRunForm(null)
     setForm({
+      gender:       readGender(profile?.gender),
       dominantHand: profile?.dominantHand || null,
       level:        profile?.level || '',
       birthYear:    profile?.birthYear    ? String(profile.birthYear)    : '',
@@ -47,6 +50,7 @@ export default function Profile() {
     if (saving || !form) return
     setSaving(true)
     await update({
+      gender:       form.gender,
       dominantHand: form.dominantHand || null,
       level:        form.level.trim() || null,
       birthYear:    yearOrNull(form.birthYear),
@@ -132,7 +136,8 @@ export default function Profile() {
           </button>
 
           <Section title="Il tuo tennis">
-            <Row label="Mano"               value={handLabel(profile?.dominantHand) || '—'} />
+            <Row label="Genere"              value={genderLabel(readGender(profile?.gender)) || '—'} />
+            <Row label="Mano"              value={handLabel(profile?.dominantHand) || '—'} />
             <Row label="Livello / classifica" value={profile?.level || '—'} />
             <Row label="Età"                value={age !== null ? `${age} anni` : '—'} />
             <Row label="Gioca dal"
@@ -140,6 +145,12 @@ export default function Profile() {
                    ? `${profile.playingSince}${experience !== null ? ` · ${experience} ${experience === 1 ? 'anno' : 'anni'}` : ''}`
                    : '—'} />
           </Section>
+
+          {!readGender(profile?.gender) && (
+            <p className="text-xs -mt-3 mb-6 px-1" style={{ color: 'var(--color-slate)' }}>
+              Indica il tuo genere: serve per ricavare la categoria dei doppi (maschile, femminile o misto).
+            </p>
+          )}
         </>
       )}
 
@@ -149,6 +160,8 @@ export default function Profile() {
              style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-display)' }}>
             Modifica profilo
           </p>
+
+          <GenderField value={form.gender} onChange={v => setField('gender', v)} />
 
           <div>
             <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Mano</label>

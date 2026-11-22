@@ -6,8 +6,11 @@
 // ── Perché il mese solare, qui sì ──
 // La Panoramica ha scartato il mese come unità di SINTESI (il 1° del mese è
 // azzerata). Qui il mese non riassume niente: è il foglio di calendario che
-// l'utente ha in testa, e la Home lo mostra perché il mese corrente è "adesso".
-// Nessun selettore, nessuna freccia: un mese diverso da questo è roba di Stats.
+// l'utente ha in testa, e la Home parte dal mese corrente perché è "adesso".
+// Dalla 2.2.0 (Fase 7) si può scorrere con `monthOffset`: indietro fino a
+// `MAX_MONTHS_BACK` mesi, avanti fino a `MAX_MONTHS_AHEAD`. Scorrere non
+// riassume niente: il mese passato mostra solo il fatto, quello futuro il
+// programmato; fiammella e card della settimana restano del mese corrente.
 //
 // ── Cosa è ricavato e cosa no ──
 // Lo stato di un programma (fatto / da fare / non svolto) NON è salvato: si
@@ -55,21 +58,31 @@ export const KIND_META = {
 // corsa ↔ `runs`, palestra ↔ `gymSessions`).
 export const PLAN_KINDS = ['match', 'training', 'run', 'gym', 'rest']
 
+// Quanto si può scorrere: 24 mesi indietro (tetto fisso, deciso dall'utente) e
+// 6 avanti. `monthOffset` fuori dai limiti viene riportato dentro.
+export const MAX_MONTHS_BACK = 24
+export const MAX_MONTHS_AHEAD = 6
+
 // ── Punto d'ingresso ───────────────────────────────────────
 // `today` si passa solo per collaudare su date fisse: l'app usa il default.
+// `monthOffset` è il mese guardato rispetto a quello di oggi (0 = corrente).
 export function buildCalendar({
   matches = [], trainings = [], runs = [], gymSessions = [], plans = [],
-  today = todayTime(),
+  today = todayTime(), monthOffset = 0,
 }) {
   today = startOfDay(today)
+  const offset = clampOffset(monthOffset)
   const sessions = toCalendarSessions({ matches, trainings, runs, gymSessions })
   const sessionsByDay = groupByDay(sessions)
   const plansByDay = planStatuses(plans, sessionsByDay, today)
   const thisWeek = startOfWeek(today)
 
-  const ref = new Date(today)
+  // Mai `setMonth` sul giorno di oggi: il 31 gennaio + 1 mese slitta a marzo.
+  const todayDate = new Date(today)
+  const ref = new Date(todayDate.getFullYear(), todayDate.getMonth() + offset, 1)
   const year = ref.getFullYear()
   const month = ref.getMonth()
+  const isCurrentMonth = offset === 0
 
   const monthStart = startOfDay(new Date(year, month, 1))
 
@@ -82,11 +95,31 @@ export function buildCalendar({
     }
     return {
       index, start, end, days,
-      isCurrent: start === thisWeek,
+      // La card della settimana è del solo mese corrente: in un altro mese la
+      // riga che contiene oggi (prima riga del mese dopo, ultima del mese
+      // prima) resta una riga di cerchi.
+      isCurrent: isCurrentMonth && start === thisWeek,
       isPast: end < today,
       isFuture: start > today,
+      // Almeno una sessione svolta nella settimana (fino a oggi): è ciò che
+      // accende la barra della fiammella nei mesi passati.
+      active: weekHasSession(sessionsByDay, start, today),
     }
   })
+
+  const bounds = { min: -MAX_MONTHS_BACK, max: MAX_MONTHS_AHEAD }
+  const base = {
+    year, month,
+    title: `${MONTHS[month]} ${year}`,
+    today,
+    offset,
+    isCurrentMonth,
+    bounds,
+    weeks,
+  }
+
+  // Altro mese: niente settimana corrente né serie (sono del presente).
+  if (!isCurrentMonth) return { ...base, currentWeek: null, streak: null }
 
   // Oggi sta sempre nel mese corrente, quindi la sua settimana è sempre una
   // delle righe della griglia: la ricerca non può fallire.
@@ -94,10 +127,7 @@ export function buildCalendar({
   const current = weeks[row]
 
   return {
-    year, month,
-    title: `${MONTHS[month]} ${year}`,
-    today,
-    weeks,
+    ...base,
     currentWeek: {
       row,
       start: current.start,
@@ -106,6 +136,23 @@ export function buildCalendar({
     },
     streak: buildStreak(sessions, today, row),
   }
+}
+
+function clampOffset(offset) {
+  const n = Number.isFinite(offset) ? Math.trunc(offset) : 0
+  return Math.min(MAX_MONTHS_AHEAD, Math.max(-MAX_MONTHS_BACK, n))
+}
+
+// Una settimana (lunedì `start`) è attiva se un suo giorno, fino a oggi, ha
+// almeno una sessione. `addDays` passa dal calendario locale: sicura col cambio
+// dell'ora, a differenza di `start + i * 86400000`.
+function weekHasSession(sessionsByDay, start, today) {
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(start, i)
+    if (day > today) return false
+    if (sessionsByDay.has(day)) return true
+  }
+  return false
 }
 
 // ── Sessioni ───────────────────────────────────────────────

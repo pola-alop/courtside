@@ -44,6 +44,7 @@ import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
 import { groupRotation, lastMatchText, plannedText } from '../lib/opponents'
 import { readGender } from '../lib/gender'
+import { DISCIPLINES, isDoubles, involvesPlayer, facedPlayer, matchDiscipline } from '../lib/doubles'
 import { whatsappHref } from '../lib/phone'
 import { todayTime } from '../lib/activity'
 import { calibrateIntensity } from '../lib/fit'
@@ -193,6 +194,7 @@ export default function Matches() {
   const [selectedMatchId, setSelectedMatchId] = useState(() => searchParams.get('match'))
   const [matchDeleteToast, setMatchDeleteToast] = useState(false)
   const [fType, setFType]         = useState('all')
+  const [fDiscipline, setFDiscipline] = useState('all')
   const [fEvent, setFEvent]       = useState('')
   const [fOpponent, setFOpponent] = useState('all')
   const [fSurface, setFSurface]   = useState('all')
@@ -303,18 +305,37 @@ export default function Matches() {
     }
   }
   const matchesVs = (opponentId) => matches.filter(m => m.opponentId === opponentId)
+  // I doppi in cui il giocatore compare (compagno o avversario): non entrano
+  // nell'H2H né in `matchesVs`, che restano di singolo, ma tengono bloccata
+  // l'eliminazione: un riferimento orfano romperebbe il nome della partita.
+  const doublesWith = (opponentId) => matches.filter(m => isDoubles(m) && involvesPlayer(m, opponentId)).length
 
   // ── Filtri partite ──
   const eventOptions = (fType === 'campionato' || fType === 'torneo')
     ? [...new Set(matches.filter(m => m.type === fType && m.eventName).map(m => m.eventName))]
     : []
-  const opponentOptions = [...new Map(matches.map(m => [m.opponentId, m.opponentName])).entries()]
-    .sort((a, b) => a[1].localeCompare(b[1]))
+  // Chiunque tu abbia affrontato: l'avversario dei singoli e i due dei doppi
+  // (il compagno no: «insieme in doppio» è un record del dettaglio giocatore).
+  const opponentOptions = (() => {
+    const options = new Map()
+    matches.forEach(m => {
+      if (isDoubles(m)) {
+        ;(m.opponentIds || []).forEach(id => {
+          const known = opponents.find(o => o.id === id)
+          if (known) options.set(id, known.name)
+        })
+      } else if (m.opponentId) {
+        options.set(m.opponentId, m.opponentName || '—')
+      }
+    })
+    return [...options.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  })()
 
   const filteredMatches = matches.filter(m => {
     if (fType !== 'all' && m.type !== fType) return false
     if (fEvent && m.eventName !== fEvent) return false
-    if (fOpponent !== 'all' && m.opponentId !== fOpponent) return false
+    if (fDiscipline !== 'all' && matchDiscipline(m) !== fDiscipline) return false
+    if (fOpponent !== 'all' && !facedPlayer(m, fOpponent)) return false
     if (fSurface !== 'all' && m.surface !== fSurface) return false
     if (fDateFrom && m.date.slice(0, 10) < fDateFrom) return false
     if (fDateTo && m.date.slice(0, 10) > fDateTo) return false
@@ -323,10 +344,11 @@ export default function Matches() {
   })
   const monthGroups = groupByMonth(filteredMatches)
 
-  const hasActiveFilters = fType !== 'all' || fEvent !== '' || fOpponent !== 'all'
+  const hasActiveFilters = fType !== 'all' || fDiscipline !== 'all' || fEvent !== '' || fOpponent !== 'all'
     || fSurface !== 'all' || fDateFrom !== '' || fDateTo !== '' || fResult !== 'all'
   const resetFilters = () => {
     setFType('all')
+    setFDiscipline('all')
     setFEvent('')
     setFOpponent('all')
     setFSurface('all')
@@ -498,6 +520,7 @@ export default function Matches() {
             <div className="space-y-4">
               <MatchFilters
                 type={fType} setType={t => { setFType(t); setFEvent('') }}
+                discipline={fDiscipline} setDiscipline={setFDiscipline}
                 event={fEvent} setEvent={setFEvent} eventOptions={eventOptions}
                 opponent={fOpponent} setOpponent={setFOpponent} opponentOptions={opponentOptions}
                 surface={fSurface} setSurface={setFSurface}
@@ -756,6 +779,7 @@ export default function Matches() {
           onRemoveFromGroup={(groupId) => setGroupMembers(groupId, { remove: [selectedOpponent.id] })}
           record={recordFor(selectedOpponent.id)}
           matches={matchesVs(selectedOpponent.id)}
+          doublesCount={doublesWith(selectedOpponent.id)}
           onClose={() => setSelectedOpponentId(null)}
           onSelectMatch={(matchId) => setSelectedMatchId(matchId)}
           onUpdate={async (id, data) => {
@@ -766,7 +790,7 @@ export default function Matches() {
           onDelete={async (id) => {
             // Guard difensiva: il bottone di eliminazione è già nascosto nel
             // modale quando ci sono match collegati, ma non fidarsi solo della UI.
-            if (matchesVs(id).length > 0) return
+            if (matchesVs(id).length > 0 || doublesWith(id) > 0) return
             await removeOpponent(id)
             setSelectedOpponentId(null)
             setOppDeleteToast(true)
@@ -959,7 +983,7 @@ export default function Matches() {
 // ── Filtri partite ─────────────────────────────────────────
 
 function MatchFilters({
-  type, setType, event, setEvent, eventOptions,
+  type, setType, discipline, setDiscipline, event, setEvent, eventOptions,
   opponent, setOpponent, opponentOptions,
   surface, setSurface,
   dateFrom, setDateFrom, dateTo, setDateTo,
@@ -985,6 +1009,15 @@ function MatchFilters({
         <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
           {[{ id: 'all', label: 'Tutti' }, ...MATCH_TYPES.map(t => ({ id: t.id, label: t.label }))].map(t => (
             <Chip key={t.id} active={type === t.id} onClick={() => setType(t.id)}>{t.label}</Chip>
+          ))}
+        </div>
+      </div>
+
+      {/* Disciplina */}
+      <div className="overflow-x-auto">
+        <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
+          {[{ id: 'all', label: 'Tutti' }, ...DISCIPLINES].map(d => (
+            <Chip key={d.id} active={discipline === d.id} onClick={() => setDiscipline(d.id)}>{d.label}</Chip>
           ))}
         </div>
       </div>

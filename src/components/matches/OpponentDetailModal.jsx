@@ -14,7 +14,7 @@ const HANDS = [
 const MAX_NOTE_LENGTH = 150
 
 export default function OpponentDetailModal({
-  opponent, record = null, matches = [], groups = [], onClose, onUpdate, onDelete, onSelectMatch,
+  opponent, record = null, matches = [], doublesCount = 0, groups = [], onClose, onUpdate, onDelete, onSelectMatch,
   onAddToGroup, onRemoveFromGroup
 }) {
   // view | edit | confirmDelete | addNote | editNote | confirmDeleteNote
@@ -36,7 +36,10 @@ export default function OpponentDetailModal({
 
   // Un avversario con almeno una partita all'attivo non può essere eliminato
   // (serve alle statistiche future): l'anagrafica resta, si può solo modificare.
-  const hasMatches = matches.length > 0
+  // Contano anche i doppi in cui compare (come compagno o avversario), che non
+  // sono nell'elenco `matches` (di singolo) ma lo tengono nell'anagrafica.
+  const linkedCount = matches.length + doublesCount
+  const hasMatches = linkedCount > 0
 
   // I documenti salvati prima della 2.2.0 non hanno il genere: `null`.
   const gender = readGender(opponent.gender)
@@ -250,7 +253,7 @@ export default function OpponentDetailModal({
                 <div className="p-3 rounded-2xl text-center"
                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-surface-2)' }}>
                   <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
-                    🔒 Non eliminabile: ha {matches.length} {matches.length === 1 ? 'partita' : 'partite'} all'attivo.
+                    🔒 Non eliminabile: ha {linkedCount} {linkedCount === 1 ? 'partita' : 'partite'} all'attivo{doublesCount > 0 ? ` (${doublesCount} in doppio)` : ''}.
                   </p>
                 </div>
               ) : (

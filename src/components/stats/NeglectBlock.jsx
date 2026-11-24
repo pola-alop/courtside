@@ -84,7 +84,7 @@ function NeglectRow({ row }) {
          style={{ background: 'var(--color-surface-2)' }}>
       <span className="text-[11px] shrink-0">{row.categoryIcon}</span>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold truncate"
+        <p className="text-[11px] font-semibold wrap-anywhere"
            style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {row.label}
         </p>
@@ -174,7 +174,7 @@ function CoverageCard({ report }) {
           <div key={cat.id}>
             <div className="flex items-baseline gap-2">
               <span className="text-[11px] shrink-0">{cat.icon}</span>
-              <span className="text-[11px] flex-1 min-w-0 truncate"
+              <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
                     style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {cat.label}
               </span>

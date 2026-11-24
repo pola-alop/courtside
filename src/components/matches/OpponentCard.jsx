@@ -30,12 +30,12 @@ export default function OpponentCard({ opponent, record = null, rotation = null,
 
         {/* Nome + sottotitolo */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold truncate"
+          <p className="text-sm font-bold wrap-anywhere"
              style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
             {opponent.name}
           </p>
           {subtitle && (
-            <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--color-slate)' }}>
+            <p className="text-xs mt-0.5 wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
               {subtitle}
             </p>
           )}

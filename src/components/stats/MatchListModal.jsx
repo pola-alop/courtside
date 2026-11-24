@@ -22,7 +22,7 @@ export default function MatchListModal({ title, sub, matches = [], onClose, onSe
         <div className="shrink-0 px-6 pt-6 pb-4 flex items-start justify-between gap-3"
              style={{ borderBottom: '1px solid var(--color-surface-2)' }}>
           <div className="min-w-0">
-            <p className="text-base font-semibold truncate"
+            <p className="text-base font-semibold wrap-anywhere"
                style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
               {title}
             </p>

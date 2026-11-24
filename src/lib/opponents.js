@@ -106,6 +106,13 @@ export function opponentShortName(opponent) {
   return `${lastName} ${firstName[0].toUpperCase()}.`
 }
 
+// "Di Gaetano"; senza cognome il nome; null se non c'è nulla. È la forma con cui
+// il punteggio di un doppio scrive i giocatori («Rossi / Bianchi»).
+export function opponentSurname(opponent) {
+  const { firstName, lastName } = opponentParts(opponent)
+  return lastName || firstName || null
+}
+
 // ── Gruppi di avversari ────────────────────────────────────
 // `users/{uid}/opponentGroups`: { name, memberIds: [opponentId] }. L'appartenenza
 // sta sul gruppo e non sull'avversario; gli id di avversari eliminati restano

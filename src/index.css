@@ -81,3 +81,33 @@ body {
 h1, h2, h3, h4 {
   font-family: var(--font-display);
 }
+
+/* Campi data e ora nativi. Su iOS 27.2 la larghezza intrinseca di
+   `date`/`time` è cresciuta: senza `min-width: 0` il campo sfora la cella del
+   grid (data e ora attaccate) e allarga la modale fino al bordo della finestra.
+   Regola unica per tutti, in `@layer base` così le utility di Tailwind
+   (`flex-1`, `w-…`) restano più forti. `appearance: none` toglie lo stile e la
+   larghezza nativi: il fondo, il bordo e il padding sono già nei componenti. */
+@layer base {
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="month"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    color-scheme: dark;
+  }
+
+  /* Con `appearance: none` iOS collassa il campo vuoto e centra il valore. */
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value,
+  input[type="datetime-local"]::-webkit-date-and-time-value,
+  input[type="month"]::-webkit-date-and-time-value {
+    min-height: 1.25em;
+    text-align: left;
+  }
+}

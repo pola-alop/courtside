@@ -4,7 +4,7 @@
 // Riusa i moduli puri dell'app (src/lib/tennis.js, athletics.js) per calcolare
 // risultati/normalizzazioni esattamente come farebbe l'app. Cancella TUTTI i
 // dati esistenti (equipment/opponents/matches/trainings/runs/runWorkouts/
-// gymWorkouts/gymSessions/gymExercises/plans + profilo) dell'utente target e
+// gymWorkouts/gymSessions/gymExercises/plans/teamTies/teamCompetitions + profilo) dell'utente target e
 // li ricrea da zero — pensato solo per il progetto dev. Quasi tutte le date
 // sono fisse; quelle del calendario della Home (sessioni recenti e programmi)
 // partono dal giorno in cui si lancia lo script.
@@ -64,7 +64,10 @@ const randInt = (min, max) => min + Math.floor(rng() * (max - min + 1))
 
 const iso = (dateStr) => new Date(dateStr).toISOString()
 const ts = (dateStr) => Timestamp.fromDate(new Date(dateStr))
-const note = (text, dateStr) => ({ text, createdAt: iso(dateStr) })
+// `createdAt` fa da id univoco della nota nell'app: due note dello stesso giorno
+// si distinguono per un secondo in più ciascuna.
+let noteSeq = 0
+const note = (text, dateStr) => ({ text, createdAt: new Date(new Date(dateStr).getTime() + (++noteSeq) * 1000).toISOString() })
 const S = (me, opp, tbMe = null, tbOpp = null) => ({ me, opp, tbMe, tbOpp })
 
 // ── Trova l'utente dev ───────────────────────────────────────
@@ -98,7 +101,7 @@ async function main() {
   console.log(`Utente target: ${user.email} (uid=${uid})`)
 
   // ── Pulizia ──────────────────────────────────────────────
-  for (const col of ['equipment', 'opponents', 'matches', 'trainings', 'runs', 'runWorkouts', 'gymWorkouts', 'gymSessions', 'gymExercises', 'plans']) {
+  for (const col of ['equipment', 'opponents', 'matches', 'trainings', 'runs', 'runWorkouts', 'gymWorkouts', 'gymSessions', 'gymExercises', 'plans', 'teamTies', 'teamCompetitions']) {
     const n = await wipeSubcollection(uid, col)
     console.log(`Eliminati ${n} doc esistenti in ${col}`)
   }
@@ -184,46 +187,107 @@ async function main() {
   // ── Opponents ────────────────────────────────────────────
   const opponentsCol = userRef.collection('opponents')
 
-  const oMarco = await opponentsCol.add({
-    name: 'Marco Rossi', hand: 'destro', level: '3.3', playstyle: 'regolarista',
+  // Nome e cognome separati (`name` è la composizione, come la salva l'app) e
+  // genere: Davide resta SENZA genere, per vedere l'avviso nel dettaglio e il
+  // doppio con la categoria non calcolabile.
+  const addOpponent = (firstName, lastName, gender, extra) => opponentsCol.add({
+    firstName, lastName, name: `${firstName} ${lastName}`, gender, ...extra,
+  })
+  const oMarco = await addOpponent('Marco', 'Rossi', 'M', {
+    hand: 'destro', level: '3.3', playstyle: 'regolarista',
     notes: [
       note('Palleggia sempre in profondità, poco rischio dalla riga di fondo.', '2025-09-10'),
       note('Servizio poco pericoloso, si può rispondere in aggressione.', '2026-01-25'),
     ],
     createdAt: ts('2025-09-05'),
   })
-  const oLuca = await opponentsCol.add({
-    name: 'Luca Bianchi', hand: 'sinistro', level: '3.1', playstyle: 'aggressivo-fondo',
+  const oLuca = await addOpponent('Luca', 'Bianchi', 'M', {
+    hand: 'sinistro', level: '3.1', playstyle: 'aggressivo-fondo',
     notes: [note('Mancino, dritto molto pesante in cross. Attaccare il rovescio.', '2025-10-06')],
     createdAt: ts('2025-10-02'),
   })
-  const oAndrea = await opponentsCol.add({
-    name: 'Andrea Verdi', hand: 'destro', level: '2.7', playstyle: 'serve-volley',
+  const oAndrea = await addOpponent('Andrea', 'Verdi', 'M', {
+    hand: 'destro', level: '2.7', playstyle: 'serve-volley',
     notes: [],
     createdAt: ts('2025-09-18'),
   })
-  const oGiulia = await opponentsCol.add({
-    name: 'Giulia Ferrari', hand: 'destro', level: '4.3', playstyle: 'contrattaccante',
+  const oGiulia = await addOpponent('Giulia', 'Ferrari', 'F', {
+    hand: 'destro', level: '4.3', playstyle: 'contrattaccante',
     notes: [note('Molto solida, va tenuta in movimento con i cambi di direzione.', '2025-11-10')],
     createdAt: ts('2025-11-06'),
   })
-  const oSimone = await opponentsCol.add({
-    name: 'Simone Colombo', hand: 'sinistro', level: '3.5', playstyle: 'completo',
+  const oSimone = await addOpponent('Simone', 'Colombo', 'M', {
+    hand: 'sinistro', level: '3.5', playstyle: 'completo',
     notes: [],
     createdAt: ts('2025-10-15'),
   })
-  const oDavide = await opponentsCol.add({
-    name: 'Davide Greco', hand: 'destro', level: '4.1', playstyle: 'attacco',
-    notes: [note('Conosciuto al circolo, non ancora affrontato in partita.', '2026-05-01')],
+  const oDavide = await addOpponent('Davide', 'Greco', null, {
+    hand: 'destro', level: '4.1', playstyle: 'attacco',
+    notes: [note('Conosciuto al circolo, non ancora affrontato in singolo.', '2026-05-01')],
     createdAt: ts('2026-05-01'),
   })
+  // Giocatori per i doppi (compagni e avversari), mai affrontati in singolo.
+  const oElena = await addOpponent('Elena', 'Conti', 'F', {
+    hand: 'destro', level: '3.7', playstyle: 'regolarista', notes: [], createdAt: ts('2026-09-01'),
+  })
+  const oPaolo = await addOpponent('Paolo', 'Neri', 'M', {
+    hand: 'destro', level: '3.2', playstyle: 'completo', notes: [], createdAt: ts('2026-09-01'),
+  })
+  const oChiara = await addOpponent('Chiara', 'Moretti', 'F', {
+    hand: 'sinistro', level: '3.9', playstyle: 'aggressivo-fondo', notes: [], createdAt: ts('2026-09-01'),
+  })
 
-  console.log('Avversari creati: 6 (Davide senza partite, per testare eliminazione libera)')
+  console.log('Avversari creati: 9 (Davide senza genere né singoli; Elena, Paolo e Chiara solo nei doppi)')
 
   const oppNames = {
     [oMarco.id]: 'Marco Rossi', [oLuca.id]: 'Luca Bianchi', [oAndrea.id]: 'Andrea Verdi',
     [oGiulia.id]: 'Giulia Ferrari', [oSimone.id]: 'Simone Colombo', [oDavide.id]: 'Davide Greco',
+    [oElena.id]: 'Elena Conti', [oPaolo.id]: 'Paolo Neri', [oChiara.id]: 'Chiara Moretti',
   }
+
+  // ── Squadre: una competizione con girone e scontri ──────────
+  // Girone di sola andata a 4 squadre (3 incontri a testa), formula 2 singolari
+  // + 1 doppio. Il mio scontro con la prima squadra è vinto 2-1, il secondo
+  // perso 1-2, il terzo è ancora da giocare. Tra le altre squadre mancano i
+  // risultati di Como–Monza, quindi la classifica è parziale. Più uno scontro
+  // singolo, fuori da ogni competizione.
+  const teamTiesCol = userRef.collection('teamTies')
+  const compCol = userRef.collection('teamCompetitions')
+  const T = { mine: 'tseedmine', como: 'tseedcomo', lecco: 'tseedlecco', monza: 'tseedmonza' }
+  const teamNames = { [T.mine]: 'TC Brianza', [T.como]: 'Tennis Club Como', [T.lecco]: 'Circolo Lecco', [T.monza]: 'ASD Monza' }
+  const formula = { singles: 2, doubles: 1 }
+
+  const competition = await compCol.add({
+    name: 'Campionato a squadre Autunno 2026', season: '2026/27',
+    teams: Object.entries(teamNames).map(([id, name]) => ({ id, name })),
+    myTeamId: T.mine, legs: 1, formula,
+    points: { win: 3, draw: 1, loss: 0 }, qualifiers: 2,
+    results: [
+      { a: T.como, b: T.lecco, leg: 1, scoreA: 2, scoreB: 1, sets: [4, 3], games: [45, 40] },
+      { a: T.lecco, b: T.monza, leg: 1, scoreA: 3, scoreB: 0, sets: null, games: null },
+    ],
+    createdAt: ts('2026-10-01'),
+  })
+  const groupTie = (date, teamId, home, extra = {}) => ({
+    date: iso(date), opponentTeam: teamNames[teamId], home, formula,
+    competitionId: competition.id, phase: 'girone', leg: 1, opponentTeamId: teamId, round: null,
+    totals: null, rubbers: [], createdAt: ts(date), ...extra,
+  })
+  const tieComo = await teamTiesCol.add(groupTie('2026-10-17', T.como, true, {
+    rubbers: [{ slot: 'S2', winner: 'them', score: '3-6 4-6' }, { slot: 'D1', winner: 'us', score: '6-4 7-5' }],
+    totals: { sets: [5, 3], games: [52, 44] },
+  }))
+  const tieLecco = await teamTiesCol.add(groupTie('2026-10-31', T.lecco, false, {
+    rubbers: [{ slot: 'S2', winner: 'us', score: '6-3 6-4' }],
+    totals: { sets: [3, 4], games: [38, 43] },
+  }))
+  await teamTiesCol.add(groupTie('2026-12-05', T.monza, true))
+  const tieSingle = await teamTiesCol.add({
+    date: iso('2026-11-22'), opponentTeam: 'Tennis Club Cernusco', home: false, formula,
+    rubbers: [{ slot: 'S2', winner: 'them', score: '2-6 3-6' }, { slot: 'D1', winner: 'us', score: '6-2 6-3' }],
+    createdAt: ts('2026-11-22'),
+  })
+  console.log('Squadre: 1 competizione (girone da 4, classifica parziale), 3 scontri di girone, 1 scontro singolo')
 
   // ── Athletics helper ─────────────────────────────────────
   function athleticsFor({ minutes, intensity = 'media', withZones = true }) {
@@ -276,14 +340,27 @@ async function main() {
     { date: '2026-04-18', type: 'torneo', eventName: 'Torneo Città di Milano', round: 'semifinale', surface: 'terra', format: 'amatoriale', opp: oLuca, sets: [S(7, 6, 7, 4), S(6, 4)], intensity: 'intensa', racchetta: racchettaB.id, athletics: { minutes: 118, intensity: 'intensa' } },
     { date: '2026-04-25', type: 'torneo', eventName: 'Torneo Città di Milano', round: 'finale', surface: 'terra', format: 'amatoriale', opp: oGiulia, sets: [S(3, 6), S(6, 4), S(10, 8)], intensity: 'intensa', racchetta: racchettaB.id, notes: [note('Vinto il torneo! Finale tiratissima decisa al super tie-break.', '2026-04-25')], athletics: { minutes: 145, intensity: 'intensa' } },
     { date: '2026-05-09', type: 'amichevole', surface: 'cemento', format: 'atp', opp: oMarco, sets: [S(6, 1), S(6, 2)], intensity: 'media' },
-    { date: '2026-05-23', type: 'campionato', eventName: 'Campionato UISP D2 2026/27', surface: 'cemento', format: 'atp', opp: oAndrea, sets: [S(6, 4), S(4, 6), S(3, 6)], intensity: 'intensa' },
+    { date: '2026-05-23', type: 'campionato', eventName: 'Campionato UISP D2 2026/27', surface: 'cemento', format: 'atp', opp: oAndrea, sets: [S(6, 4), S(4, 6), S(3, 6)], intensity: 'intensa', notes: [note('Al terzo set calo fisico evidente, ho perso lucidità sui punti importanti.', '2026-05-23'), note('Seconda di servizio attaccata di continuo: devo avere una kick più alta e profonda.', '2026-05-23')] },
     { date: '2026-06-06', type: 'amichevole', surface: 'terra', format: 'amatoriale', opp: oLuca, sets: [S(6, 4), S(7, 5)], intensity: 'media', athletics: { minutes: 102, intensity: 'media' } },
     { date: '2026-06-20', type: 'amichevole', surface: 'cemento', format: 'grandslam', opp: oSimone, sets: [S(6, 4), S(3, 6), S(6, 2), S(7, 6, 10, 8)], intensity: 'intensa', notes: [note('Simulazione al meglio dei 5 set per preparazione fisica.', '2026-06-20')], athletics: { minutes: 175, intensity: 'intensa' } },
     { date: '2026-07-04', type: 'campionato', eventName: 'Campionato UISP D2 2026/27', surface: 'cemento', format: 'atp', opp: oMarco, sets: [S(6, 3), S(6, 2)], intensity: 'media' },
-    { date: '2026-07-18', type: 'amichevole', surface: 'terra', format: 'amatoriale', opp: oGiulia, sets: [S(2, 6), S(4, 6)], intensity: 'media' },
+    { date: '2026-07-18', type: 'amichevole', surface: 'terra', format: 'amatoriale', opp: oGiulia, sets: [S(2, 6), S(4, 6)], intensity: 'media', notes: [note('Avversaria molto regolare da fondo: troppi errori gratuiti di dritto quando provavo ad accelerare.', '2026-07-18'), note('Non ho mai usato il rovescio in back per cambiare ritmo.', '2026-07-18')] },
     { date: '2026-08-02', type: 'torneo', eventName: 'Torneo Estivo Villa Comunale', round: null, surface: 'cemento', format: 'amatoriale', opp: oAndrea, sets: [S(6, 3), S(6, 4)], intensity: 'media' },
-    { date: '2026-08-10', type: 'torneo', eventName: 'Torneo Autunno Città', round: 'quarti', surface: 'cemento', format: 'amatoriale', opp: oLuca, sets: [S(4, 6), S(6, 3), S(10, 7)], intensity: 'intensa' },
+    { date: '2026-08-10', type: 'torneo', eventName: 'Torneo Autunno Città', round: 'quarti', surface: 'cemento', format: 'amatoriale', opp: oLuca, sets: [S(4, 6), S(6, 3), S(10, 7)], intensity: 'intensa', notes: [note('Caldo forte; il super tie-break lo ho vinto gestendo meglio i punti sotto pressione.', '2026-08-10')] },
     { date: '2026-08-15', type: 'amichevole', surface: 'cemento', format: 'atp', opp: oMarco, sets: [S(6, 4), S(6, 3)], intensity: 'intensa', athletics: { minutes: 98, intensity: 'intensa' } },
+
+    // ── 2.2.0: doppi (partner + due avversari). Davide non ha il genere: l'ultimo ha categoria non calcolabile.
+    { date: '2026-09-13', type: 'amichevole', surface: 'terra', format: 'amatoriale', doubles: { partner: oGiulia, opps: [oMarco, oElena] }, sets: [S(6, 3), S(6, 4)], intensity: 'media', notes: [note('A rete mi sono mosso bene sulle volée di dritto, meno sicuro sulle volée basse di rovescio.', '2026-09-13')] },
+    { date: '2026-10-11', type: 'amichevole', surface: 'cemento', format: 'amatoriale', doubles: { partner: oLuca, opps: [oAndrea, oSimone] }, sets: [S(4, 6), S(6, 7, 5, 7)], intensity: 'media' },
+    { date: '2026-10-24', type: 'torneo', eventName: 'Torneo Doppio Open Lecco', round: 'semifinale', surface: 'cemento', format: 'amatoriale', doubles: { partner: oPaolo, opps: [oMarco, oSimone] }, sets: [S(6, 4), S(7, 5)], intensity: 'media' },
+    { date: '2026-10-25', type: 'torneo', eventName: 'Torneo Doppio Open Lecco', round: 'finale', surface: 'cemento', format: 'amatoriale', doubles: { partner: oPaolo, opps: [oAndrea, oLuca] }, sets: [S(3, 6), S(6, 4), S(8, 10)], intensity: 'intensa', notes: [note('Finale persa al super tie-break: sulla risposta alla seconda eravamo troppo passivi.', '2026-10-25')] },
+    { date: '2026-11-08', type: 'amichevole', surface: 'terra', format: 'amatoriale', doubles: { partner: oDavide, opps: [oElena, oChiara] }, sets: [S(6, 2), S(6, 3)], intensity: 'leggera' },
+
+    // ── 2.2.0: le mie partite negli scontri a squadre (S1 = singolare 1, D1 = doppio 1)
+    { date: '2026-10-17', time: '15:00', type: 'squadre', surface: 'terra', format: 'amatoriale', opp: oSimone, tie: tieComo, slot: 'S1', sets: [S(6, 3), S(4, 6), S(10, 6)], intensity: 'intensa' },
+    { date: '2026-10-31', time: '15:00', type: 'squadre', surface: 'cemento', format: 'amatoriale', opp: oAndrea, tie: tieLecco, slot: 'S1', sets: [S(2, 6), S(3, 6)], intensity: 'media' },
+    { date: '2026-10-31', time: '16:30', type: 'squadre', surface: 'cemento', format: 'amatoriale', doubles: { partner: oPaolo, opps: [oMarco, oLuca] }, tie: tieLecco, slot: 'D1', sets: [S(4, 6), S(5, 7)], intensity: 'media' },
+    { date: '2026-11-22', time: '15:00', type: 'squadre', surface: 'terra', format: 'amatoriale', opp: oLuca, tie: tieSingle, slot: 'S1', sets: [S(5, 7), S(6, 4), S(10, 1)], intensity: 'intensa', notes: [note('Nel super tie-break ho cambiato ritmo con le palle corte e lui ha smesso di giocare.', '2026-11-22')] },
   ]
 
   const matchesCol = userRef.collection('matches')
@@ -296,9 +373,16 @@ async function main() {
     const racchettaId = m.racchetta || racchettaA.id
     const doc = {
       date: iso(m.date),
-      opponentId: m.opp.id,
-      opponentName: oppNames[m.opp.id],
+      // Singolo: un avversario. Doppio: `opponentId` null, compagno e due avversari,
+      // `opponentName` «A / B» (come lo salva l'app e lo riallinea syncOpponentNames).
+      discipline: m.doubles ? 'doppio' : 'singolo',
+      opponentId: m.doubles ? null : m.opp.id,
+      partnerId: m.doubles ? m.doubles.partner.id : null,
+      opponentIds: m.doubles ? m.doubles.opps.map(o => o.id) : null,
+      opponentName: m.doubles ? m.doubles.opps.map(o => oppNames[o.id]).join(' / ') : oppNames[m.opp.id],
       type: m.type,
+      tieId: m.tie ? m.tie.id : null,
+      slot: m.slot || null,
       eventName: m.eventName || null,
       round: m.round !== undefined ? m.round : null,
       surface: m.surface,
@@ -317,6 +401,7 @@ async function main() {
       },
       intensity: m.intensity || null,
       athletics: m.athletics ? athleticsFor(m.athletics) : null,
+      time: m.time || '10:00',
       notes: m.notes || [],
       createdAt: ts(m.date),
     }
@@ -483,6 +568,7 @@ async function main() {
         borsone: null,
       },
       athletics: t.athletics ? athleticsFor(t.athletics) : null,
+      time: t.time || '18:30',
       notes: t.notes || [],
       createdAt: ts(t.date),
     }
@@ -698,14 +784,14 @@ async function main() {
       sets, retired: null, result: outcome.result, completed: outcome.completed,
       setsMe: outcome.setsMe, setsOpp: outcome.setsOpp,
       equipment: { racchetta: racchettaA.id, scarpa: scarpaTerra.id, outfit: outfit.id, borsone: null },
-      intensity: 'media', athletics: null, notes: [], createdAt: ts(date), ...extra,
+      time: '10:00', intensity: 'media', athletics: null, notes: [], createdAt: ts(date), ...extra,
     })
     recent.match++
   }
   const calTraining = (offset, blocks, focus = []) => {
     const date = keyOf(dayAt(offset))
     calBatch.set(trainingsCol.doc(), {
-      date: iso(date), blocks, surface: 'terra', focus, ratings: {}, intensity: 'media',
+      date: iso(date), time: '18:30', blocks, surface: 'terra', focus, ratings: {}, intensity: 'media',
       withWhom: null, brokeStrings: false,
       equipment: { racchetta: racchettaA.id, scarpa: scarpaTerra.id, outfit: outfit.id, borsone: null },
       athletics: null, notes: [], createdAt: ts(date),
@@ -776,6 +862,18 @@ async function main() {
   ]
   for (let d = monday; d < 0; d++) pastScenarios[d - monday]?.(d)
 
+  // Scenario per il riassunto AI: due partite con note dopo l'ultimo allenamento
+  // svolto e prima dell'allenamento di oggi alle 18:30 (ieri sera alle 20:00, che
+  // viene dopo l'eventuale allenamento delle 18:30 di ieri; oggi alle 09:00).
+  calMatch(-1, oMarco, [S(6, 4), S(3, 6), S(4, 6)], { time: '20:00', notes: [
+    note('Primo set vinto col servizio, poi troppi errori di rovescio quando mi spingeva sul lato debole.', keyOf(dayAt(-1))),
+    note('Seconda di servizio troppo corta, mi ha attaccato più volte la risposta.', keyOf(dayAt(-1))),
+  ] })
+  calMatch(0, oLuca, [S(6, 2), S(6, 4)], { time: '09:00', notes: [
+    note('Dritto inside-out molto efficace, bene gli spostamenti laterali.', keyOf(dayAt(0))),
+    note("Nei game lunghi sono calato un po' di tenuta; a rete incerto sulle volée basse.", keyOf(dayAt(0))),
+  ] })
+
   // Oggi: una corsa programmata e già fatta, e il tennis della sera da fare
   // ("Registra" nella PlanModal).
   plan(0, 'run', '07:00', workoutPlan(wRipetute, 'Ripetute 1000'))
@@ -803,7 +901,7 @@ async function main() {
   // `running` è la tabella zone → passo (s/km) che sblocca la corsa.
   await userRef.update({
     profile: {
-      dominantHand: 'destro', level: '3.4', birthYear: 1994, playingSince: 2008,
+      dominantHand: 'destro', gender: 'M', level: '3.4', birthYear: 1994, playingSince: 2008,
       running: {
         zones: [[480, 540], [420, 460], [380, 420], [340, 380], [300, 340], [260, 300], [220, 260]].map(([fast, slow]) => ({ fast, slow })),
         walk: { fast: 570, slow: 690 },
@@ -815,7 +913,7 @@ async function main() {
   console.log('Profilo aggiornato')
 
   console.log('\n✅ Seed completato con successo su', DEV_PROJECT_ID)
-  console.log(`   Equipment: 7 · Avversari: 6 · Partite: ${matchCount} · Allenamenti: ${trainCount} · Corse: ${rawRuns.length} · Palestra: ${gymSeed.length}`)
+  console.log(`   Equipment: 7 · Avversari: 9 · Partite: ${matchCount} · Allenamenti: ${trainCount} · Corse: ${rawRuns.length} · Palestra: ${gymSeed.length}`)
 }
 
 main().then(() => process.exit(0)).catch(err => {

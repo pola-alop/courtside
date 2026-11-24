@@ -15,11 +15,12 @@ import { sportMismatch } from '../../lib/fit'
 //  · imported   riassunto appena importato (per la conferma sotto il bottone)
 //  · hasData    la sessione ha già dei dati atletici (verranno sostituiti)
 //  · date       data 'YYYY-MM-DD' della sessione, per avvisare se non coincide
-//  · onUseDate  se c'è, propone di prendere la data del file
+//  · onUseDate  se c'è, propone di prendere la data del file (e l'ora, come secondo argomento)
+//  · useTime    il chiamante salva anche l'ora: il tasto dice «data e ora»
 //  · fitUse     fitId → descrizione della sessione che lo ha già, o null
 export default function FitImport({
   expected, imported = null, currentFitId = null, hasData = false,
-  date = null, onUseDate = null, fitUse = null, onImport,
+  date = null, onUseDate = null, useTime = false, fitUse = null, onImport,
 }) {
   const inputRef = useRef(null)
   const [busy, setBusy] = useState(false)
@@ -113,9 +114,9 @@ export default function FitImport({
             ⚠ Il file è del {formatLocalDate(imported.localDate)}, la sessione del {formatLocalDate(date)}.
           </p>
           {onUseDate && (
-            <button type="button" onClick={() => onUseDate(imported.localDate)}
+            <button type="button" onClick={() => onUseDate(imported.localDate, imported.localTime)}
               className="text-[11px] underline mt-1" style={{ color: 'var(--color-teal)' }}>
-              Usa la data del file
+              {useTime ? 'Usa data e ora del file' : 'Usa la data del file'}
             </button>
           )}
         </div>

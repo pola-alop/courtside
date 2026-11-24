@@ -139,7 +139,7 @@ function SpeedTrend({ trend }) {
               </div>
               {/* A 12 colonne restano ~25px per etichetta: "Gen" ci sta a 7px,
                   e la sola iniziale non basterebbe (Gen e Giu, Mar e Mag). */}
-              <span className="text-[7px] mt-0.5 truncate w-full text-center"
+              <span className="text-[7px] mt-0.5 wrap-anywhere w-full text-center"
                     style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
                 {m.label}
               </span>

@@ -35,7 +35,7 @@ export default function GymRow({ session, workouts = [], index, onClick }) {
       </div>
 
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        <p className="text-sm font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           🏋️ {gymDisplayName(session, workouts)}
         </p>
         <span className="text-sm font-bold shrink-0" style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-mono)' }}>
@@ -55,7 +55,7 @@ export default function GymRow({ session, workouts = [], index, onClick }) {
         </div>
       )}
 
-      <p className="text-xs truncate" style={{ color: 'var(--color-slate)' }}>
+      <p className="text-xs wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
         {totals.exercises} {totals.exercises === 1 ? 'esercizio' : 'esercizi'} · {totals.sets} serie
         {totals.volumeKg > 0 ? ` · ${formatVolume(totals.volumeKg)}` : ''}
       </p>

@@ -8,6 +8,7 @@ import { trainingGameEquivalents } from '../../lib/wear'
 import AthleticsSection from '../athletics/AthleticsSection'
 import TrainingAthleticsEditor from './TrainingAthleticsEditor'
 import IntensitySuggestion from '../athletics/IntensitySuggestion'
+import { timeLabel } from '../../lib/sessionTime'
 
 const MAX_NOTE_LENGTH = 150
 
@@ -108,7 +109,7 @@ export default function TrainingDetailModal({
           <div className="flex items-start justify-between mb-3">
             <div>
               <p className="text-xs" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
-                {formatDate(training.date)}
+                {formatDate(training.date)}{timeLabel(training) ? ` · ${timeLabel(training)}` : ''}
               </p>
               {intensity && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full mt-1"
@@ -151,7 +152,7 @@ export default function TrainingDetailModal({
                 return (
                   <div key={i} className="flex items-center gap-2">
                     <span className="text-xs shrink-0">{meta?.icon || '🎾'}</span>
-                    <span className="text-xs flex-1 truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                    <span className="text-xs flex-1 wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                       {meta?.label || b.kind}
                     </span>
                     <span className="text-xs shrink-0" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
@@ -302,11 +303,11 @@ function FocusSection({ focus, ratings, onRate }) {
           <div key={id} className="px-4 py-3 flex items-center justify-between gap-3"
                style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
             <div className="min-w-0">
-              <p className="text-xs font-medium truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+              <p className="text-xs font-medium wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {focusLabel(id)}
               </p>
               {FOCUS_BY_ID[id]?.categoryLabel && (
-                <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>
+                <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
                   {FOCUS_BY_ID[id].categoryLabel}
                 </p>
               )}

@@ -323,7 +323,7 @@ function ZonesBreakdown({ zones, total }) {
               <span className="text-[11px] font-semibold shrink-0" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 {z.label}
               </span>
-              <span className="text-[11px] flex-1 truncate" style={{ color: 'var(--color-slate)' }}>{z.name}</span>
+              <span className="text-[11px] flex-1 wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{z.name}</span>
               <span className="text-[11px] shrink-0" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
                 {formatDuration(sec)}
               </span>

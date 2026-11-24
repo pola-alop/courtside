@@ -4,6 +4,8 @@ import { auth } from '../firebase/config'
 import { useAuthState } from '../hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { HR_ZONES } from '../lib/athletics'
+import { genderLabel, readGender } from '../lib/gender'
+import GenderField from '../components/GenderField'
 import {
   DEFAULT_WALK, WEIGHT_LIMITS, emptyRunningProfile, runningProfileIssues,
   isRunningReady, parsePace, formatPace, maskPaceInput,
@@ -33,6 +35,7 @@ export default function Profile() {
   const openEdit = () => {
     setRunForm(null)
     setForm({
+      gender:       readGender(profile?.gender),
       dominantHand: profile?.dominantHand || null,
       level:        profile?.level || '',
       birthYear:    profile?.birthYear    ? String(profile.birthYear)    : '',
@@ -47,6 +50,7 @@ export default function Profile() {
     if (saving || !form) return
     setSaving(true)
     await update({
+      gender:       form.gender,
       dominantHand: form.dominantHand || null,
       level:        form.level.trim() || null,
       birthYear:    yearOrNull(form.birthYear),
@@ -89,7 +93,7 @@ export default function Profile() {
   const runningReady = isRunningReady(running)
 
   return (
-    <div className="px-6 pt-8 pb-4">
+    <div className="px-6 pt-8 pb-8">
       <h1 className="text-2xl font-bold mb-6"
           style={{ fontFamily: 'var(--font-display)', color: 'var(--color-white)' }}>
         Profile
@@ -107,11 +111,11 @@ export default function Profile() {
           </span>
         </div>
         <div className="min-w-0">
-          <p className="text-lg font-bold truncate"
+          <p className="text-lg font-bold wrap-anywhere"
              style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
             {user?.displayName || 'Giocatore'}
           </p>
-          <p className="text-sm truncate" style={{ color: 'var(--color-slate)' }}>
+          <p className="text-sm wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
             {user?.email}
           </p>
         </div>
@@ -132,7 +136,8 @@ export default function Profile() {
           </button>
 
           <Section title="Il tuo tennis">
-            <Row label="Mano"               value={handLabel(profile?.dominantHand) || '—'} />
+            <Row label="Genere"              value={genderLabel(readGender(profile?.gender)) || '—'} />
+            <Row label="Mano"              value={handLabel(profile?.dominantHand) || '—'} />
             <Row label="Livello / classifica" value={profile?.level || '—'} />
             <Row label="Età"                value={age !== null ? `${age} anni` : '—'} />
             <Row label="Gioca dal"
@@ -140,6 +145,12 @@ export default function Profile() {
                    ? `${profile.playingSince}${experience !== null ? ` · ${experience} ${experience === 1 ? 'anno' : 'anni'}` : ''}`
                    : '—'} />
           </Section>
+
+          {!readGender(profile?.gender) && (
+            <p className="text-xs -mt-3 mb-6 px-1" style={{ color: 'var(--color-slate)' }}>
+              Indica il tuo genere: serve per ricavare la categoria dei doppi (maschile, femminile o misto).
+            </p>
+          )}
         </>
       )}
 
@@ -149,6 +160,8 @@ export default function Profile() {
              style={{ color: 'var(--color-amber)', fontFamily: 'var(--font-display)' }}>
             Modifica profilo
           </p>
+
+          <GenderField value={form.gender} onChange={v => setField('gender', v)} />
 
           <div>
             <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Mano</label>
@@ -275,6 +288,11 @@ export default function Profile() {
       >
         Sign out
       </button>
+
+      <p className="mt-4 text-center text-[10px]"
+         style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+        Courtside v{__APP_VERSION__}
+      </p>
     </div>
   )
 }
@@ -411,7 +429,7 @@ function RunningZonesForm({ form, setForm, issues, saving, onCancel, onSave }) {
 function PaceRow({ label, fast, slow, onFast, onSlow }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="flex-1 min-w-0 text-xs truncate" style={{ color: 'var(--color-slate)' }}>{label}</span>
+      <span className="flex-1 min-w-0 text-xs wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{label}</span>
       <PaceInput value={fast} onChange={onFast} placeholder="5:00" />
       <span className="w-2 text-center text-xs" style={{ color: 'var(--color-slate)' }}>–</span>
       <PaceInput value={slow} onChange={onSlow} placeholder="5:30" />

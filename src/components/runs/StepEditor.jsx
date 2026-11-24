@@ -214,7 +214,7 @@ export default function StepEditor({ step, running, onChange, onBack, onRemove }
                 <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                   {t.label}
                 </span>
-                <span className="text-[11px] flex-1 truncate" style={{ color: active ? 'var(--color-white)' : 'var(--color-slate)' }}>
+                <span className="text-[11px] flex-1 wrap-anywhere" style={{ color: active ? 'var(--color-white)' : 'var(--color-slate)' }}>
                   {t.zoneIndex != null ? t.name : ''}
                 </span>
                 {range && (

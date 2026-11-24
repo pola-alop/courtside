@@ -6,6 +6,7 @@ import {
   MIN_CLUTCH, MIN_TIEBREAK, MIN_FIRSTSET, MIN_SET_SLOT, ROLLING_WINDOW,
   SET_BUCKETS, formatPct, formatSigned, formatGames,
 } from '../../lib/stats'
+import { DISCIPLINE_FILTERS } from '../../lib/doubles'
 
 // Sezione "Rendimento" — risponde a "quanto sono forte, e come vinco/perdo?".
 //
@@ -28,19 +29,26 @@ const BUCKET_COLORS = {
   tiebreak:   'var(--color-loss)',
 }
 
-export default function Rendimento({ report, comparison, onDrill }) {
+export default function Rendimento({ report, comparison, onDrill, discipline, onDiscipline }) {
   const { core } = report
+
+  // Il selettore sta sopra anche quando non c'è abbastanza campione: senza,
+  // chi sceglie «Doppio» con poche partite non potrebbe tornare indietro.
+  const selector = <DisciplineSelector value={discipline} onChange={onDiscipline} />
 
   if (!report.enough) {
     return (
-      <div className="pt-4">
-        <NotEnough need={report.missing} what="Per calcolare il rendimento" />
+      <div className="space-y-3">
+        {selector}
+        <NotEnough need={report.missing} what="Per calcolare il rendimento"
+                   unit={discipline === 'doppio' ? 'partite di doppio' : discipline === 'singolo' ? 'partite di singolo' : 'partite'} />
       </div>
     )
   }
 
   return (
     <div className="space-y-3">
+      {selector}
       <LivelloBlock report={report} comparison={comparison} />
       <ClutchCard report={report} onDrill={onDrill} />
       <ProfileCard report={report} onDrill={onDrill} />
@@ -52,6 +60,13 @@ export default function Rendimento({ report, comparison, onDrill }) {
       <OpponentsBlock report={report} onDrill={onDrill} />
       <BridgeBlock report={report} onDrill={onDrill} />
 
+      {discipline !== 'singolo' && (
+        <Note>
+          Nel doppio il punteggio è quello della coppia: «Tu» sono i game vinti dal tuo lato.
+          Avversari e split per mano, livello e stile di gioco contano solo i singoli.
+        </Note>
+      )}
+
       <Note>
         Il match non registra i punti, quindi non esistono ace, prime di servizio o
         vincenti: tutto qui è ricavato dal punteggio. Il <strong>game vinti %</strong> è
@@ -59,6 +74,28 @@ export default function Rendimento({ report, comparison, onDrill }) {
         si stabilizza molto prima del rapporto vittorie/sconfitte, e con {core.n} partite
         è già un segnale mentre il win/loss è ancora rumore.
       </Note>
+    </div>
+  )
+}
+
+// Singolo | Doppio | Tutti. Stesse pillole del selettore di periodo, un gradino
+// più discrete: governa la sola tab Rendimento.
+function DisciplineSelector({ value, onChange }) {
+  return (
+    <div className="flex gap-1.5" role="group" aria-label="Disciplina">
+      {DISCIPLINE_FILTERS.map(d => (
+        <button key={d.id} onClick={() => onChange(d.id)}
+          aria-pressed={value === d.id}
+          className="flex-1 py-1.5 rounded-full text-[11px] font-medium transition-all"
+          style={{
+            background: value === d.id ? 'var(--color-teal-dark)' : 'var(--color-surface)',
+            color: value === d.id ? 'var(--color-white)' : 'var(--color-slate)',
+            border: value === d.id ? 'none' : '1px solid var(--color-surface-2)',
+            fontFamily: 'var(--font-display)',
+          }}>
+          {d.label}
+        </button>
+      ))}
     </div>
   )
 }

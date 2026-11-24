@@ -25,6 +25,7 @@ export default function TournamentCard({ run, onClick }) {
             {run.name}
           </p>
           <p className="text-xs mt-0.5 break-words" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+            {run.disciplineLabel && `${run.disciplineLabel} · `}
             {formatRange(run.startDate, run.endDate)}
             {run.surfaces.length > 0 && ` · ${run.surfaces.map(surfaceIcon).join(' ')}`}
           </p>

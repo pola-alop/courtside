@@ -4,6 +4,30 @@ Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/); il 
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-11-24
+
+### Aggiunto
+- **Partite di doppio**: in apertura del wizard si sceglie Singolo o Doppio; il doppio chiede compagno e due avversari dall'anagrafica (che diventa di fatto l'anagrafica dei giocatori), mostra due nomi per lato nel punteggio, nelle righe e nel dettaglio e ha le scritte «Noi» / «Avversari» e il ritiro di coppia. La **categoria** (maschile, femminile, misto) si ricava dai generi dei quattro giocatori e non si salva. Le partite già registrate restano singoli.
+- **Genere** dell'avversario (obbligatorio per i nuovi, con un avviso per quelli già salvati che invita a completarlo) e dell'utente nel Profilo (facoltativo).
+- **Doppio nelle statistiche e nei record**: filtro **Singolo / Doppio / Tutti** in Stats › Rendimento (all'apertura è su Singolo) e nella lista Partite; nel dettaglio di ogni giocatore tre record separati («In singolo», «Contro in doppio», «Insieme in doppio») e le ultime partite in qualsiasi ruolo. Un giocatore che compare in un doppio non si elimina. I doppi si possono anche programmare nel calendario.
+- **Scontri a squadre** (per esempio 2 singolari + 1 doppio, con altre formule possibili) nel tab Tornei › «A squadre»: la squadra avversaria, casa o trasferta, gli esiti dei compagni con un tap su Vinto / Perso (punteggio facoltativo) e le tue partite collegate agli incontri con «Ho giocato io». Il nuovo tipo di partita **Squadre** entra nelle statistiche come ogni altra partita; il risultato dello scontro (per esempio 2-1) e il suo stato si ricavano dagli incontri.
+- **Competizioni a squadre con gironi**: girone all'italiana (solo andata o andata e ritorno) con **classifica** calcolata dagli scontri, punti configurabili (3-1-0 di partenza), spareggi (scontri diretti, differenza incontri, set, game; dichiara quando uno spareggio non è calcolabile e quando la classifica è parziale), inserimento rapido dei risultati tra le altre squadre, qualificate evidenziate e **fase finale** con il tabellone dei tornei.
+- **Mesi nel calendario della Home**: frecce ‹ › per scorrere fino a 24 mesi indietro e 6 avanti, con il tasto «Oggi». Nei mesi passati restano i cerchi delle sessioni fatte e la barra delle settimane attive; nei mesi futuri i programmi tratteggiati, che si possono creare come sempre.
+- **Ora d'inizio** di partite e allenamenti di tennis, accanto alla data nei wizard: obbligatoria per le sessioni nuove (in modifica solo se la sessione ce l'aveva già), precompilata dall'orario del programma e dal file Garmin («Usa data e ora del file»). Compare nel dettaglio solo se c'è; le sessioni già registrate restano senza.
+- **Riassunto delle note e colpi suggeriti** nell'allenamento programmato: «Genera riassunto» legge le sole note delle partite giocate dall'ultimo allenamento di tennis svolto (al massimo 60 giorni) e scrive un riassunto con i punti salienti e i colpi da allenare. Lo scrive un modello AI (Gemini, tramite Firebase AI Logic, protetto da App Check): gli vengono inviati data, esito, punteggio, superficie e testo delle note, **mai i nomi degli avversari**. Il riassunto dichiara da quali partite viene, si salva sul programma e compare «Aggiorna» quando le note cambiano. Accanto, separati e dichiarati come tali, i colpi che non alleni da un po' (calcolati dai tuoi allenamenti, non dall'AI). I suggerimenti non preselezionano il focus: li sceglie il maestro. Se il primo modello è sovraccarico si prova automaticamente con un secondo.
+- **Versione dell'app** in fondo al Profilo.
+
+### Modificato
+- **Testo mai troncato nelle card**: nomi, righe e intestazioni vanno a capo invece di finire con i puntini; le card crescono in altezza quando serve.
+- **I cammini dei tornei si separano per disciplina**: un singolo e un doppio con lo stesso nome sono due cammini, e le date mostrano «Doppio misto» quando serve.
+- **Setup e Incroci** confrontano il rendimento sui soli singoli (con una nota su quanti doppi lasciano fuori); carico, usura, ore in campo e calendario contano ogni partita.
+
+### Corretto
+- **La barra di scorrimento finiva sopra la barra di navigazione** in ogni pagina: ora scorre un contenitore che si ferma al bordo della barra.
+- **Box di giorno e ora attaccati ai bordi su iOS 27.2** nei form di programmazione: una regola unica per i campi data e ora nativi li riporta nella loro cella, con le spaziature di prima.
+- **«Ultima partita» troncata** nell'anagrafica avversari, e più in generale ogni testo informativo delle card.
+- **«Sconfitte» non centrata** nei riquadri del dettaglio avversario.
+
 ## [2.1.0] - 2026-11-04
 
 ### Aggiunto

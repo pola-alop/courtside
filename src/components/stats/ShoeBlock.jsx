@@ -65,7 +65,7 @@ function ShoeRow({ shoe }) {
   return (
     <div>
       <div className="flex items-baseline gap-2">
-        <span className="text-[11px] flex-1 min-w-0 truncate"
+        <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {shoe.label}
         </span>

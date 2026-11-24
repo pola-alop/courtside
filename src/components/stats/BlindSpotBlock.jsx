@@ -62,7 +62,7 @@ export default function BlindSpotBlock({ report }) {
           return (
             <div key={id} className="flex items-center gap-1.5 min-w-0">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: q.color }} />
-              <span className="text-[9px] truncate" style={{ color: 'var(--color-slate)' }}>
+              <span className="text-[9px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
                 {q.label}{' '}
                 <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-white)' }}>
                   {b[id].length}
@@ -246,7 +246,7 @@ function PointRow({ point, report, compact, index }) {
         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: q.color }} />
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold truncate"
+        <p className="text-[11px] font-semibold wrap-anywhere"
            style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {point.label}
         </p>

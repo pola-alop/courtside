@@ -113,9 +113,9 @@ export function Tile({ label, value, sub, color = 'var(--color-white)', onClick 
     <Tag onClick={onClick}
          className={`rounded-xl px-1.5 py-2.5 text-center min-w-0 w-full ${onClick ? 'transition-all active:scale-95' : ''}`}
          style={{ background: 'var(--color-surface-2)' }}>
-      <p className="text-base font-bold truncate" style={{ color, fontFamily: 'var(--font-display)' }}>{value}</p>
+      <p className="text-base font-bold wrap-anywhere" style={{ color, fontFamily: 'var(--font-display)' }}>{value}</p>
       <p className="text-[9px] uppercase tracking-wide leading-tight mt-0.5" style={{ color: 'var(--color-slate)' }}>{label}</p>
-      {sub && <p className="text-[9px] mt-0.5 truncate" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>{sub}</p>}
+      {sub && <p className="text-[9px] mt-0.5 wrap-anywhere" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>{sub}</p>}
     </Tag>
   )
 }
@@ -132,7 +132,7 @@ export function BarRow({ label, sub, value, rate, color = 'var(--color-teal-dark
          className={`w-full text-left ${onClick ? 'transition-all active:scale-[0.99]' : ''}`}
          style={{ opacity: dim ? 0.45 : 1 }}>
       <div className="flex items-baseline gap-2">
-        <span className="text-[11px] flex-1 min-w-0 truncate"
+        <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {label}
         </span>

@@ -214,7 +214,7 @@ function ZoneRow({ zone, seconds, onChange }) {
         <span className="w-1.5 h-8 rounded-full shrink-0" style={{ background: zone.color }} />
         <div className="min-w-0">
           <p className="text-xs font-semibold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{zone.label}</p>
-          <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>{zone.name}</p>
+          <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{zone.name}</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">

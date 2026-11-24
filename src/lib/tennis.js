@@ -6,11 +6,14 @@
 export const SURFACES = ['terra', 'cemento', 'erba', 'indoor']
 
 // Tipi di match. Campionato e torneo richiedono un nome evento e NON possono
-// finire in parità (deve esserci sempre un vincitore).
+// finire in parità (deve esserci sempre un vincitore). `squadre` è un incontro
+// di uno scontro a squadre (`tieId` + `slot` sulla partita, vedi teamTies.js):
+// l'evento è lo scontro, non un nome scritto a mano, e non ammette pareggio.
 export const MATCH_TYPES = [
   { id: 'amichevole', label: 'Amichevole', needsEvent: false, allowsDraw: true  },
   { id: 'campionato', label: 'Campionato', needsEvent: true,  allowsDraw: false },
   { id: 'torneo',     label: 'Torneo',     needsEvent: true,  allowsDraw: false },
+  { id: 'squadre',    label: 'Squadre',    needsEvent: false, allowsDraw: false },
 ]
 
 // ── Turni di un tabellone ───────────────────────────────────

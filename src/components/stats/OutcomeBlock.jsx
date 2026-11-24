@@ -81,7 +81,7 @@ function OutcomeRow({ row }) {
   return (
     <div>
       <div className="flex items-baseline gap-2 mb-1.5">
-        <span className="text-[11px] flex-1 min-w-0 truncate"
+        <span className="text-[11px] flex-1 min-w-0 wrap-anywhere"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {row.label}
         </span>

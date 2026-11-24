@@ -2,7 +2,9 @@ import { useState } from 'react'
 import MatchRow from './MatchRow'
 import { LEVELS, PLAYSTYLES, levelLabel, playstyleLabel, opponentParts, opponentNameFields, opponentInitials, groupsOf } from '../../lib/opponents'
 import { DEFAULT_PHONE_COUNTRY, formatPhone, phoneFields, phoneHref, phoneIssue, whatsappHref } from '../../lib/phone'
+import { genderLabel, readGender } from '../../lib/gender'
 import PhoneField from './PhoneField'
+import GenderField from '../GenderField'
 
 const HANDS = [
   { id: 'destro',   label: 'Destro'  },
@@ -12,7 +14,7 @@ const HANDS = [
 const MAX_NOTE_LENGTH = 150
 
 export default function OpponentDetailModal({
-  opponent, record = null, matches = [], groups = [], onClose, onUpdate, onDelete, onSelectMatch,
+  opponent, records = null, matches = [], groups = [], onClose, onUpdate, onDelete, onSelectMatch,
   onAddToGroup, onRemoveFromGroup
 }) {
   // view | edit | confirmDelete | addNote | editNote | confirmDeleteNote
@@ -25,16 +27,25 @@ export default function OpponentDetailModal({
   const [noteDraft, setNoteDraft]   = useState('')
   const [noteTarget, setNoteTarget] = useState(null)
 
-  const wins   = record?.wins   ?? 0
-  const losses = record?.losses ?? 0
-  const draws  = record?.draws  ?? 0
+  // Tre record separati (vedi `playerRecords`): i quattro box sono il singolo,
+  // «contro in doppio» e «insieme in doppio» sono due righe sotto, solo se ce ne sono.
+  const single = records?.single
+  const wins   = single?.wins   ?? 0
+  const losses = single?.losses ?? 0
+  const draws  = single?.draws  ?? 0
+  const doublesCount = (records?.againstDoubles.n ?? 0) + (records?.withDoubles.n ?? 0)
 
   const notes = opponent.notes || []
   const sortedNotes = [...notes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
   // Un avversario con almeno una partita all'attivo non può essere eliminato
   // (serve alle statistiche future): l'anagrafica resta, si può solo modificare.
-  const hasMatches = matches.length > 0
+  // `matches` sono le partite in cui compare in qualsiasi ruolo, doppi compresi.
+  const linkedCount = matches.length
+  const hasMatches = linkedCount > 0
+
+  // I documenti salvati prima della 2.2.0 non hanno il genere: `null`.
+  const gender = readGender(opponent.gender)
 
   const setField = (k, v) => setEditForm(f => ({ ...f, [k]: v }))
 
@@ -44,6 +55,7 @@ export default function OpponentDetailModal({
     setEditForm({
       ...opponentParts(opponent),
       phone:     { country: opponent.phone?.country || DEFAULT_PHONE_COUNTRY, number: opponent.phone?.number || '' },
+      gender,
       hand:      opponent.hand      || null,
       level:     opponent.level     || '',
       playstyle: opponent.playstyle || '',
@@ -51,7 +63,10 @@ export default function OpponentDetailModal({
     setMode('edit')
   }
 
+  // Il genere è obbligatorio anche in modifica: un avversario vecchio, senza,
+  // non si salva finché non lo si sceglie (nessun valore di ripiego).
   const canSave = editForm && editForm.firstName.trim().length > 0
+    && !!editForm.gender
     && !phoneIssue(editForm.phone.country, editForm.phone.number)
 
   const handleSaveEdit = async () => {
@@ -60,6 +75,7 @@ export default function OpponentDetailModal({
     await onUpdate(opponent.id, {
       ...opponentNameFields(editForm.firstName, editForm.lastName),
       phone:     phoneFields(editForm.phone.country, editForm.phone.number),
+      gender:    editForm.gender,
       hand:      editForm.hand || null,
       level:     editForm.level     || null,
       playstyle: editForm.playstyle || null,
@@ -136,13 +152,13 @@ export default function OpponentDetailModal({
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold truncate"
+            <h2 className="text-xl font-bold wrap-anywhere"
                 style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
               {opponent.name}
             </h2>
-            {(opponent.hand || opponent.level) && (
-              <p className="text-sm mt-0.5 truncate" style={{ color: 'var(--color-slate)' }}>
-                {[handLabel(opponent.hand), levelLabel(opponent.level)].filter(Boolean).join(' · ')}
+            {(gender || opponent.hand || opponent.level) && (
+              <p className="text-sm mt-0.5 wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
+                {[genderLabel(gender), handLabel(opponent.hand), levelLabel(opponent.level)].filter(Boolean).join(' · ')}
               </p>
             )}
           </div>
@@ -162,13 +178,45 @@ export default function OpponentDetailModal({
           {/* ── MODO VISUALIZZAZIONE ── */}
           {mode === 'view' && <>
 
-            {/* Blocco testa-a-testa */}
-            <div className="grid grid-cols-4 gap-2 mb-5">
+            {/* Avviso: avversario vecchio senza genere */}
+            {!gender && (
+              <div className="mb-4 p-3 rounded-2xl flex items-center gap-3"
+                   style={{ background: 'rgba(244,163,0,0.12)', border: '1px solid rgba(244,163,0,0.3)' }}>
+                <p className="flex-1 min-w-0 text-xs wrap-anywhere" style={{ color: 'var(--color-amber-light)' }}>
+                  Genere non indicato: serve per la categoria dei doppi.
+                </p>
+                <button
+                  onClick={openEdit}
+                  className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                  style={{ background: 'var(--color-amber)', color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}>
+                  Completa
+                </button>
+              </div>
+            )}
+
+            {/* Blocco testa-a-testa: il record in singolo */}
+            <p className="text-[10px] uppercase tracking-wider mb-2"
+               style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
+              In singolo
+            </p>
+            <div className={`grid grid-cols-4 gap-2 ${doublesCount > 0 ? 'mb-3' : 'mb-5'}`}>
               <StatTile label="Vittorie"  value={wins}                  color="var(--color-teal-light)" />
               <StatTile label="Pareggi"   value={draws}                 color="var(--color-draw)" />
               <StatTile label="Sconfitte" value={losses}                color="#ff7070" />
               <StatTile label="Scontri"   value={wins + losses + draws} color="var(--color-white)" />
             </div>
+
+            {doublesCount > 0 && (
+              <div className="mb-5 rounded-2xl overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
+                {records.againstDoubles.n > 0 && (
+                  <DoublesRecordRow label="Contro in doppio" record={records.againstDoubles} />
+                )}
+                {records.withDoubles.n > 0 && (
+                  <DoublesRecordRow label="Insieme in doppio" record={records.withDoubles}
+                                    divider={records.againstDoubles.n > 0} />
+                )}
+              </div>
+            )}
 
             {/* Bottone modifica */}
             <button
@@ -199,6 +247,7 @@ export default function OpponentDetailModal({
             )}
 
             <Section title="Dettagli">
+              <Row label="Genere"        value={genderLabel(gender) || '—'} />
               <Row label="Mano"          value={handLabel(opponent.hand) || '—'} />
               <Row label="Livello"       value={levelLabel(opponent.level)         || '—'} />
               <Row label="Stile di gioco" value={playstyleLabel(opponent.playstyle) || '—'} />
@@ -223,7 +272,7 @@ export default function OpponentDetailModal({
                 <div className="p-3 rounded-2xl text-center"
                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--color-surface-2)' }}>
                   <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
-                    🔒 Non eliminabile: ha {matches.length} {matches.length === 1 ? 'partita' : 'partite'} all'attivo.
+                    🔒 Non eliminabile: ha {linkedCount} {linkedCount === 1 ? 'partita' : 'partite'} all'attivo{doublesCount > 0 ? ` (${doublesCount} in doppio)` : ''}.
                   </p>
                 </div>
               ) : (
@@ -254,6 +303,8 @@ export default function OpponentDetailModal({
                 <EditInput label="Nome *" value={editForm.firstName} onChange={v => setField('firstName', v)} placeholder="Es. Marco" />
                 <EditInput label="Cognome" value={editForm.lastName} onChange={v => setField('lastName', v)} placeholder="Es. Rossi" />
               </div>
+
+              <GenderField required value={editForm.gender} onChange={v => setField('gender', v)} />
 
               <PhoneField value={editForm.phone} onChange={v => setField('phone', v)} />
 
@@ -409,9 +460,34 @@ export default function OpponentDetailModal({
 
 function StatTile({ label, value, color }) {
   return (
-    <div className="rounded-2xl px-2 py-3 text-center" style={{ background: 'var(--color-surface-2)' }}>
+    <div className="min-w-0 rounded-2xl px-0.5 py-3 text-center" style={{ background: 'var(--color-surface-2)' }}>
       <p className="text-2xl font-bold" style={{ color, fontFamily: 'var(--font-display)' }}>{value}</p>
-      <p className="text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--color-slate)' }}>{label}</p>
+      {/* "SCONFITTE" è la parola più larga e a 11px con la spaziatura larga
+          sforava il box (a 360 px) uscendo dal centro. Ora 10px, spaziatura
+          normale, mai a capo, e centrata con flex: se anche sporgesse, lo
+          farebbe in modo uguale da entrambi i lati. */}
+      <p className="flex justify-center text-[10px] mt-0.5 uppercase tracking-wide whitespace-nowrap" style={{ color: 'var(--color-slate)' }}>{label}</p>
+    </div>
+  )
+}
+
+// Una riga dei record di doppio: etichetta a sinistra, «2V · 1P · 3S» e il numero
+// di partite a destra. Il testo va a capo, non si tronca.
+function DoublesRecordRow({ label, record, divider = false }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3"
+         style={divider ? { borderTop: '1px solid var(--color-surface)' } : undefined}>
+      <span className="min-w-0 text-xs wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+        {label}
+      </span>
+      <span className="shrink-0 text-right">
+        <span className="block text-sm font-semibold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
+          {record.wins}V{record.draws > 0 ? ` · ${record.draws}P` : ''} · {record.losses}S
+        </span>
+        <span className="block text-[10px]" style={{ color: 'var(--color-slate)' }}>
+          {record.n} {record.n === 1 ? 'partita' : 'partite'}
+        </span>
+      </span>
     </div>
   )
 }
@@ -604,9 +680,11 @@ function NoteTextArea({ value, onChange }) {
   )
 }
 
-// Storico scontri: solo le ultime 3 partite, giusto per un colpo d'occhio
-// sull'andamento recente — lo storico completo è già consultabile dal tab
-// Partite filtrando per questo avversario, niente bisogno di duplicarlo qui.
+// Ultime partite: solo le ultime 3, in qualsiasi ruolo (singolo, contro in
+// doppio, insieme in doppio: la riga porta già «Doppio misto»), giusto per un
+// colpo d'occhio sull'andamento recente — lo storico completo è già consultabile
+// dal tab Partite filtrando per questo giocatore (il filtro non include però le
+// partite in cui è stato compagno).
 const MATCH_HISTORY_LIMIT = 3
 
 function MatchHistorySection({ matches, onSelectMatch }) {
@@ -616,12 +694,12 @@ function MatchHistorySection({ matches, onSelectMatch }) {
     <div className="mb-4">
       <p className="text-xs font-semibold uppercase tracking-wider mb-2"
          style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-display)' }}>
-        Ultimi scontri
+        Ultime partite
       </p>
       {recent.length === 0 ? (
         <div className="rounded-2xl px-4 py-4 text-center" style={{ background: 'var(--color-surface-2)' }}>
           <p className="text-xs" style={{ color: 'var(--color-slate)' }}>
-            Nessuna partita registrata contro questo avversario.
+            Nessuna partita registrata con questo giocatore.
           </p>
         </div>
       ) : (

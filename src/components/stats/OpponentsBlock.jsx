@@ -29,7 +29,7 @@ export default function OpponentsBlock({ report, onDrill }) {
       <div className="grid grid-cols-3 gap-2">
         <Tile label="Avversari" value={String(distinct)} sub="affrontati" />
         <Tile label="Top 3" value={formatPct(top3Share)} sub="delle partite" />
-        <Tile label="Media" value={(report.core.n / Math.max(1, distinct)).toLocaleString('it-IT', { maximumFractionDigits: 1 })} sub="partite a testa" />
+        <Tile label="Media" value={(report.opponents.n / Math.max(1, distinct)).toLocaleString('it-IT', { maximumFractionDigits: 1 })} sub="partite a testa" />
       </div>
 
       <div className="space-y-3 mt-4">
@@ -132,7 +132,7 @@ function Highlight({ icon, label, name, detail, color, onClick }) {
       <span className="text-[9px] uppercase tracking-wide block" style={{ color: 'var(--color-slate)' }}>
         {icon} {label}
       </span>
-      <span className="text-xs font-semibold block truncate mt-0.5"
+      <span className="text-xs font-semibold block wrap-anywhere mt-0.5"
             style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
         {name}
       </span>
@@ -148,10 +148,10 @@ function ScorelineRow({ entry, label, color, onDrill }) {
             className="w-full flex items-center gap-2 text-left transition-all active:scale-[0.99]">
       <span className="w-1 h-8 rounded-full shrink-0" style={{ background: color }} />
       <span className="flex-1 min-w-0">
-        <span className="text-[10px] block truncate" style={{ color: 'var(--color-slate)' }}>
+        <span className="text-[10px] block wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
           {label} · {m.opponentName || 'avversario'}
         </span>
-        <span className="text-[11px] block truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
+        <span className="text-[11px] block wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
           {scoreText(m)}
         </span>
       </span>

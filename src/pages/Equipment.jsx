@@ -63,7 +63,7 @@ export default function Equipment() {
   const modalInitialType = activeTab === 'all' ? null : activeTab
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+    <div style={{ background: 'var(--color-bg)' }}>
 
       {/* Header */}
       <div className="px-6 pt-12 pb-4 flex items-center justify-between">
@@ -106,7 +106,7 @@ export default function Equipment() {
       </div>
 
       {/* Contenuto */}
-      <div className="px-6 pb-32">
+      <div className="px-6 pb-8">
         {loading ? (
           <div className="flex justify-center pt-20">
             <div className="w-6 h-6 rounded-full border-2 animate-spin"

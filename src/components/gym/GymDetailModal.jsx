@@ -89,7 +89,7 @@ export default function GymDetailModal({
               <p className="text-xs" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
                 {formatDate(session.date)}
               </p>
-              <h2 className="text-lg font-bold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+              <h2 className="text-lg font-bold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                 🏋️ {gymDisplayName(session, workouts)}
               </h2>
               {intensity && (
@@ -254,7 +254,7 @@ export default function GymDetailModal({
 function StatTile({ label, value }) {
   return (
     <div className="rounded-xl px-1.5 py-2.5 text-center min-w-0" style={{ background: 'var(--color-surface-2)' }}>
-      <p className="text-sm font-bold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{value}</p>
+      <p className="text-sm font-bold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>{value}</p>
       <p className="text-[9px] uppercase tracking-wide mt-0.5" style={{ color: 'var(--color-slate)' }}>{label}</p>
     </div>
   )
@@ -274,7 +274,7 @@ function MuscleDetail({ muscleId, points, contributors }) {
       </div>
       {contributors.map(c => (
         <div key={c.exercise.id} className="flex items-baseline justify-between gap-2 mt-1.5">
-          <span className="text-[11px] truncate" style={{ color: 'var(--color-white)' }}>{c.exercise.name}</span>
+          <span className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-white)' }}>{c.exercise.name}</span>
           <span className="text-[11px] shrink-0" style={{ color: 'var(--color-slate)' }}>
             {c.sets} serie · {c.role === 'primary' ? 'principale' : 'secondario'}
           </span>
@@ -297,7 +297,7 @@ function ExercisesSection({ items, index }) {
             <p className="text-xs mt-0.5" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-mono)' }}>
               {summarizeSets(it.sets, ex.mode, it.perSide)}
             </p>
-            <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>
+            <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>
               {ex.primary.map(muscleLabel).join(', ') || '—'}
             </p>
           </div>

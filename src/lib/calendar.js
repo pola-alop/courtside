@@ -6,8 +6,11 @@
 // ── Perché il mese solare, qui sì ──
 // La Panoramica ha scartato il mese come unità di SINTESI (il 1° del mese è
 // azzerata). Qui il mese non riassume niente: è il foglio di calendario che
-// l'utente ha in testa, e la Home lo mostra perché il mese corrente è "adesso".
-// Nessun selettore, nessuna freccia: un mese diverso da questo è roba di Stats.
+// l'utente ha in testa, e la Home parte dal mese corrente perché è "adesso".
+// Dalla 2.2.0 (Fase 7) si può scorrere con `monthOffset`: indietro fino a
+// `MAX_MONTHS_BACK` mesi, avanti fino a `MAX_MONTHS_AHEAD`. Scorrere non
+// riassume niente: il mese passato mostra solo il fatto, quello futuro il
+// programmato; fiammella e card della settimana restano del mese corrente.
 //
 // ── Cosa è ricavato e cosa no ──
 // Lo stato di un programma (fatto / da fare / non svolto) NON è salvato: si
@@ -26,6 +29,8 @@
 import { dayTime } from './stats'
 import { todayTime, startOfWeek, addDays, currentRhythm, MONTHS_SHORT } from './activity'
 import { emptyBlock } from './training'
+import { isDoubles, joinNames } from './doubles'
+import { readTime as readTimeOrNull } from './sessionTime'
 
 export const WEEKDAY_INITIALS = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
 export const MONTHS = [
@@ -54,21 +59,31 @@ export const KIND_META = {
 // corsa ↔ `runs`, palestra ↔ `gymSessions`).
 export const PLAN_KINDS = ['match', 'training', 'run', 'gym', 'rest']
 
+// Quanto si può scorrere: 24 mesi indietro (tetto fisso, deciso dall'utente) e
+// 6 avanti. `monthOffset` fuori dai limiti viene riportato dentro.
+export const MAX_MONTHS_BACK = 24
+export const MAX_MONTHS_AHEAD = 6
+
 // ── Punto d'ingresso ───────────────────────────────────────
 // `today` si passa solo per collaudare su date fisse: l'app usa il default.
+// `monthOffset` è il mese guardato rispetto a quello di oggi (0 = corrente).
 export function buildCalendar({
   matches = [], trainings = [], runs = [], gymSessions = [], plans = [],
-  today = todayTime(),
+  today = todayTime(), monthOffset = 0,
 }) {
   today = startOfDay(today)
+  const offset = clampOffset(monthOffset)
   const sessions = toCalendarSessions({ matches, trainings, runs, gymSessions })
   const sessionsByDay = groupByDay(sessions)
   const plansByDay = planStatuses(plans, sessionsByDay, today)
   const thisWeek = startOfWeek(today)
 
-  const ref = new Date(today)
+  // Mai `setMonth` sul giorno di oggi: il 31 gennaio + 1 mese slitta a marzo.
+  const todayDate = new Date(today)
+  const ref = new Date(todayDate.getFullYear(), todayDate.getMonth() + offset, 1)
   const year = ref.getFullYear()
   const month = ref.getMonth()
+  const isCurrentMonth = offset === 0
 
   const monthStart = startOfDay(new Date(year, month, 1))
 
@@ -81,11 +96,31 @@ export function buildCalendar({
     }
     return {
       index, start, end, days,
-      isCurrent: start === thisWeek,
+      // La card della settimana è del solo mese corrente: in un altro mese la
+      // riga che contiene oggi (prima riga del mese dopo, ultima del mese
+      // prima) resta una riga di cerchi.
+      isCurrent: isCurrentMonth && start === thisWeek,
       isPast: end < today,
       isFuture: start > today,
+      // Almeno una sessione svolta nella settimana (fino a oggi): è ciò che
+      // accende la barra della fiammella nei mesi passati.
+      active: weekHasSession(sessionsByDay, start, today),
     }
   })
+
+  const bounds = { min: -MAX_MONTHS_BACK, max: MAX_MONTHS_AHEAD }
+  const base = {
+    year, month,
+    title: `${MONTHS[month]} ${year}`,
+    today,
+    offset,
+    isCurrentMonth,
+    bounds,
+    weeks,
+  }
+
+  // Altro mese: niente settimana corrente né serie (sono del presente).
+  if (!isCurrentMonth) return { ...base, currentWeek: null, streak: null }
 
   // Oggi sta sempre nel mese corrente, quindi la sua settimana è sempre una
   // delle righe della griglia: la ricerca non può fallire.
@@ -93,10 +128,7 @@ export function buildCalendar({
   const current = weeks[row]
 
   return {
-    year, month,
-    title: `${MONTHS[month]} ${year}`,
-    today,
-    weeks,
+    ...base,
     currentWeek: {
       row,
       start: current.start,
@@ -105,6 +137,23 @@ export function buildCalendar({
     },
     streak: buildStreak(sessions, today, row),
   }
+}
+
+function clampOffset(offset) {
+  const n = Number.isFinite(offset) ? Math.trunc(offset) : 0
+  return Math.min(MAX_MONTHS_AHEAD, Math.max(-MAX_MONTHS_BACK, n))
+}
+
+// Una settimana (lunedì `start`) è attiva se un suo giorno, fino a oggi, ha
+// almeno una sessione. `addDays` passa dal calendario locale: sicura col cambio
+// dell'ora, a differenza di `start + i * 86400000`.
+function weekHasSession(sessionsByDay, start, today) {
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(start, i)
+    if (day > today) return false
+    if (sessionsByDay.has(day)) return true
+  }
+  return false
 }
 
 // ── Sessioni ───────────────────────────────────────────────
@@ -263,8 +312,15 @@ export function planSubject(plan, { opponents = [], runWorkouts = [], gymWorkout
   const d = plan?.details || {}
   const byId = (list, id) => (id ? (list || []).find(x => x.id === id) : null)
   switch (plan?.kind) {
-    case 'match':
-      return byId(opponents, d.opponentId)?.name || d.opponentName || null
+    case 'match': {
+      if (!isDoubles(d)) return byId(opponents, d.opponentId)?.name || d.opponentName || null
+      // Doppio: i due avversari, «Rossi / Bianchi». Se uno non è più in
+      // anagrafica vale la copia salvata, che li ha entrambi.
+      const ids = planOpponentIds(plan)
+      const known = ids.map(id => byId(opponents, id)?.name).filter(Boolean)
+      if (known.length > 0 && known.length === ids.length) return joinNames(known)
+      return d.opponentName || (known.length > 0 ? joinNames(known) : null)
+    }
     case 'training':
       return byId(opponents, d.withWhom?.opponentId)?.name || d.withWhom?.label || null
     case 'run':
@@ -276,6 +332,20 @@ export function planSubject(plan, { opponents = [], runWorkouts = [], gymWorkout
   }
 }
 
+// Il compagno di un programma di doppio (nome attuale, altrimenti la copia
+// salvata); null per ogni altro programma o se non è ancora stato scelto.
+export function planPartner(plan, { opponents = [] } = {}) {
+  const d = plan?.details || {}
+  if (plan?.kind !== 'match' || !isDoubles(d)) return null
+  const known = d.partnerId ? opponents.find(o => o.id === d.partnerId) : null
+  return known?.name || d.partnerName || null
+}
+
+// Gli avversari scelti di un programma di doppio, da 0 a 2 id. Il doppio vive
+// in `details` come in una partita: `discipline`, `partnerId`, `opponentIds`,
+// con `opponentId` sempre null; assente = singolo.
+const planOpponentIds = plan => (Array.isArray(plan?.details?.opponentIds) ? plan.details.opponentIds : []).filter(Boolean)
+
 // ── Precompilazione dei wizard ─────────────────────────────
 // "Registra" apre il wizard della sessione già riempito con ciò che il
 // programma sapeva. Il risultato ha la forma di un pezzo di sessione (stessi
@@ -285,9 +355,10 @@ export function planSubject(plan, { opponents = [], runWorkouts = [], gymWorkout
 //
 // Avversario e scheda passano solo se esistono ancora: un id che non trova
 // niente lascerebbe il wizard con una selezione invisibile. Non passano la nota
-// (nel programma è una stringa, nella sessione un elenco datato) né l'orario
-// (le sessioni non lo salvano). Dell'allenamento si sa la durata, non il tipo
-// di lavoro: diventa un blocco solo, del tipo di partenza del wizard.
+// (nel programma è una stringa, nella sessione un elenco datato). L'orario
+// del programma passa, per partite e allenamenti di tennis (dalla 2.2.0 le
+// sessioni salvano l'ora d'inizio); corsa e palestra non ce l'hanno.
+// Dell'allenamento si sa la durata, non il tipo di lavoro: diventa un blocco solo, del tipo di partenza del wizard.
 export function planPrefill(plan, { opponents = [], runWorkouts = [], gymWorkouts = [] } = {}) {
   if (!plan || keyToDay(plan.date) == null) return null
   const d = plan.details || {}
@@ -296,8 +367,25 @@ export function planPrefill(plan, { opponents = [], runWorkouts = [], gymWorkout
 
   switch (plan.kind) {
     case 'match':
+      // Doppio: compagno e avversari passano solo se esistono ancora, come
+      // l'avversario del singolo; il wizard riparte dal primo passo e chiede
+      // ciò che manca.
+      if (isDoubles(d)) {
+        return {
+          date,
+          discipline: 'doppio',
+          opponentId: null,
+          time:       readTimeOrNull(plan.time),
+          partnerId:   exists(opponents, d.partnerId),
+          opponentIds: planOpponentIds(plan).map(id => exists(opponents, id)).filter(Boolean),
+          type:       d.type || null,
+          eventName:  d.eventName || '',
+          surface:    d.surface || null,
+        }
+      }
       return {
         date,
+        time:       readTimeOrNull(plan.time),
         opponentId: exists(opponents, d.opponentId),
         type:       d.type || null,
         eventName:  d.eventName || '',
@@ -310,6 +398,7 @@ export function planPrefill(plan, { opponents = [], runWorkouts = [], gymWorkout
         : d.withWhom?.label || ''
       return {
         date,
+        time:     readTimeOrNull(plan.time),
         surface:  d.surface || null,
         focus:    Array.isArray(d.focus) ? [...d.focus] : [],
         withWhom: label ? { label, opponentId } : null,

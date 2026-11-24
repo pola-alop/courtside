@@ -13,6 +13,7 @@ export async function initUserData(user) {
       photoURL: user.photoURL,
       createdAt: serverTimestamp(),
       profile: {
+        gender: null,
         level: null,
         dominantHand: null,
         playingSince: null,

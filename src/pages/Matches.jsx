@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useOpponents } from '../hooks/useOpponents'
 import { useOpponentGroups } from '../hooks/useOpponentGroups'
 import { useMatches } from '../hooks/useMatches'
+import { useTeamTies } from '../hooks/useTeamTies'
+import { useTeamCompetitions } from '../hooks/useTeamCompetitions'
 import { useTrainings } from '../hooks/useTrainings'
 import { useEquipment } from '../hooks/useEquipment'
 import { useRuns } from '../hooks/useRuns'
@@ -25,6 +27,11 @@ import MatchDetailModal from '../components/matches/MatchDetailModal'
 import Overview from '../components/matches/Overview'
 import Tournaments from '../components/matches/Tournaments'
 import TournamentDetailModal from '../components/matches/TournamentDetailModal'
+import TeamTies from '../components/matches/TeamTies'
+import TeamTieDetailModal from '../components/matches/TeamTieDetailModal'
+import TeamTieFormModal from '../components/matches/TeamTieFormModal'
+import TeamCompetitionDetailModal from '../components/matches/TeamCompetitionDetailModal'
+import TeamCompetitionFormModal from '../components/matches/TeamCompetitionFormModal'
 import TrainingRow from '../components/trainings/TrainingRow'
 import AddTrainingModal from '../components/trainings/AddTrainingModal'
 import TrainingDetailModal from '../components/trainings/TrainingDetailModal'
@@ -42,7 +49,11 @@ import GymWorkoutLibrary from '../components/gym/GymWorkoutLibrary'
 import GymWorkoutEditModal from '../components/gym/GymWorkoutEditModal'
 import { MATCH_TYPES, SURFACES, RESULT_META, surfaceIcon } from '../lib/tennis'
 import { buildTournaments } from '../lib/tournaments'
+import { slotKind, deleteIssue } from '../lib/teamTies'
+import { withCompetitionNames, tieContext, competitionDeleteIssue } from '../lib/teamCompetitions'
 import { groupRotation, lastMatchText, plannedText } from '../lib/opponents'
+import { readGender } from '../lib/gender'
+import { DISCIPLINES, isDoubles, involvesPlayer, facedPlayer, matchDiscipline, playerRecords } from '../lib/doubles'
 import { whatsappHref } from '../lib/phone'
 import { todayTime } from '../lib/activity'
 import { calibrateIntensity } from '../lib/fit'
@@ -81,6 +92,15 @@ export default function Matches() {
   const { opponents, loading: oppLoading, add: addOpponent, update: updateOpponent, remove: removeOpponent } = useOpponents()
   const { groups, add: addGroup, rename: renameGroup, setMembers: setGroupMembers, remove: removeGroup } = useOpponentGroups()
   const { matches,   loading: matchLoading, add: addMatch, update: updateMatch, remove: removeMatch, reload: reloadMatches } = useMatches()
+  const { ties: rawTies, loading: tieLoading, add: addTie, update: updateTie, setRubber, remove: removeTie } = useTeamTies()
+  const {
+    competitions, loading: competitionLoading, add: addCompetition, update: updateCompetition,
+    setResult, clearResult, remove: removeCompetition,
+  } = useTeamCompetitions()
+  // Il nome della squadra avversaria di uno scontro di girone è quello ATTUALE
+  // della competizione (la copia salvata resta di ripiego): derivato qui, una
+  // volta, e usato da tutta la pagina.
+  const ties = useMemo(() => withCompetitionNames(rawTies, competitions), [rawTies, competitions])
   const { trainings, loading: trainLoading, add: addTraining, update: updateTraining, remove: removeTraining } = useTrainings()
   const { equipment } = useEquipment()
   const { runs, loading: runLoading, add: addRun, update: updateRun, remove: removeRun } = useRuns()
@@ -192,6 +212,7 @@ export default function Matches() {
   const [selectedMatchId, setSelectedMatchId] = useState(() => searchParams.get('match'))
   const [matchDeleteToast, setMatchDeleteToast] = useState(false)
   const [fType, setFType]         = useState('all')
+  const [fDiscipline, setFDiscipline] = useState('all')
   const [fEvent, setFEvent]       = useState('')
   const [fOpponent, setFOpponent] = useState('all')
   const [fSurface, setFSurface]   = useState('all')
@@ -201,6 +222,15 @@ export default function Matches() {
 
   // Tornei
   const [selectedTournamentId, setSelectedTournamentId] = useState(null)
+  // Scontri a squadre: dettaglio aperto, form (null | 'new' | id da modificare)
+  // e l'incontro per cui si sta registrando una partita («Ho giocato io»).
+  const [selectedTieId, setSelectedTieId] = useState(null)
+  const [tieForm, setTieForm] = useState(null)
+  const [tieRegister, setTieRegister] = useState(null)
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState(null)
+  const [competitionForm, setCompetitionForm] = useState(null) // null | 'new' | id
+  // Scontro nuovo dentro una competizione: { competitionId, phase, leg?, opponentTeamId? }
+  const [tieSlot, setTieSlot] = useState(null)
 
   // Allenamenti — "+ Allenamento" apre prima la scelta del tipo (tennis/corsa)
   // Con una precompilazione il tipo è già deciso (tennis): niente scelta.
@@ -286,6 +316,33 @@ export default function Matches() {
   const groupFormGroup = groupForm && groupForm !== 'new' ? groups.find(g => g.id === groupForm) || null : null
   const selectedMatch    = selectedMatchId ? matches.find(m => m.id === selectedMatchId) || null : null
   const selectedTraining = selectedTrainingId ? trainings.find(t => t.id === selectedTrainingId) || null : null
+  // La sezione «A squadre» sta nel tab Tornei, sotto il palmarès (o in cima se
+  // non c'è ancora nessun torneo).
+  const teamTiesSection = (
+    <TeamTies
+      competitions={competitions} ties={ties} matches={matches}
+      onSelect={setSelectedTieId} onAdd={() => setTieForm('new')}
+      onSelectCompetition={setSelectedCompetitionId} onAddCompetition={() => setCompetitionForm('new')}
+    />
+  )
+
+  const selectedTie = selectedTieId ? ties.find(t => t.id === selectedTieId) || null : null
+  const tieFormTie  = tieForm && tieForm !== 'new' ? ties.find(t => t.id === tieForm) || null : null
+  const selectedCompetition = selectedCompetitionId ? competitions.find(c => c.id === selectedCompetitionId) || null : null
+  const competitionFormComp = competitionForm && competitionForm !== 'new' ? competitions.find(c => c.id === competitionForm) || null : null
+  // La competizione dello scontro: quella dello scontro in modifica o, per uno
+  // nuovo, quella da cui si è partiti.
+  const tieCompetition = (tieFormTie?.competitionId || tieSlot?.competitionId)
+    ? competitions.find(c => c.id === (tieFormTie?.competitionId || tieSlot?.competitionId)) || null
+    : null
+  const closeTieForm = () => { setTieForm(null); setTieSlot(null) }
+  // «Ho giocato io»: il wizard parte già sul tipo Squadre, con scontro,
+  // incontro, disciplina (dal tipo di incontro) e data dello scontro.
+  const registerTie = tieRegister ? ties.find(t => t.id === tieRegister.tieId) || null : null
+  const tiePrefill = registerTie ? {
+    type: 'squadre', tieId: registerTie.id, slot: tieRegister.slot,
+    discipline: slotKind(tieRegister.slot), date: registerTie.date,
+  } : null
   const selectedTournament = selectedTournamentId ? tournaments.find(t => t.id === selectedTournamentId) || null : null
   const selectedRun      = selectedRunId ? runs.find(r => r.id === selectedRunId) || null : null
   const editingWorkout   = editingWorkoutId ? workouts.find(w => w.id === editingWorkoutId) || null : null
@@ -301,19 +358,37 @@ export default function Matches() {
       draws:  played.filter(m => m.result === 'draw').length,
     }
   }
-  const matchesVs = (opponentId) => matches.filter(m => m.opponentId === opponentId)
+  // Le partite del dettaglio giocatore, in qualsiasi ruolo (singolo, contro in
+  // doppio, insieme in doppio), già dalla più recente. Servono anche al guard di
+  // eliminazione: un riferimento orfano romperebbe il nome della partita.
+  const matchesWith = (opponentId) => matches.filter(m => involvesPlayer(m, opponentId))
 
   // ── Filtri partite ──
   const eventOptions = (fType === 'campionato' || fType === 'torneo')
     ? [...new Set(matches.filter(m => m.type === fType && m.eventName).map(m => m.eventName))]
     : []
-  const opponentOptions = [...new Map(matches.map(m => [m.opponentId, m.opponentName])).entries()]
-    .sort((a, b) => a[1].localeCompare(b[1]))
+  // Chiunque tu abbia affrontato: l'avversario dei singoli e i due dei doppi
+  // (il compagno no: «insieme in doppio» è un record del dettaglio giocatore).
+  const opponentOptions = (() => {
+    const options = new Map()
+    matches.forEach(m => {
+      if (isDoubles(m)) {
+        ;(m.opponentIds || []).forEach(id => {
+          const known = opponents.find(o => o.id === id)
+          if (known) options.set(id, known.name)
+        })
+      } else if (m.opponentId) {
+        options.set(m.opponentId, m.opponentName || '—')
+      }
+    })
+    return [...options.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  })()
 
   const filteredMatches = matches.filter(m => {
     if (fType !== 'all' && m.type !== fType) return false
     if (fEvent && m.eventName !== fEvent) return false
-    if (fOpponent !== 'all' && m.opponentId !== fOpponent) return false
+    if (fDiscipline !== 'all' && matchDiscipline(m) !== fDiscipline) return false
+    if (fOpponent !== 'all' && !facedPlayer(m, fOpponent)) return false
     if (fSurface !== 'all' && m.surface !== fSurface) return false
     if (fDateFrom && m.date.slice(0, 10) < fDateFrom) return false
     if (fDateTo && m.date.slice(0, 10) > fDateTo) return false
@@ -322,10 +397,11 @@ export default function Matches() {
   })
   const monthGroups = groupByMonth(filteredMatches)
 
-  const hasActiveFilters = fType !== 'all' || fEvent !== '' || fOpponent !== 'all'
+  const hasActiveFilters = fType !== 'all' || fDiscipline !== 'all' || fEvent !== '' || fOpponent !== 'all'
     || fSurface !== 'all' || fDateFrom !== '' || fDateTo !== '' || fResult !== 'all'
   const resetFilters = () => {
     setFType('all')
+    setFDiscipline('all')
     setFEvent('')
     setFOpponent('all')
     setFSurface('all')
@@ -442,7 +518,7 @@ export default function Matches() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+    <div style={{ background: 'var(--color-bg)' }}>
 
       {/* Header */}
       <div className="px-6 pt-12 pb-4 flex items-center justify-between">
@@ -485,7 +561,7 @@ export default function Matches() {
       </div>
 
       {/* Contenuto */}
-      <div className="px-6 pb-32">
+      <div className="px-6 pb-8">
 
         {/* ── PARTITE ── */}
         {activeTab === 'partite' && (
@@ -497,6 +573,7 @@ export default function Matches() {
             <div className="space-y-4">
               <MatchFilters
                 type={fType} setType={t => { setFType(t); setFEvent('') }}
+                discipline={fDiscipline} setDiscipline={setFDiscipline}
                 event={fEvent} setEvent={setFEvent} eventOptions={eventOptions}
                 opponent={fOpponent} setOpponent={setFOpponent} opponentOptions={opponentOptions}
                 surface={fSurface} setSurface={setFSurface}
@@ -538,17 +615,20 @@ export default function Matches() {
 
         {/* ── TORNEI ── */}
         {activeTab === 'tornei' && (
-          matchLoading ? (
+          (matchLoading || tieLoading || competitionLoading) ? (
             <Spinner />
           ) : tournaments.length === 0 ? (
-            <EmptyState
-              icon="🏆"
-              title="Nessun torneo."
-              sub="Registra una partita di tipo Torneo indicando il turno: il tabellone si costruisce da solo."
-              onAdd={() => setShowAddMatch(true)}
-            />
+            <div className="space-y-5">
+              {teamTiesSection}
+              <EmptyState
+                icon="🏆"
+                title="Nessun torneo."
+                sub="Registra una partita di tipo Torneo indicando il turno: il tabellone si costruisce da solo."
+                onAdd={() => setShowAddMatch(true)}
+              />
+            </div>
           ) : (
-            <Tournaments runs={tournaments} onSelectTournament={setSelectedTournamentId} />
+            <Tournaments runs={tournaments} teamSection={teamTiesSection} onSelectTournament={setSelectedTournamentId} />
           )
         )}
 
@@ -753,8 +833,8 @@ export default function Matches() {
           groups={groups}
           onAddToGroup={(groupId) => setGroupMembers(groupId, { add: [selectedOpponent.id] })}
           onRemoveFromGroup={(groupId) => setGroupMembers(groupId, { remove: [selectedOpponent.id] })}
-          record={recordFor(selectedOpponent.id)}
-          matches={matchesVs(selectedOpponent.id)}
+          records={playerRecords(matches, selectedOpponent.id)}
+          matches={matchesWith(selectedOpponent.id)}
           onClose={() => setSelectedOpponentId(null)}
           onSelectMatch={(matchId) => setSelectedMatchId(matchId)}
           onUpdate={async (id, data) => {
@@ -765,7 +845,7 @@ export default function Matches() {
           onDelete={async (id) => {
             // Guard difensiva: il bottone di eliminazione è già nascosto nel
             // modale quando ci sono match collegati, ma non fidarsi solo della UI.
-            if (matchesVs(id).length > 0) return
+            if (matchesWith(id).length > 0) return
             await removeOpponent(id)
             setSelectedOpponentId(null)
             setOppDeleteToast(true)
@@ -787,16 +867,89 @@ export default function Matches() {
         />
       )}
 
+      {/* La competizione sta prima degli scontri: dal suo dettaglio si apre uno
+          scontro (o il form per crearlo) sopra di lei, senza chiuderla. */}
+      {selectedCompetition && (
+        <TeamCompetitionDetailModal
+          competition={selectedCompetition}
+          ties={ties}
+          matches={matches}
+          onClose={() => setSelectedCompetitionId(null)}
+          onSelectTie={setSelectedTieId}
+          onCreateTie={(slot) => { setTieSlot({ competitionId: selectedCompetition.id, ...slot }); setTieForm('new') }}
+          onSetResult={(entry) => setResult(selectedCompetition.id, entry)}
+          onClearResult={(a, b, leg) => clearResult(selectedCompetition.id, a, b, leg)}
+          onEdit={() => setCompetitionForm(selectedCompetition.id)}
+          onDelete={async () => {
+            // Ripete il controllo del pulsante: una competizione con scontri
+            // non si elimina.
+            if (competitionDeleteIssue(selectedCompetition, ties)) return
+            await removeCompetition(selectedCompetition.id)
+            setSelectedCompetitionId(null)
+          }}
+        />
+      )}
+      {(competitionForm === 'new' || competitionFormComp) && (
+        <TeamCompetitionFormModal
+          competition={competitionFormComp}
+          ties={ties}
+          onClose={() => setCompetitionForm(null)}
+          onSave={async (data) => {
+            if (competitionFormComp) await updateCompetition(competitionFormComp.id, data)
+            else setSelectedCompetitionId(await addCompetition(data))
+          }}
+        />
+      )}
+
+      {/* Lo scontro sta prima dei modali partita, come il torneo: dal suo
+          dettaglio si apre una partita (o il wizard già collegato a un
+          incontro) sopra di lui, senza chiuderlo. */}
+      {selectedTie && (
+        <TeamTieDetailModal
+          tie={selectedTie}
+          context={tieContext(selectedTie, competitions.find(c => c.id === selectedTie.competitionId) || null)}
+          matches={matches}
+          onClose={() => setSelectedTieId(null)}
+          onSelectMatch={(matchId) => setSelectedMatchId(matchId)}
+          onRegister={(slot) => { setTieRegister({ tieId: selectedTie.id, slot }); setShowAddMatch(true) }}
+          onSetRubber={(slot, winner, score) => setRubber(selectedTie.id, slot, winner, score)}
+          onEdit={() => setTieForm(selectedTie.id)}
+          onDelete={async () => {
+            // Ripete il controllo del pulsante: uno scontro con partite
+            // collegate non si elimina (si eliminano prima le partite).
+            if (deleteIssue(selectedTie, matches)) return
+            await removeTie(selectedTie.id)
+            setSelectedTieId(null)
+          }}
+        />
+      )}
+      {(tieForm === 'new' || tieFormTie) && (
+        <TeamTieFormModal
+          tie={tieFormTie}
+          competition={tieCompetition}
+          slot={tieSlot}
+          matches={matches}
+          onClose={closeTieForm}
+          onSave={async (data) => {
+            if (tieFormTie) await updateTie(tieFormTie.id, data)
+            else setSelectedTieId(await addTie(data))
+          }}
+        />
+      )}
+
       {/* ── Modali Partite ── */}
       {(showAddMatch || editingMatch) && !waitPrefill && (
         <AddMatchModal
           initial={editingMatch}
-          prefill={editingMatch ? null : prefillOf('match')}
+          prefill={editingMatch ? null : tiePrefill || prefillOf('match')}
           opponents={opponents}
           equipment={equipment}
+          ties={ties}
+          matches={matches}
+          userGender={readGender(profile?.gender)}
           fitUse={fitUseFor(editingMatch?.id)}
           intensityCalibration={intensityCalibration}
-          onClose={closing(() => { setShowAddMatch(false); setEditingMatch(null); setPrefillFor(null) })}
+          onClose={closing(() => { setShowAddMatch(false); setEditingMatch(null); setPrefillFor(null); setTieRegister(null) })}
           onSave={async (data, fitDetails) => {
             await commitFit({ details: fitDetails, prevFitId: editingMatch?.athletics?.fitId }, data.athletics)
             if (editingMatch) await updateMatch(editingMatch.id, data)
@@ -808,6 +961,7 @@ export default function Matches() {
         <MatchDetailModal
           match={selectedMatch}
           equipment={equipment}
+          tie={selectedMatch.tieId ? ties.find(t => t.id === selectedMatch.tieId) || null : null}
           onClose={closing(() => setSelectedMatchId(null))}
           onEdit={() => { setEditingMatch(selectedMatch); setSelectedMatchId(null) }}
           onUpdate={async (id, data) => { await updateMatch(id, data) }}
@@ -957,7 +1111,7 @@ export default function Matches() {
 // ── Filtri partite ─────────────────────────────────────────
 
 function MatchFilters({
-  type, setType, event, setEvent, eventOptions,
+  type, setType, discipline, setDiscipline, event, setEvent, eventOptions,
   opponent, setOpponent, opponentOptions,
   surface, setSurface,
   dateFrom, setDateFrom, dateTo, setDateTo,
@@ -983,6 +1137,15 @@ function MatchFilters({
         <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
           {[{ id: 'all', label: 'Tutti' }, ...MATCH_TYPES.map(t => ({ id: t.id, label: t.label }))].map(t => (
             <Chip key={t.id} active={type === t.id} onClick={() => setType(t.id)}>{t.label}</Chip>
+          ))}
+        </div>
+      </div>
+
+      {/* Disciplina */}
+      <div className="overflow-x-auto">
+        <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
+          {[{ id: 'all', label: 'Tutti' }, ...DISCIPLINES].map(d => (
+            <Chip key={d.id} active={discipline === d.id} onClick={() => setDiscipline(d.id)}>{d.label}</Chip>
           ))}
         </div>
       </div>

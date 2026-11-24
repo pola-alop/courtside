@@ -14,13 +14,35 @@ import {
 // allenamenti: descrive lo sforzo di una SESSIONE, e una partita è una sessione.
 // Riusarla è meglio che duplicare tre etichette e tre colori.
 import { INTENSITIES } from '../../lib/training'
-import { levelLabel, opponentInitials } from '../../lib/opponents'
+import { levelLabel, opponentInitials, opponentSurname } from '../../lib/opponents'
+import { DISCIPLINES, playersIssue, joinNames } from '../../lib/doubles'
+import { freeSlots, slotLabel, formulaText, homeLabel, sortTies } from '../../lib/teamTies'
+import { tieContext } from '../../lib/teamCompetitions'
+import { readTime } from '../../lib/sessionTime'
+import DateTimeFields from '../DateTimeFields'
+import DoublesPlayersPicker from './DoublesPlayersPicker'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 import FitImport from '../athletics/FitImport'
 import IntensitySuggestion from '../athletics/IntensitySuggestion'
 import { intensityFromRpe } from '../../lib/fit'
 
 const STEPS = ['Data', 'Avversario', 'Tipo', 'Superficie', 'Punteggio', 'Attrezzatura', 'Atletica']
+// Nel doppio il secondo step sceglie tre giocatori, non un avversario.
+const stepLabels = doubles => STEPS.map((label, i) => (i === 1 && doubles ? 'Giocatori' : label))
+
+// Le scritte dello step «Punteggio». Nel singolo i lati sono «Tu» e «Avversario»;
+// nel doppio sono due coppie, quindi «Noi» e «Avversari» e un ritiro di coppia
+// (se uno dei due si ferma, perde la coppia: non si registra chi). I dati non
+// cambiano: `me`/`opp` e `retired: 'me'|'opp'` sono sempre il nostro lato e il
+// loro. `sides` dice chi sono i due lati, con le forme brevi del punteggio.
+function scoreLabels(doubles, form, opponents) {
+  if (!doubles) return { me: 'Tu', opp: 'Avversario', retireMe: 'Mi ritiro', retireOpp: 'Si ritira lui', sides: null }
+  const surname = id => opponentSurname(opponents.find(o => o.id === id))
+  return {
+    me: 'Noi', opp: 'Avversari', retireMe: 'Ci ritiriamo', retireOpp: 'Si ritirano loro',
+    sides: `Noi: ${joinNames(['Tu', surname(form.partnerId)])} · Avversari: ${joinNames(form.opponentIds.map(surname))}`,
+  }
+}
 
 const EQUIP_TYPES = [
   { id: 'racchetta', label: 'Racchetta', icon: '🎾' },
@@ -36,9 +58,22 @@ const EQUIP_TYPES = [
 function initialForm(initial) {
   return {
     date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
+    // Ora d'inizio ('HH:MM'). Mai un valore di ripiego: per una partita nuova
+    // parte vuota (o con l'orario del programma) e va indicata.
+    time:       readTime(initial?.time) || '',
+    // Singolo o doppio. Assente (partite vecchie) = singolo. Le due scelte
+    // convivono nel form: passare da una disciplina all'altra e tornare non
+    // perde ciò che si era scelto; al salvataggio vale solo quella attiva.
+    discipline: initial?.discipline === 'doppio' ? 'doppio' : 'singolo',
     opponentId: initial?.opponentId || null,
+    partnerId:  initial?.partnerId || null,
+    opponentIds: [initial?.opponentIds?.[0] || null, initial?.opponentIds?.[1] || null],
     type:       initial?.type || 'amichevole',
     eventName:  initial?.eventName || '',
+    // Solo per il tipo «Squadre»: lo scontro e l'incontro (S1, D1…) a cui la
+    // partita appartiene. Il legame sta sulla partita, non sullo scontro.
+    tieId:      initial?.tieId || null,
+    slot:       initial?.slot || null,
     // Solo per i tornei. Le partite registrate prima che il campo esistesse
     // partono a null: modificarle è la via (guidata) per assegnare il turno.
     round:      initial?.round || null,
@@ -68,13 +103,23 @@ function initialForm(initial) {
   }
 }
 
-export default function AddMatchModal({ initial = null, prefill = null, opponents = [], equipment = [], fitUse = null, intensityCalibration = null, onClose, onSave }) {
+export default function AddMatchModal({ initial = null, prefill = null, opponents = [], equipment = [], ties = [], matches = [], userGender = null, fitUse = null, intensityCalibration = null, onClose, onSave }) {
   const [step, setStep]   = useState(1)
   const [form, setForm]   = useState(() => initialForm(initial || prefill))
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  // L'ora è obbligatoria per una partita nuova; in modifica solo se la partita
+  // ce l'aveva già (una registrata prima non deve costringere a inventarla).
+  const timeRequired = !initial || Boolean(readTime(initial.time))
   const typeMeta = MATCH_TYPES.find(t => t.id === form.type)
+  const doubles  = form.discipline === 'doppio'
+  // Per «Squadre»: l'incontro scelto deve essere libero e della disciplina
+  // della partita (il singolare non si assegna a un doppio). La partita che si
+  // modifica non occupa il proprio incontro.
+  const tie = ties.find(t => t.id === form.tieId) || null
+  const slotOk = form.type !== 'squadre' || Boolean(tie && form.slot
+    && freeSlots(tie, matches, { discipline: form.discipline, excludeMatchId: initial?.id }).includes(form.slot))
   const outcome  = computeOutcome(form.sets, form.format, form.retired)
   const athIssues = athleticsIssues(form.athletics)
 
@@ -89,14 +134,15 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
 
   const stepValid = (() => {
     switch (step) {
-      case 1: return Boolean(form.date)
-      case 2: return Boolean(form.opponentId)
+      case 1: return Boolean(form.date) && (!timeRequired || Boolean(readTime(form.time)))
+      case 2: return doubles ? !playersIssue(form) : Boolean(form.opponentId)
       // Il turno è obbligatorio SOLO per i tornei: è un tap su una griglia già
       // a schermo, e senza di esso la sezione Tornei non può ricostruire il
       // cammino (una partita senza turno è un buco nel tabellone).
       case 3: return Boolean(form.type)
         && (!typeMeta?.needsEvent || form.eventName.trim().length > 0)
         && (form.type !== 'torneo' || Boolean(form.round))
+        && slotOk
       case 4: return Boolean(form.surface)
       case 5: {
         const anyScore = form.sets.some(hasScore) || Boolean(form.retired)
@@ -125,6 +171,7 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
     if (!stepValid || saving) return
     setSaving(true)
     const opponent = opponents.find(o => o.id === form.opponentId)
+    const nameOf = id => opponents.find(o => o.id === id)?.name
     const cleanedSets = form.sets.filter(hasScore).map(s => ({
       me: s.me || 0, opp: s.opp || 0,
       tbMe: s.tbMe ?? null, tbOpp: s.tbOpp ?? null,
@@ -136,11 +183,21 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
     const fitDetails = athletics?.fitId && form.fitDetails?.fitId === athletics.fitId ? form.fitDetails : null
     await onSave({
       date:         new Date(form.date).toISOString(),
-      opponentId:   form.opponentId,
-      opponentName: opponent?.name || '—',
+      time:         readTime(form.time),
+      // Nel doppio `opponentId` resta null (vedi doubles.js) e `opponentName` è
+      // «Rossi / Bianchi»; i campi dell'altra disciplina si azzerano, così
+      // cambiare disciplina in modifica non lascia riferimenti orfani.
+      discipline:   form.discipline,
+      opponentId:   doubles ? null : form.opponentId,
+      partnerId:    doubles ? form.partnerId : null,
+      opponentIds:  doubles ? [...form.opponentIds] : null,
+      opponentName: doubles ? joinNames(form.opponentIds.map(nameOf)) : opponent?.name || '—',
       type:         form.type,
       eventName:    typeMeta?.needsEvent ? form.eventName.trim() : null,
       round:        form.type === 'torneo' ? form.round : null,
+      // Cambiare tipo in modifica non lascia un legame orfano con lo scontro.
+      tieId:        form.type === 'squadre' ? form.tieId : null,
+      slot:         form.type === 'squadre' ? form.slot : null,
       surface:      form.surface,
       format:       form.format,
       sets:         cleanedSets,
@@ -187,19 +244,24 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
               ✕
             </button>
           </div>
-          <StepIndicator step={step} />
+          <StepIndicator step={step} labels={stepLabels(doubles)} />
         </div>
 
         {/* Corpo scrollabile */}
         <div className="overflow-y-auto flex-1 px-6 py-4">
-          {step === 1 && <StepDate value={form.date} onChange={v => set('date', v)} />}
-          {step === 2 && <StepOpponent opponents={opponents} value={form.opponentId} onChange={v => set('opponentId', v)} />}
-          {step === 3 && <StepType form={form} set={set} />}
+          {step === 1 && <StepDate date={form.date} onDate={v => set('date', v)} time={form.time} onTime={v => set('time', v)} timeRequired={timeRequired}
+                                   discipline={form.discipline} onDiscipline={v => set('discipline', v)} />}
+          {step === 2 && (doubles
+            ? <StepDoubles opponents={opponents} form={form} userGender={userGender}
+                           onChange={({ partnerId, opponentIds }) => setForm(f => ({ ...f, partnerId, opponentIds }))} />
+            : <StepOpponent opponents={opponents} value={form.opponentId} onChange={v => set('opponentId', v)} />)}
+          {step === 3 && <StepType form={form} set={set} ties={ties} matches={matches} excludeMatchId={initial?.id} />}
           {step === 4 && <StepSurface value={form.surface} onChange={v => set('surface', v)} />}
           {step === 5 && (
             <StepScore
               form={form} setForm={setForm}
               outcome={outcome} allowsDraw={typeMeta?.allowsDraw}
+              labels={scoreLabels(doubles, form, opponents)}
             />
           )}
           {step === 6 && <StepEquipment equipment={equipment} value={form.equipment} onChange={v => set('equipment', v)} />}
@@ -208,7 +270,8 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
                            intensity={form.intensity} calibration={intensityCalibration}
                            onIntensityChange={v => setForm(f => ({ ...f, intensity: v, intensitySource: null }))}
                            onIntensitySuggested={v => setForm(f => ({ ...f, intensity: v, intensitySource: 'suggested' }))}
-                           fit={{ summary: form.fitSummary, date: form.date, fitUse, onImport: importFit, onUseDate: d => set('date', d) }} />
+                           fit={{ summary: form.fitSummary, date: form.date, fitUse, onImport: importFit, useTime: true,
+                                 onUseDate: (d, t) => setForm(f => ({ ...f, date: d, time: readTime(t) || f.time })) }} />
           )}
         </div>
 
@@ -233,10 +296,10 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
 
 // ── Step indicator ─────────────────────────────────────────
 
-function StepIndicator({ step }) {
+function StepIndicator({ step, labels }) {
   return (
     <div className="flex items-center gap-1.5">
-      {STEPS.map((label, i) => {
+      {labels.map((label, i) => {
         const n = i + 1
         const active = n === step
         const done = n < step
@@ -258,20 +321,32 @@ function StepIndicator({ step }) {
 
 // ── Step 1 — Data ──────────────────────────────────────────
 
-function StepDate({ value, onChange }) {
+function StepDate({ date, onDate, time, onTime, timeRequired, discipline, onDiscipline }) {
   return (
     <div className="space-y-3">
       <StepTitle title="Quando hai giocato?" />
       <div>
-        <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Data</label>
-        <input
-          type="date"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          className="w-full p-3 rounded-xl text-sm outline-none"
-          style={{ background: 'var(--color-surface-2)', color: 'var(--color-white)', border: '1px solid transparent', fontFamily: 'var(--font-body)' }}
-        />
+        <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Disciplina</label>
+        <div className="grid grid-cols-2 gap-2">
+          {DISCIPLINES.map(d => {
+            const active = discipline === d.id
+            return (
+              <button key={d.id} type="button"
+                onClick={() => onDiscipline(d.id)}
+                className="py-3 rounded-2xl text-sm font-semibold transition-all"
+                style={{
+                  background: active ? 'var(--color-teal-dark)' : 'var(--color-surface-2)',
+                  color:      active ? 'var(--color-white)' : 'var(--color-slate)',
+                  border:     active ? '1px solid var(--color-teal)' : '1px solid transparent',
+                  fontFamily: 'var(--font-display)'
+                }}>
+                {d.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
+      <DateTimeFields date={date} time={time} onDate={onDate} onTime={onTime} timeRequired={timeRequired} />
     </div>
   )
 }
@@ -322,11 +397,11 @@ function StepOpponent({ opponents, value, onChange }) {
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                  <p className="text-sm font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
                     {o.name}
                   </p>
                   {(o.hand || o.level) && (
-                    <p className="text-xs truncate" style={{ color: active ? 'var(--color-teal-light)' : 'var(--color-slate)' }}>
+                    <p className="text-xs wrap-anywhere" style={{ color: active ? 'var(--color-teal-light)' : 'var(--color-slate)' }}>
                       {[o.hand === 'destro' ? 'Destro' : o.hand === 'sinistro' ? 'Mancino' : null, levelLabel(o.level)].filter(Boolean).join(' · ')}
                     </p>
                   )}
@@ -342,14 +417,34 @@ function StepOpponent({ opponents, value, onChange }) {
   )
 }
 
+// Nel doppio: compagno e due avversari, tutti dall'anagrafica.
+function StepDoubles({ opponents, form, userGender, onChange }) {
+  const issue = playersIssue(form)
+  return (
+    <div className="space-y-3">
+      <StepTitle title="Con chi giochi e contro chi?" sub="Compagno e due avversari, dall'anagrafica." />
+      <DoublesPlayersPicker
+        opponents={opponents}
+        partnerId={form.partnerId}
+        opponentIds={form.opponentIds}
+        userGender={userGender}
+        onChange={onChange}
+      />
+      {issue && opponents.length > 0 && (
+        <p className="text-xs" style={{ color: 'var(--color-amber-light)' }}>{issue}</p>
+      )}
+    </div>
+  )
+}
+
 // ── Step 3 — Tipo ──────────────────────────────────────────
 
-function StepType({ form, set }) {
+function StepType({ form, set, ties, matches, excludeMatchId }) {
   const meta = MATCH_TYPES.find(t => t.id === form.type)
   return (
     <div className="space-y-3">
       <StepTitle title="Che tipo di partita?" />
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {MATCH_TYPES.map(t => {
           const active = form.type === t.id
           return (
@@ -367,6 +462,9 @@ function StepType({ form, set }) {
           )
         })}
       </div>
+      {form.type === 'squadre' && (
+        <TieSlotPicker form={form} set={set} ties={ties} matches={matches} excludeMatchId={excludeMatchId} />
+      )}
       {meta?.needsEvent && (
         <div>
           <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>
@@ -422,6 +520,101 @@ function StepType({ form, set }) {
   )
 }
 
+// Scontro e incontro di una partita «Squadre». Si propongono gli scontri che
+// hanno ancora un incontro libero della disciplina scelta nello step 1 (più
+// quello della partita in modifica); l'incontro si sceglie tra quelli liberi.
+function TieSlotPicker({ form, set, ties, matches, excludeMatchId }) {
+  const discipline = form.discipline
+  const label = discipline === 'doppio' ? 'di doppio' : 'di singolare'
+  const options = sortTies(ties).map(t => ({
+    tie: t,
+    free: freeSlots(t, matches, { discipline, excludeMatchId }),
+  }))
+  const available = options.filter(o => o.free.length > 0)
+  const current = options.find(o => o.tie.id === form.tieId)
+
+  // Cambiare scontro azzera l'incontro: gli slot sono quelli di quello scontro.
+  const pickTie = (id) => { set('tieId', id); set('slot', null) }
+
+  if (ties.length === 0) {
+    return (
+      <div className="rounded-2xl px-4 py-4" style={{ background: 'var(--color-surface-2)' }}>
+        <p className="text-sm" style={{ color: 'var(--color-slate)' }}>
+          Nessuno scontro a squadre. Crealo prima dal tab Tornei, sezione «A squadre».
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Scontro *</label>
+        {available.length === 0 ? (
+          <p className="text-xs" style={{ color: 'var(--color-amber-light)' }}>
+            Nessuno scontro ha un incontro {label} libero.
+            {discipline === 'singolo' ? ' Per un doppio, scegli «Doppio» nel primo step.' : ' Per un singolo, scegli «Singolo» nel primo step.'}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {available.map(({ tie: t }) => {
+              const active = form.tieId === t.id
+              return (
+                <button key={t.id} type="button" onClick={() => pickTie(t.id)}
+                  className="w-full text-left rounded-2xl p-3 flex flex-col items-stretch transition-all"
+                  style={{
+                    background: active ? 'var(--color-teal-dark)' : 'var(--color-surface-2)',
+                    border: active ? '1px solid var(--color-teal)' : '1px solid transparent',
+                  }}>
+                  <span className="text-sm font-semibold wrap-anywhere" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
+                    vs {t.opponentTeam}
+                  </span>
+                  <span className="text-xs wrap-anywhere" style={{ color: active ? 'var(--color-teal-light)' : 'var(--color-slate)' }}>
+                    {[tieContext(t), formatTieDate(t.date), homeLabel(t.home), formulaText(t.formula)].filter(Boolean).join(' · ')}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {current && current.free.length > 0 && (
+        <div>
+          <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Incontro *</label>
+          <div className="grid grid-cols-2 gap-2">
+            {current.free.map(slot => {
+              const active = form.slot === slot
+              return (
+                <button key={slot} type="button" onClick={() => set('slot', slot)}
+                  className="py-2.5 rounded-xl text-xs font-semibold transition-all"
+                  style={{
+                    background: active ? 'var(--color-amber)' : 'var(--color-surface-2)',
+                    color:      active ? 'var(--color-bg)' : 'var(--color-slate)',
+                    border:     active ? '1px solid var(--color-amber)' : '1px solid transparent',
+                    fontFamily: 'var(--font-display)'
+                  }}>
+                  {slotLabel(slot)}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs mt-1" style={{ color: 'var(--color-slate)' }}>
+            Sono proposti solo gli incontri {label} ancora liberi. Un incontro a squadre deve concludersi con un vincitore.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function formatTieDate(dateStr) {
+  if (!dateStr) return null
+  try {
+    return new Date(dateStr).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+  } catch { return dateStr }
+}
+
 // ── Step 4 — Superficie ────────────────────────────────────
 
 function StepSurface({ value, onChange }) {
@@ -453,7 +646,7 @@ function StepSurface({ value, onChange }) {
 
 // ── Step 5 — Punteggio ─────────────────────────────────────
 
-function StepScore({ form, setForm, outcome, allowsDraw }) {
+function StepScore({ form, setForm, outcome, allowsDraw, labels }) {
   const fmt = MATCH_FORMATS[form.format]
 
   const setFormat = (key) => setForm(f => ({ ...f, format: key, sets: [emptySet()], retired: null }))
@@ -479,7 +672,7 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
 
   return (
     <div className="space-y-4">
-      <StepTitle title="Formato e punteggio" />
+      <StepTitle title="Formato e punteggio" sub={labels.sides} />
 
       {/* Scelta formato */}
       <div className="grid grid-cols-2 gap-2">
@@ -505,7 +698,7 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
         {shown.map((s, i) => {
           const kind = setKind(fmt, i)
           return (
-            <SetInput key={i} index={i} set={s} kind={kind} fmt={fmt}
+            <SetInput key={i} index={i} set={s} kind={kind} fmt={fmt} labels={labels}
               invalid={!isTiebreakValid(s, kind, fmt, form.retired)}
               onChange={patch => updateSet(i, patch)} />
           )
@@ -520,8 +713,8 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
         <div className="flex gap-2">
           {[
             { id: null,  label: 'Nessuno' },
-            { id: 'me',  label: 'Mi ritiro' },
-            { id: 'opp', label: 'Si ritira lui' },
+            { id: 'me',  label: labels.retireMe },
+            { id: 'opp', label: labels.retireOpp },
           ].map(opt => {
             const active = (form.retired || null) === opt.id
             return (
@@ -568,7 +761,7 @@ function StepScore({ form, setForm, outcome, allowsDraw }) {
   )
 }
 
-function SetInput({ index, set, kind, fmt, invalid, onChange }) {
+function SetInput({ index, set, kind, fmt, labels, invalid, onChange }) {
   const isSuper = kind === 'superTb'
   const maxGames = isSuper ? 99 : 7
   const showTb = !isSuper && isTiebreakSet(set)
@@ -579,8 +772,8 @@ function SetInput({ index, set, kind, fmt, invalid, onChange }) {
         {isSuper ? `Super tie-break (a ${fmt.superTbTarget})` : `Set ${index + 1}`}
       </p>
       <div className="space-y-2">
-        <ScoreStepper label="Tu"          value={set.me}  onChange={v => onChange({ me: v })}  max={maxGames} />
-        <ScoreStepper label="Avversario"  value={set.opp} onChange={v => onChange({ opp: v })} max={maxGames} />
+        <ScoreStepper label={labels.me}  value={set.me}  onChange={v => onChange({ me: v })}  max={maxGames} />
+        <ScoreStepper label={labels.opp} value={set.opp} onChange={v => onChange({ opp: v })} max={maxGames} />
       </div>
       {isSuper && invalid && (
         <p className="text-[11px] mt-2" style={{ color: 'var(--color-loss)' }}>
@@ -593,8 +786,8 @@ function SetInput({ index, set, kind, fmt, invalid, onChange }) {
             Punti tie-break {invalid && '— scarto minimo 2 punti, il vincitore deve coincidere con il set'}
           </p>
           <div className="space-y-2">
-            <ScoreStepper label="Tu"         value={set.tbMe  ?? 0} onChange={v => onChange({ tbMe: v })}  max={99} small />
-            <ScoreStepper label="Avversario" value={set.tbOpp ?? 0} onChange={v => onChange({ tbOpp: v })} max={99} small />
+            <ScoreStepper label={labels.me}  value={set.tbMe  ?? 0} onChange={v => onChange({ tbMe: v })}  max={99} small />
+            <ScoreStepper label={labels.opp} value={set.tbOpp ?? 0} onChange={v => onChange({ tbOpp: v })} max={99} small />
           </div>
         </div>
       )}
@@ -755,6 +948,7 @@ function StepAthletics({ value, onChange, issues, intensity, calibration, onInte
         hasData={hasAthletics(value)}
         date={fit.date}
         onUseDate={fit.onUseDate}
+        useTime={fit.useTime}
         fitUse={fit.fitUse}
         onImport={fit.onImport}
       />
@@ -871,7 +1065,7 @@ function ZoneRow({ zone, seconds, onChange }) {
           <p className="text-xs font-semibold" style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
             {zone.label}
           </p>
-          <p className="text-[11px] truncate" style={{ color: 'var(--color-slate)' }}>{zone.name}</p>
+          <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{zone.name}</p>
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">

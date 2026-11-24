@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom'
 
 export default function Onboarding({ name, profileDone, equipmentDone, addMatchTo, addTrainingTo }) {
   return (
-    <div className="px-6 pt-12 pb-32">
+    <div className="px-6 pt-12 pb-8">
 
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl mb-4"
@@ -82,7 +82,7 @@ function Step({ n, done, title, sub, to }) {
         {done ? '✓' : n}
       </span>
       <span className="flex-1 min-w-0">
-        <span className="text-sm font-semibold block truncate"
+        <span className="text-sm font-semibold block wrap-anywhere"
               style={{
                 color: done ? 'var(--color-slate)' : 'var(--color-white)',
                 fontFamily: 'var(--font-display)',
@@ -90,7 +90,7 @@ function Step({ n, done, title, sub, to }) {
               }}>
           {title}
         </span>
-        <span className="text-xs block truncate" style={{ color: 'var(--color-slate)' }}>{sub}</span>
+        <span className="text-xs block wrap-anywhere" style={{ color: 'var(--color-slate)' }}>{sub}</span>
       </span>
       {to && !done && <span className="text-sm shrink-0" style={{ color: 'var(--color-slate)' }}>›</span>}
     </>

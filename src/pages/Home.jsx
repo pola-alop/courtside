@@ -19,6 +19,7 @@ import MatchRow from '../components/matches/MatchRow'
 import TrainingRow from '../components/trainings/TrainingRow'
 import { buildHome, ALERT_TONES, IDLE_BAD } from '../lib/home'
 import { buildCalendar } from '../lib/calendar'
+import { readGender } from '../lib/gender'
 import { formatDaysAgo } from '../lib/technique'
 
 // Home — "adesso".
@@ -75,6 +76,9 @@ export default function Home() {
   const { opponents, loading: opponentLoading } = useOpponents()
   // { date: 'YYYY-MM-DD', plan?: programma da vedere/modificare } o null.
   const [planTarget, setPlanTarget] = useState(null)
+  // Il mese del calendario rispetto a quello di oggi (0 = corrente). Sta in
+  // memoria e riparte da oggi a ogni ingresso nella Home: la pagina è "adesso".
+  const [monthOffset, setMonthOffset] = useState(0)
 
   const report = useMemo(
     () => buildHome({
@@ -85,8 +89,8 @@ export default function Home() {
   )
 
   const calendar = useMemo(
-    () => buildCalendar({ matches, trainings, runs, gymSessions, plans }),
-    [matches, trainings, runs, gymSessions, plans]
+    () => buildCalendar({ matches, trainings, runs, gymSessions, plans, monthOffset }),
+    [matches, trainings, runs, gymSessions, plans, monthOffset]
   )
 
   // `kind` è già il nome del parametro del deep link (match|training|run|gym).
@@ -142,7 +146,7 @@ export default function Home() {
   const { rhythm, idle, alerts, checks, last, career } = report
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+    <div style={{ background: 'var(--color-bg)' }}>
 
       {/* ── Header: chi sei e da quanto non giochi ── */}
       <div className="px-6 pt-12 pb-5">
@@ -178,11 +182,14 @@ export default function Home() {
 
       {/* ── Calendario: il mese corrente, il fatto e la serie di settimane ──
           Ha preso il posto della striscia di continuità: dice la stessa cosa
-          meglio, e la serie conta tutti i domini, non solo il tennis. */}
+          meglio, e la serie conta tutti i domini, non solo il tennis. Dalla
+          2.2.0 si scorre con le frecce (indietro il fatto, avanti il
+          programmato); si riparte sempre dal mese corrente. */}
       <div className="px-6 pb-6">
         <SectionTitle>Calendario</SectionTitle>
         <Calendar
           calendar={calendar}
+          onMonth={setMonthOffset}
           runWorkouts={runWorkouts}
           gymWorkouts={gymWorkouts}
           opponents={opponents}
@@ -228,7 +235,7 @@ export default function Home() {
       {/* ── Carriera: i totali di sempre, una riga sola ──
           Sono di tennis: con sole corse o palestra la riga è vuota e non c'è.
           Il padding in fondo resta, perché è lo spazio della bottom nav. */}
-      <div className="px-6 pb-32">
+      <div className="px-6 pb-8">
         {careerText(career) && (
           <p className="text-[11px] text-center leading-relaxed"
              style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
@@ -249,9 +256,12 @@ export default function Home() {
           runWorkouts={runWorkouts}
           gymWorkouts={gymWorkouts}
           trainings={trainings}
+          matches={matches}
           runs={runs}
           gymSessions={gymSessions}
+          userGender={readGender(profile?.gender)}
           onSave={savePlan}
+          onSaveSummary={(planId, summary) => updatePlan(planId, { summary })}
           onDelete={removePlan}
           onRegister={registerPlan}
           onClose={() => setPlanTarget(null)}
@@ -281,11 +291,11 @@ function AlertRow({ alert }) {
       style={{ background: tone.bg, border: '1px solid var(--color-surface-2)' }}>
       <span className="text-sm shrink-0">{alert.icon}</span>
       <span className="flex-1 min-w-0">
-        <span className="text-xs block truncate"
+        <span className="text-xs block wrap-anywhere"
               style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
           {alert.title}
         </span>
-        <span className="text-[10px] block truncate" style={{ color: tone.color }}>{alert.sub}</span>
+        <span className="text-[10px] block wrap-anywhere" style={{ color: tone.color }}>{alert.sub}</span>
       </span>
       <span className="text-sm shrink-0" style={{ color: 'var(--color-slate)' }}>›</span>
     </Link>

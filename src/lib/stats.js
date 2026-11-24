@@ -520,11 +520,15 @@ export function opponentBreakdown(matches, opponents) {
   const favourite = [...qualified].sort((a, b) => b.winRate - a.winRate)[0] || null
 
   const top3 = rows.slice(0, 3).reduce((s, r) => s + r.n, 0)
+  // Le partite con un avversario solo: i doppi (`opponentId` null) non ne fanno
+  // parte, quindi i denominatori di quota e media sono questi e non `matches.length`.
+  const counted = rows.reduce((s, r) => s + r.n, 0)
 
   return {
     rows,
     distinct: rows.length,
-    top3Share: matches.length ? top3 / matches.length : null,
+    n: counted,
+    top3Share: counted ? top3 / counted : null,
     nemesis:   nemesis   && nemesis.winRate   <= 0.4 ? nemesis   : null,
     favourite: favourite && favourite.winRate >= 0.6 ? favourite : null,
   }
@@ -607,10 +611,10 @@ function bucketize(annotated, buckets, pick) {
 // artefatto di quanto poco è stato registrato, non del gioco.
 export const MIN_BRIDGE_TRAININGS = 10
 
-export function trainingBridge(matches, trainings) {
+export function trainingBridge(matches, trainings, sessionMatches = matches) {
   // Le sessioni precedenti includono le partite stesse: due partite in una
-  // settimana sono carico quanto due allenamenti.
-  const sessions  = [...trainings, ...matches]
+  // settimana sono carico quanto due allenamenti (e un doppio quanto un singolo).
+  const sessions  = [...trainings, ...sessionMatches]
   const annotated = annotate(matches, sessions)
   return {
     prep: bucketize(annotated, PREP_BUCKETS, a => a.prep),
@@ -625,7 +629,11 @@ export function trainingBridge(matches, trainings) {
 // Un'unica funzione che restituisce tutto il necessario alla sezione, così il
 // componente fa un solo useMemo e non deve conoscere l'ordine dei calcoli.
 
-export function buildRendimento({ matches = [], trainings = [], opponents = [] }) {
+// `matches` sono quelle da analizzare (già tagliate per periodo e disciplina);
+// `sessionMatches` sono quelle del periodo senza il taglio di disciplina, e
+// servono solo al ponte: un doppio due giorni prima di un singolo è carico
+// anche se il filtro lo esclude dai numeri.
+export function buildRendimento({ matches = [], sessionMatches = matches, trainings = [], opponents = [] }) {
   const core = coreStats(matches)
   const opponentsById = new Map(opponents.map(o => [o.id, o]))
 
@@ -646,7 +654,7 @@ export function buildRendimento({ matches = [], trainings = [], opponents = [] }
     }, {}),
     opponents: opponentBreakdown(matches, opponents),
     notable:   notableScorelines(matches),
-    bridge:    trainingBridge(matches, trainings),
+    bridge:    trainingBridge(matches, trainings, sessionMatches),
     enough:    matches.length >= MIN_CORE,
     missing:   Math.max(0, MIN_CORE - matches.length),
   }
@@ -803,11 +811,11 @@ export function rendimentoInsights(r) {
 
   // Varietà degli avversari: se il campione è concentrato su due persone, il
   // GW% misura loro, non te. È un avvertimento sulla lettura di tutto il resto.
-  if (core.n >= 10 && r.opponents.top3Share != null && r.opponents.top3Share >= 0.7 && r.opponents.distinct >= 2) {
+  if (r.opponents.n >= 10 && r.opponents.top3Share != null && r.opponents.top3Share >= 0.7 && r.opponents.distinct >= 2) {
     out.push(insight({
       id: 'varieta', target: 'avversari', tone: 'neutral', icon: 'ℹ️',
-      effect: r.opponents.top3Share - 0.5, n: core.n, weight: 0.35,
-      text: `Il ${pct(r.opponents.top3Share)} delle tue partite è contro 3 avversari: queste medie descrivono soprattutto quei confronti.`,
+      effect: r.opponents.top3Share - 0.5, n: r.opponents.n, weight: 0.35,
+      text: `Il ${pct(r.opponents.top3Share)} ${r.opponents.n === core.n ? 'delle tue partite' : 'dei tuoi singoli'} è contro 3 avversari: queste medie descrivono soprattutto quei confronti.`,
     }))
   }
 

@@ -28,7 +28,7 @@ export default function GroupBar({
         <div className="rounded-2xl p-3 space-y-3"
              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-surface-2)' }}>
           <div className="min-w-0">
-            <p className="text-sm font-bold truncate"
+            <p className="text-sm font-bold wrap-anywhere"
                style={{ color: 'var(--color-white)', fontFamily: 'var(--font-display)' }}>
               {selectedGroup.name}
             </p>

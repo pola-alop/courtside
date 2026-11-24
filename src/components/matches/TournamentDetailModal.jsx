@@ -24,6 +24,7 @@ export default function TournamentDetailModal({ run, onClose, onSelectMatch }) {
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="min-w-0">
               <p className="text-xs mb-1" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+                {run.disciplineLabel && `${run.disciplineLabel} · `}
                 {formatDate(run.startDate)}
                 {run.endDate !== run.startDate && ` → ${formatDate(run.endDate)}`}
               </p>

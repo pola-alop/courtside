@@ -256,10 +256,12 @@ export default function Home() {
           runWorkouts={runWorkouts}
           gymWorkouts={gymWorkouts}
           trainings={trainings}
+          matches={matches}
           runs={runs}
           gymSessions={gymSessions}
           userGender={readGender(profile?.gender)}
           onSave={savePlan}
+          onSaveSummary={(planId, summary) => updatePlan(planId, { summary })}
           onDelete={removePlan}
           onRegister={registerPlan}
           onClose={() => setPlanTarget(null)}

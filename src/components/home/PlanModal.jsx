@@ -11,6 +11,7 @@ import { sortWorkoutsByUse as sortGymWorkouts } from '../../lib/gym'
 import FocusPicker from '../trainings/FocusPicker'
 import OpponentSearchField from '../matches/OpponentSearchField'
 import DoublesPlayersPicker from '../matches/DoublesPlayersPicker'
+import NotesSummary from './NotesSummary'
 
 // La modale dei programmi: l'unica "di proprietà" della Home, perché i
 // programmi esistono solo qui (le sessioni invece vivono in Matches e la Home
@@ -75,7 +76,7 @@ function initialForm(date, plan) {
 
 export default function PlanModal({
   date, plan = null, plans = [], opponents = [], runWorkouts = [], gymWorkouts = [],
-  trainings = [], runs = [], gymSessions = [], userGender = null, onSave, onDelete, onRegister, onClose,
+  trainings = [], runs = [], gymSessions = [], matches = [], userGender = null, onSave, onSaveSummary, onDelete, onRegister, onClose,
 }) {
   // view | form | confirmDelete
   const [mode, setMode]     = useState(plan ? 'view' : 'form')
@@ -166,6 +167,11 @@ export default function PlanModal({
               </button>
 
               <PlanSummary plan={plan} names={names} />
+
+              {plan.kind === 'training' && (
+                <NotesSummary plan={plan} matches={matches} trainings={trainings} opponents={opponents}
+                              onSaveSummary={onSaveSummary} />
+              )}
 
               <div className="mt-6 pb-2">
                 <button

@@ -30,6 +30,7 @@ import { dayTime } from './stats'
 import { todayTime, startOfWeek, addDays, currentRhythm, MONTHS_SHORT } from './activity'
 import { emptyBlock } from './training'
 import { isDoubles, joinNames } from './doubles'
+import { readTime as readTimeOrNull } from './sessionTime'
 
 export const WEEKDAY_INITIALS = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
 export const MONTHS = [
@@ -354,9 +355,10 @@ const planOpponentIds = plan => (Array.isArray(plan?.details?.opponentIds) ? pla
 //
 // Avversario e scheda passano solo se esistono ancora: un id che non trova
 // niente lascerebbe il wizard con una selezione invisibile. Non passano la nota
-// (nel programma è una stringa, nella sessione un elenco datato) né l'orario
-// (le sessioni non lo salvano). Dell'allenamento si sa la durata, non il tipo
-// di lavoro: diventa un blocco solo, del tipo di partenza del wizard.
+// (nel programma è una stringa, nella sessione un elenco datato). L'orario
+// del programma passa, per partite e allenamenti di tennis (dalla 2.2.0 le
+// sessioni salvano l'ora d'inizio); corsa e palestra non ce l'hanno.
+// Dell'allenamento si sa la durata, non il tipo di lavoro: diventa un blocco solo, del tipo di partenza del wizard.
 export function planPrefill(plan, { opponents = [], runWorkouts = [], gymWorkouts = [] } = {}) {
   if (!plan || keyToDay(plan.date) == null) return null
   const d = plan.details || {}
@@ -373,6 +375,7 @@ export function planPrefill(plan, { opponents = [], runWorkouts = [], gymWorkout
           date,
           discipline: 'doppio',
           opponentId: null,
+          time:       readTimeOrNull(plan.time),
           partnerId:   exists(opponents, d.partnerId),
           opponentIds: planOpponentIds(plan).map(id => exists(opponents, id)).filter(Boolean),
           type:       d.type || null,
@@ -382,6 +385,7 @@ export function planPrefill(plan, { opponents = [], runWorkouts = [], gymWorkout
       }
       return {
         date,
+        time:       readTimeOrNull(plan.time),
         opponentId: exists(opponents, d.opponentId),
         type:       d.type || null,
         eventName:  d.eventName || '',
@@ -394,6 +398,7 @@ export function planPrefill(plan, { opponents = [], runWorkouts = [], gymWorkout
         : d.withWhom?.label || ''
       return {
         date,
+        time:     readTimeOrNull(plan.time),
         surface:  d.surface || null,
         focus:    Array.isArray(d.focus) ? [...d.focus] : [],
         withWhom: label ? { label, opponentId } : null,

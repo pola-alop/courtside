@@ -54,6 +54,10 @@ export default defineConfig({
           if (id.includes('/node_modules/')) {
             // Firestore è il modulo più pesante: chunk a sé, separato da auth/app
             if (id.includes('/@firebase/firestore') || id.includes('/firebase/firestore')) return 'firebase-firestore'
+            // L'AI si carica solo alla prima generazione del riassunto (import dinamico in firebase/ai.js).
+            // Niente chunk manuale: lo separa il bundler per l'import dinamico, altrimenti
+            // la regola generica sotto lo metterebbe in firebase-core, caricato all'avvio.
+            if (id.includes('/@firebase/ai/') || id.includes('/firebase/ai/')) return undefined
             if (id.includes('/@firebase/') || id.includes('/firebase/')) return 'firebase-core'
           }
         },

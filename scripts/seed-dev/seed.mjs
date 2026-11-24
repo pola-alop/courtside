@@ -317,6 +317,7 @@ async function main() {
       },
       intensity: m.intensity || null,
       athletics: m.athletics ? athleticsFor(m.athletics) : null,
+      time: m.time || '10:00',
       notes: m.notes || [],
       createdAt: ts(m.date),
     }
@@ -483,6 +484,7 @@ async function main() {
         borsone: null,
       },
       athletics: t.athletics ? athleticsFor(t.athletics) : null,
+      time: t.time || '18:30',
       notes: t.notes || [],
       createdAt: ts(t.date),
     }
@@ -698,14 +700,14 @@ async function main() {
       sets, retired: null, result: outcome.result, completed: outcome.completed,
       setsMe: outcome.setsMe, setsOpp: outcome.setsOpp,
       equipment: { racchetta: racchettaA.id, scarpa: scarpaTerra.id, outfit: outfit.id, borsone: null },
-      intensity: 'media', athletics: null, notes: [], createdAt: ts(date), ...extra,
+      time: '10:00', intensity: 'media', athletics: null, notes: [], createdAt: ts(date), ...extra,
     })
     recent.match++
   }
   const calTraining = (offset, blocks, focus = []) => {
     const date = keyOf(dayAt(offset))
     calBatch.set(trainingsCol.doc(), {
-      date: iso(date), blocks, surface: 'terra', focus, ratings: {}, intensity: 'media',
+      date: iso(date), time: '18:30', blocks, surface: 'terra', focus, ratings: {}, intensity: 'media',
       withWhom: null, brokeStrings: false,
       equipment: { racchetta: racchettaA.id, scarpa: scarpaTerra.id, outfit: outfit.id, borsone: null },
       athletics: null, notes: [], createdAt: ts(date),

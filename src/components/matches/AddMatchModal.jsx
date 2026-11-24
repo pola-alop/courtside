@@ -18,6 +18,8 @@ import { levelLabel, opponentInitials, opponentSurname } from '../../lib/opponen
 import { DISCIPLINES, playersIssue, joinNames } from '../../lib/doubles'
 import { freeSlots, slotLabel, formulaText, homeLabel, sortTies } from '../../lib/teamTies'
 import { tieContext } from '../../lib/teamCompetitions'
+import { readTime } from '../../lib/sessionTime'
+import DateTimeFields from '../DateTimeFields'
 import DoublesPlayersPicker from './DoublesPlayersPicker'
 import TrainingEffectInfoButton from '../athletics/TrainingEffectInfo'
 import FitImport from '../athletics/FitImport'
@@ -56,6 +58,9 @@ const EQUIP_TYPES = [
 function initialForm(initial) {
   return {
     date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
+    // Ora d'inizio ('HH:MM'). Mai un valore di ripiego: per una partita nuova
+    // parte vuota (o con l'orario del programma) e va indicata.
+    time:       readTime(initial?.time) || '',
     // Singolo o doppio. Assente (partite vecchie) = singolo. Le due scelte
     // convivono nel form: passare da una disciplina all'altra e tornare non
     // perde ciò che si era scelto; al salvataggio vale solo quella attiva.
@@ -104,6 +109,9 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  // L'ora è obbligatoria per una partita nuova; in modifica solo se la partita
+  // ce l'aveva già (una registrata prima non deve costringere a inventarla).
+  const timeRequired = !initial || Boolean(readTime(initial.time))
   const typeMeta = MATCH_TYPES.find(t => t.id === form.type)
   const doubles  = form.discipline === 'doppio'
   // Per «Squadre»: l'incontro scelto deve essere libero e della disciplina
@@ -126,7 +134,7 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
 
   const stepValid = (() => {
     switch (step) {
-      case 1: return Boolean(form.date)
+      case 1: return Boolean(form.date) && (!timeRequired || Boolean(readTime(form.time)))
       case 2: return doubles ? !playersIssue(form) : Boolean(form.opponentId)
       // Il turno è obbligatorio SOLO per i tornei: è un tap su una griglia già
       // a schermo, e senza di esso la sezione Tornei non può ricostruire il
@@ -175,6 +183,7 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
     const fitDetails = athletics?.fitId && form.fitDetails?.fitId === athletics.fitId ? form.fitDetails : null
     await onSave({
       date:         new Date(form.date).toISOString(),
+      time:         readTime(form.time),
       // Nel doppio `opponentId` resta null (vedi doubles.js) e `opponentName` è
       // «Rossi / Bianchi»; i campi dell'altra disciplina si azzerano, così
       // cambiare disciplina in modifica non lascia riferimenti orfani.
@@ -240,7 +249,8 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
 
         {/* Corpo scrollabile */}
         <div className="overflow-y-auto flex-1 px-6 py-4">
-          {step === 1 && <StepDate value={form.date} onChange={v => set('date', v)} discipline={form.discipline} onDiscipline={v => set('discipline', v)} />}
+          {step === 1 && <StepDate date={form.date} onDate={v => set('date', v)} time={form.time} onTime={v => set('time', v)} timeRequired={timeRequired}
+                                   discipline={form.discipline} onDiscipline={v => set('discipline', v)} />}
           {step === 2 && (doubles
             ? <StepDoubles opponents={opponents} form={form} userGender={userGender}
                            onChange={({ partnerId, opponentIds }) => setForm(f => ({ ...f, partnerId, opponentIds }))} />
@@ -260,7 +270,8 @@ export default function AddMatchModal({ initial = null, prefill = null, opponent
                            intensity={form.intensity} calibration={intensityCalibration}
                            onIntensityChange={v => setForm(f => ({ ...f, intensity: v, intensitySource: null }))}
                            onIntensitySuggested={v => setForm(f => ({ ...f, intensity: v, intensitySource: 'suggested' }))}
-                           fit={{ summary: form.fitSummary, date: form.date, fitUse, onImport: importFit, onUseDate: d => set('date', d) }} />
+                           fit={{ summary: form.fitSummary, date: form.date, fitUse, onImport: importFit, useTime: true,
+                                 onUseDate: (d, t) => setForm(f => ({ ...f, date: d, time: readTime(t) || f.time })) }} />
           )}
         </div>
 
@@ -310,7 +321,7 @@ function StepIndicator({ step, labels }) {
 
 // ── Step 1 — Data ──────────────────────────────────────────
 
-function StepDate({ value, onChange, discipline, onDiscipline }) {
+function StepDate({ date, onDate, time, onTime, timeRequired, discipline, onDiscipline }) {
   return (
     <div className="space-y-3">
       <StepTitle title="Quando hai giocato?" />
@@ -335,16 +346,7 @@ function StepDate({ value, onChange, discipline, onDiscipline }) {
           })}
         </div>
       </div>
-      <div>
-        <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Data</label>
-        <input
-          type="date"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          className="w-full p-3 rounded-xl text-sm outline-none"
-          style={{ background: 'var(--color-surface-2)', color: 'var(--color-white)', border: '1px solid transparent', fontFamily: 'var(--font-body)' }}
-        />
-      </div>
+      <DateTimeFields date={date} time={time} onDate={onDate} onTime={onTime} timeRequired={timeRequired} />
     </div>
   )
 }
@@ -946,6 +948,7 @@ function StepAthletics({ value, onChange, issues, intensity, calibration, onInte
         hasData={hasAthletics(value)}
         date={fit.date}
         onUseDate={fit.onUseDate}
+        useTime={fit.useTime}
         fitUse={fit.fitUse}
         onImport={fit.onImport}
       />

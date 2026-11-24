@@ -5,6 +5,8 @@ import {
   normalizeRatings, formatMinutes, recentFocusIds,
 } from '../../lib/training'
 import { trainingGameEquivalents } from '../../lib/wear'
+import { readTime } from '../../lib/sessionTime'
+import DateTimeFields from '../DateTimeFields'
 import FocusPicker from './FocusPicker'
 import OpponentSearchField from '../matches/OpponentSearchField'
 
@@ -36,6 +38,9 @@ const MAX_BLOCK_MINUTES = 300
 function initialForm(initial) {
   return {
     date:       initial?.date ? initial.date.split('T')[0] : new Date().toISOString().split('T')[0],
+    // Ora d'inizio ('HH:MM'): mai un valore di ripiego, per una sessione nuova
+    // parte vuota (o con l'orario del programma) e va indicata.
+    time:       readTime(initial?.time) || '',
     blocks:     initial?.blocks?.length ? initial.blocks.map(b => ({ ...b })) : [emptyBlock()],
     surface:    initial?.surface || null,
     focus:      initial?.focus ? [...initial.focus] : [],
@@ -53,6 +58,9 @@ export default function AddTrainingModal({ initial = null, prefill = null, oppon
   const [saving, setSaving] = useState(false)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  // L'ora è obbligatoria per un allenamento nuovo; in modifica solo se ce
+  // l'aveva già (uno registrato prima non deve costringere a inventarla).
+  const timeRequired = !initial || Boolean(readTime(initial.time))
 
   // I focus recenti si calcolano dallo storico, escludendo la sessione che si
   // sta modificando (altrimenti si suggerirebbe da sé).
@@ -62,7 +70,7 @@ export default function AddTrainingModal({ initial = null, prefill = null, oppon
 
   const stepValid = (() => {
     switch (step) {
-      case 1: return Boolean(form.date) && Boolean(form.surface) && normalizeBlocks(form.blocks).length > 0
+      case 1: return Boolean(form.date) && (!timeRequired || Boolean(readTime(form.time))) && Boolean(form.surface) && normalizeBlocks(form.blocks).length > 0
       // Focus e dettagli sono facoltativi: bloccare qui significherebbe
       // impedire di registrare una sessione "al volo".
       default: return true
@@ -79,6 +87,7 @@ export default function AddTrainingModal({ initial = null, prefill = null, oppon
     const label = form.withWhomLabel.trim()
     await onSave({
       date:      new Date(form.date).toISOString(),
+      time:      readTime(form.time),
       blocks:    normalizeBlocks(form.blocks),
       surface:   form.surface,
       focus:     form.focus,
@@ -131,7 +140,7 @@ export default function AddTrainingModal({ initial = null, prefill = null, oppon
 
         {/* Corpo scrollabile */}
         <div className="overflow-y-auto flex-1 px-6 py-4">
-          {step === 1 && <StepSession form={form} set={set} setForm={setForm} minutes={minutes} />}
+          {step === 1 && <StepSession form={form} set={set} setForm={setForm} minutes={minutes} timeRequired={timeRequired} />}
           {step === 2 && (
             <div className="space-y-4">
               <StepTitle title="Su cosa hai lavorato?"
@@ -190,7 +199,7 @@ function StepIndicator({ step }) {
 
 // ── Step 1 — Sessione (data, blocchi, superficie) ──────────
 
-function StepSession({ form, set, setForm, minutes }) {
+function StepSession({ form, set, setForm, minutes, timeRequired }) {
   const updateBlock = (i, patch) => setForm(f => {
     const blocks = f.blocks.map(b => ({ ...b }))
     blocks[i] = { ...blocks[i], ...patch }
@@ -204,16 +213,7 @@ function StepSession({ form, set, setForm, minutes }) {
       <StepTitle title="Com'era strutturata la sessione?"
                  sub="Un allenamento reale è quasi sempre misto: aggiungi un blocco per ogni parte" />
 
-      <div>
-        <label className="text-xs mb-1 block" style={{ color: 'var(--color-slate)' }}>Data</label>
-        <input
-          type="date"
-          value={form.date}
-          onChange={e => set('date', e.target.value)}
-          className="w-full p-3 rounded-xl text-sm outline-none"
-          style={{ background: 'var(--color-surface-2)', color: 'var(--color-white)', border: '1px solid transparent', fontFamily: 'var(--font-body)', colorScheme: 'dark' }}
-        />
-      </div>
+      <DateTimeFields date={form.date} time={form.time} onDate={v => set('date', v)} onTime={v => set('time', v)} timeRequired={timeRequired} />
 
       <div>
         <div className="flex items-center justify-between mb-2">

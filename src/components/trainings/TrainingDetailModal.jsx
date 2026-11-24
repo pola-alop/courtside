@@ -8,6 +8,7 @@ import { trainingGameEquivalents } from '../../lib/wear'
 import AthleticsSection from '../athletics/AthleticsSection'
 import TrainingAthleticsEditor from './TrainingAthleticsEditor'
 import IntensitySuggestion from '../athletics/IntensitySuggestion'
+import { timeLabel } from '../../lib/sessionTime'
 
 const MAX_NOTE_LENGTH = 150
 
@@ -108,7 +109,7 @@ export default function TrainingDetailModal({
           <div className="flex items-start justify-between mb-3">
             <div>
               <p className="text-xs" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
-                {formatDate(training.date)}
+                {formatDate(training.date)}{timeLabel(training) ? ` · ${timeLabel(training)}` : ''}
               </p>
               {intensity && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full mt-1"

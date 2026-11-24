@@ -4,8 +4,12 @@ Popola il progetto Firebase **dev** (`courtside-dev-a2ca6`) con un set di dati
 sintetici — attrezzatura, avversari, partite (inclusi tornei con turni,
 campionati, ritiri, pareggi), allenamenti, schede e sessioni di corsa (con la
 tabella zone → passo nel profilo), schede e sessioni di palestra (con un esercizio
-personalizzato), e i programmi del calendario della Home — sotto l'utente
-Google già loggato in dev.
+personalizzato), i programmi del calendario della Home e, dalla 2.2.0, il genere
+(profilo e avversari, con Davide senza genere), nome e cognome separati, partite
+di **doppio** (categorie maschile, femminile, misto e una non calcolabile), una
+**competizione a squadre** con girone da 4 (classifica parziale), i suoi scontri
+e uno scontro singolo, l'**ora d'inizio** di partite e allenamenti e le **note**
+sulle partite — sotto l'utente Google già loggato in dev.
 **Cancella prima tutti i dati esistenti** di quell'utente (equipment,
 opponents, matches, trainings, runs, runWorkouts, gymWorkouts, gymSessions,
 gymExercises, plans, profilo) e li ricrea da zero. I dettagli dei file .FIT
@@ -25,6 +29,10 @@ altrimenti il mese corrente sarebbe vuoto:
   senza programma (di lunedì non se ne vede nessuno, di domenica tutti);
 - oggi una corsa programmata e fatta e il tennis della sera da fare (con
   "Registra");
+- **scenario per il riassunto AI**: ieri sera (20:00, dopo l'allenamento delle
+  18:30 di quel giorno, se c'è) e stamattina (09:00) due partite con note, tra
+  l'ultimo allenamento svolto e l'allenamento programmato di oggi alle 18:30:
+  aprendo quel programma «Genera riassunto» ha su cosa lavorare;
 - nei giorni dopo palestra, allenamento, un giorno con corsa e partita di
   torneo, un riposo e una partita con l'avversario da definire;
 - un programma il 1° del mese dopo se l'ultima riga della griglia ci arriva, e

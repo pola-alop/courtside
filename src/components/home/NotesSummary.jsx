@@ -22,7 +22,7 @@ const ERRORS = {
   notEnabled:  'Firebase AI Logic non è attivo su questo progetto: abilitalo dalla console (AI Logic › Inizia) e riprova tra qualche minuto.',
   rejected:    'Il modello ha rifiutato la richiesta (errore 400).',
   blocked:     'Il modello ha bloccato la risposta. Riprova.',
-  unavailable: 'Il modello non è raggiungibile in questo momento. Riprova tra poco.',
+  unavailable: 'Il modello è sovraccarico in questo momento (alta domanda su Google, di solito dura poco). Riprova tra qualche minuto.',
   timeout:     'Il modello ci sta mettendo troppo. Riprova.',
   empty:       'Il modello non ha restituito un riassunto utilizzabile. Riprova.',
   failed:      'Non sono riuscito a generare il riassunto. Riprova.',
@@ -48,8 +48,8 @@ export default function NotesSummary({ plan, matches = [], trainings = [], oppon
     setError(null)
     setDetail(null)
     try {
-      const result = await generatePlanSummary(buildPrompt(input))
-      const doc = buildSavedSummary(result, input)
+      const { result, model } = await generatePlanSummary(buildPrompt(input))
+      const doc = buildSavedSummary(result, input, { model })
       setSaved(doc)
       try {
         await onSaveSummary?.(plan.id, doc)

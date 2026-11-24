@@ -40,10 +40,13 @@ export const MAX_NEGLECTED    = 3
 const MAX_SUMMARY_CHARS   = 900
 const MAX_HIGHLIGHT_CHARS = 220
 
-// Modello di AI Logic (Gemini Developer API, utilizzabile senza Blaze). Se un
-// modello viene ritirato la chiamata risponde 404: si cambia solo questa
-// costante (ripiego provato sulla documentazione: 'gemini-3.5-flash-lite').
+// Modelli di AI Logic (Gemini Developer API, utilizzabili senza Blaze). Il
+// primo è quello preferito; se è sovraccarico (errore 5xx, «high demand», un
+// picco temporaneo del tier gratuito) o ritirato (404) si riprova una volta con
+// il secondo, che gira su risorse diverse. Per cambiare modello basta toccare
+// queste due costanti.
 export const SUMMARY_MODEL = 'gemini-3.8-flash'
+export const SUMMARY_FALLBACK_MODEL = 'gemini-3.5-flash-lite'
 
 const DAY_MS = 86400000
 

@@ -18,7 +18,10 @@ import { generatePlanSummary } from '../../firebase/ai'
 const ERRORS = {
   offline:     'Sei offline: il riassunto non si può generare adesso.',
   quota:       'La quota gratuita del modello è esaurita per ora. Riprova più tardi.',
-  denied:      'Il servizio ha rifiutato la richiesta (App Check). Controlla la configurazione.',
+  denied:      'Il servizio ha rifiutato la richiesta (403): di solito è App Check, controlla il token di debug registrato in console.',
+  notEnabled:  'Firebase AI Logic non è attivo su questo progetto: abilitalo dalla console (AI Logic › Inizia) e riprova tra qualche minuto.',
+  rejected:    'Il modello ha rifiutato la richiesta (errore 400).',
+  blocked:     'Il modello ha bloccato la risposta. Riprova.',
   unavailable: 'Il modello non è raggiungibile in questo momento. Riprova tra poco.',
   timeout:     'Il modello ci sta mettendo troppo. Riprova.',
   empty:       'Il modello non ha restituito un riassunto utilizzabile. Riprova.',
@@ -29,6 +32,7 @@ export default function NotesSummary({ plan, matches = [], trainings = [], oppon
   const [saved, setSaved]   = useState(plan.summary || null)
   const [busy, setBusy]     = useState(false)
   const [error, setError]   = useState(null)
+  const [detail, setDetail]   = useState(null)
 
   const input = useMemo(
     () => collectSummaryInput(plan, { matches, trainings, opponents }),
@@ -42,6 +46,7 @@ export default function NotesSummary({ plan, matches = [], trainings = [], oppon
     if (busy || !canGenerate) return
     setBusy(true)
     setError(null)
+    setDetail(null)
     try {
       const result = await generatePlanSummary(buildPrompt(input))
       const doc = buildSavedSummary(result, input)
@@ -53,6 +58,7 @@ export default function NotesSummary({ plan, matches = [], trainings = [], oppon
       }
     } catch (err) {
       setError(err?.kind || 'failed')
+      setDetail(err?.detail || null)
     }
     setBusy(false)
   }
@@ -104,6 +110,11 @@ export default function NotesSummary({ plan, matches = [], trainings = [], oppon
           ⚠ {error === 'saveFailed'
             ? 'Riassunto generato ma non salvato sul programma: sparirà alla chiusura.'
             : ERRORS[error] || ERRORS.failed}
+        </p>
+      )}
+      {error && detail && (
+        <p className="text-[11px] wrap-anywhere" style={{ color: 'var(--color-slate)', fontFamily: 'var(--font-mono)' }}>
+          {detail}
         </p>
       )}
 

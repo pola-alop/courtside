@@ -128,3 +128,18 @@ h1, h2, h3, h4 {
 .app-overlay {
   padding-top: env(safe-area-inset-top, 0px);
 }
+
+/* Solo app installata (classe messa in main.jsx). Dopo la tastiera iOS può
+   lasciare `100dvh` ridotto dell'altezza della barra di stato, con la bottom
+   nav alzata: `100lvh` resta quella dello schermo, e tenendo l'app a quella
+   altezza torna a posto anche `100dvh`, finestre comprese. In Safari no:
+   `lvh` finirebbe sotto la barra degli indirizzi. */
+html.ios-app .app-screen {
+  height: 100lvh;
+}
+
+/* A scorrere sono `main` e le finestre, mai il documento. */
+html.ios-app,
+html.ios-app body {
+  overflow: hidden;
+}

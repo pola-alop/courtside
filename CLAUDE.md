@@ -494,6 +494,42 @@ Richiesta: nell'allenamento **programmato** (`plans` con `kind: 'training'`, nel
 - Chiusura: seed di dev (generi, doppi, scontri, una competizione), prova sul telefono, CHANGELOG e rilascio 2.2.0. **Seed di dev AGGIORNATO ed eseguito (2026-11-24)**: 9 avversari con genere e nome/cognome separati (Davide senza genere), 6 doppi (misto, maschile, torneo di doppio con semifinale e finale, uno con categoria non calcolabile), una competizione a squadre con girone da 4 (classifica parziale: mancano Como–Monza), 3 scontri di girone (vinto 2-1, perso 1-2, da giocare) e uno scontro singolo, ora d'inizio su tutte le sessioni, note su 15 partite e lo scenario del riassunto AI (due partite con note tra l'ultimo allenamento e quello programmato di oggi alle 18:30). Collaudato con le funzioni dell'app sui dati scritti (classifica, stati degli scontri, categorie dei doppi, finestra del riassunto). Rilanciarlo cancella e ricrea tutto, comprese le note e i riassunti generati.
   - **Passi AI in produzione (progetto `courtside-7e67b`), da fare PRIMA del merge del rilascio**: (1) piano **Spark** senza account di fatturazione; (2) console Firebase › **AI Logic** › Inizia con **Gemini Developer API**; (3) Google Cloud › **Fraud Defense / reCAPTCHA Enterprise** › chiave di tipo **Web** con i soli domini `courtside-7e67b.web.app` e `courtside-7e67b.firebaseapp.com` (più un eventuale dominio proprio; **mai `localhost`**), senza «checkbox challenge»; (4) Firebase › **App Check › Apps** › registra la web app con **reCAPTCHA Enterprise** e la chiave; (5) App Check › **APIs**: **Firebase AI Logic** deve risultare *Enforced* (lo è in automatico dal 2026-11-02), replay protection disattivata, **non** imporre Firestore né Auth; (6) secret di GitHub **`VITE_RECAPTCHA_SITE_KEY`** (i due workflow in `.github/workflows/` lo passano alla build dal 2026-11-24: senza la riga `env` il secret non sarebbe arrivato alla build); (7) dopo il deploy, prova di «Genera riassunto» e controllo in Firebase › AI Logic › Monitoring e App Check › metriche. Se in qualsiasi punto viene chiesto di collegare la fatturazione, fermarsi.
 
+## Prove nel simulatore iOS
+
+Configurato il 2026-11-27 (macOS 27.2, Xcode 27.2, runtime iOS 27.2). Courtside è una PWA: **nel simulatore si prova in Safari**, non c'è nessun progetto Xcode.
+
+- **Dispositivo: solo «iPhone 16»** (scelta dell'utente; UDID `A4CF5CFA-C2F7-4898-894E-5616CA82A494`, 393×852 punti). **Il login Google lo fa l'utente, mai Claude**, sul progetto di sviluppo; resta salvato anche dopo lo spegnimento del dispositivo. L'utente non vuole accessi sparsi: non creare altri simulatori con il login, e uno non più usato si elimina (`xcrun simctl delete`).
+- **La finestra del simulatore è Device Hub** (`/Applications/Xcode.app/Contents/Applications/DeviceHub.app`): in Xcode 27 l'app «Simulator» non esiste più.
+- **AXe 2.2.0** per tap, gesti e testo (`brew install cameroncooke/axe/axe`, formula autorizzata con `brew trust --formula`). Servono Command Line Tools aggiornati, altrimenti Homebrew rifiuta l'installazione.
+
+```bash
+U=A4CF5CFA-C2F7-4898-894E-5616CA82A494
+xcrun simctl boot $U; xcrun simctl bootstatus $U -b
+npm run dev -- --port 5173 --strictPort            # in background
+xcrun simctl openurl $U "http://localhost:5173/"   # anche i deep link: /stats?tab=fisico, /matches?add=match
+xcrun simctl io $U screenshot schermata.png
+axe describe-ui --agent --web --udid $U            # elementi della pagina (ref w1, w2…) e snapshotID
+axe tap --agent --snapshot-id <id> --ref w3 --udid $U
+axe tap -x 130 -y 708 --udid $U                    # punti; px dello screenshot ÷ 3
+axe swipe --start-x 30 --start-y 620 --end-x 30 --end-y 200 --udid $U
+axe type 'testo' --udid $U                         # nel campo che ha il focus
+```
+
+- **Cose da sapere**: al primo caricamento la pagina tarda, va riletta finché gli elementi non compaiono. AXe a volte rifiuta un tap con `targetCovered` (per esempio sulla bottom nav): usare le coordinate (nav a y≈708: Home 51, Matches 130, Gear 197, Stats 265, Profile 338). Un gesto di scorrimento che parte fuori dal riquadro di una modale non la scorre (x≈30 va bene, x=12 no). `describe-ui` elenca anche gli elementi **dietro** la modale, con le stesse etichette (es. «Doppio» è sia nel filtro sia nel wizard): controllare quale si tocca e guardare sempre lo screenshot. Con `axe type` la tastiera a schermo non compare, solo la barra sopra.
+- **Errori del browser**: Vite 8 inoltra `console.error` ed eccezioni al terminale del dev server quando è avviato da un agente (verificato nel simulatore): dopo le prove leggere l'output del server.
+- **Cosa il simulatore non copre**: PWA installata (ha uno storage a parte, servirebbe un altro login), safe area in standalone, tocco e tastiera veri, orologio e file Garmin. «Genera riassunto» (Gemini) non va lanciato senza che l'utente lo chieda.
+
+### Verifica del 2026-11-27 (branch `dev`, iPhone 16)
+
+- **A posto**: sessione mantenuta dopo il riavvio; Home e calendario (mesi, «Oggi», mese passato e futuro); programma in un mese futuro salvato su Firestore, riletto dopo il riavvio ed eliminato; «Registra» da un programma (data e ora 18:00, ritorno in Home); data e ora affiancate nel programma e nei wizard partita e allenamento (bug iOS 27.2 risolto); wizard partita (singolo; doppio fino al punteggio «Noi»/«Avversari»), allenamento, corsa, palestra; Matches in tutti i tab, dettaglio di competizione, scontro, avversario (box «Sconfitte» centrato) e partita di doppio; nuovo avversario con menu dei prefissi; Equipment; Stats in tutti gli otto tab (a scorrimento, non fino in fondo); Profilo con versione 2.2.0. Lint e build puliti, nessun errore inoltrato dal browser.
+- **Non provato**: salvataggi veri di partite, allenamenti, corse, palestra, avversari, scontri e competizioni; modifiche ed eliminazioni (salvo il programma di prova); dettagli di Equipment, allenamento, corsa, palestra e torneo; import `.FIT`; riassunto AI; offline; PWA installata.
+
+**Difetti trovati, da correggere** (nessuna modifica al codice fatta):
+1. **Zoom automatico di Safari sui campi di testo**: toccando un campo con testo sotto i 16px (es. ricerca avversario, `text-sm`) la pagina si ingrandisce e **resta ingrandita** dopo la chiusura della tastiera e della modale: «+» tagliato a destra, bottom nav sotto la barra di Safari. Causa verificata con una pagina di controllo (14px ingrandisce, 16px no). Riguarda circa 49 campi su 78 (conteggio dalle classi, in 32 file): serve una regola globale in `index.css` che vinca sulle utility, non correzioni campo per campo.
+2. **Stats › Rendimento, tile «Margine»**: il sottotitolo `game/partita` va a capo dentro la parola («partit/a»).
+3. **Seed di dev**: `distanceKm` in `athleticsFor` (`scripts/seed-dev/seed.mjs`) è 10 volte troppo grande (Fisico mostra 45 km per ora di gioco). Il calcolo dell'app è corretto.
+4. **Minori**: decimali con il punto accanto a quelli con la virgola (`1.97×`, `1.1`, `0.5/sett.`); riga in fondo a Login quasi illeggibile; etichette lunghe dei passi del wizard su due righe («2. / Avversario»).
+
 ## Rilascio (da `dev` a `main`)
 
 Si lavora e si committa **solo su `dev`**; `main` riceve codice **solo tramite una Pull Request `dev` → `main`** (mai commit diretti). Il deploy lo fa GitHub Actions al merge: non si lancia nessun `firebase deploy` a mano.
@@ -548,3 +584,4 @@ Si lavora e si committa **solo su `dev`**; `main` riceve codice **solo tramite u
 - **Per nuove feature UI**: parti da una pagina in `src/pages/` (attualmente placeholder per Home/Matches/Stats), segui il pattern hook + componenti già visto in Equipment, e integra la bottom nav solo se serve una nuova route top-level (aggiungendo la entry in `src/components/BottomNav.jsx` e la route in `src/App.jsx`).
 - Il progetto è mobile-first: verifica sempre il layout a viewport stretto (max-width ~ mobile), non ottimizzare per desktop.
 - Prima di considerare una feature completa, testala manualmente nel browser (`npm run dev`), specialmente per flussi che toccano Firestore (login Google, add/edit/delete equipment) — non ci sono test automatici a rete di sicurezza.
+- Le modifiche all'interfaccia vanno provate nel simulatore iOS (vedi «Prove nel simulatore iOS»): le note «da provare sul telefono» scritte prima del 2026-11-27 risalgono a quando il simulatore non c'era.

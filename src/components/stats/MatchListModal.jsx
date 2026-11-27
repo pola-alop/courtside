@@ -13,7 +13,7 @@ export default function MatchListModal({ title, sub, matches = [], onClose, onSe
   const sorted = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+    <div className="app-overlay fixed inset-0 z-50 flex items-center justify-center px-4"
          style={{ background: 'rgba(2,13,25,0.9)', backdropFilter: 'blur(6px)' }}
          onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="w-full max-w-lg rounded-3xl overflow-hidden flex flex-col"

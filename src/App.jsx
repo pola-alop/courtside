@@ -39,10 +39,10 @@ export default function App() {
   if (!user) return <Login />
 
   return (
-    // La shell è alta quanto la finestra e a scorrere è `main`, non il documento:
+    // La shell è alta quanto la finestra (`app-screen`, in index.css) e a scorrere è `main`, non il documento:
     // la barra di scorrimento nasce e muore tra il bordo alto e la nav, che è un
     // elemento normale in fondo alla colonna (non più `fixed` sopra il contenuto).
-    <div className="flex flex-col h-dvh overflow-hidden" style={{ background: 'var(--color-bg)' }}>
+    <div className="app-screen flex flex-col overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       <main className="flex-1 min-h-0 overflow-y-auto">
         <Suspense fallback={<Spinner inShell />}>
           <Routes>

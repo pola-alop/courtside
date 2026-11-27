@@ -1348,7 +1348,7 @@ function EmptyState({ icon, title, sub, onAdd }) {
 
 function Toast({ title, sub, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-6"
+    <div className="app-overlay fixed inset-0 z-50 flex items-center justify-center px-6"
          style={{ background: 'rgba(2,13,25,0.7)', backdropFilter: 'blur(4px)' }}
          onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="w-full max-w-xs rounded-3xl p-6 text-center"

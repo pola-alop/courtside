@@ -111,3 +111,20 @@ h1, h2, h3, h4 {
     text-align: left;
   }
 }
+
+/* ── Layout a tutto schermo ───────────────────────────────────────────────────
+   L'app installata su iOS disegna anche sotto la barra di stato
+   (`black-translucent` + `viewport-fit=cover`): il margine di sicurezza in alto
+   va messo qui. In Safari `env()` vale 0 e non cambia niente. */
+
+/* Shell e Login. */
+.app-screen {
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Sfondo delle finestre (`fixed inset-0`): ogni finestra nuova deve avere
+   questa classe, altrimenti se è alta finisce sotto l'orologio. */
+.app-overlay {
+  padding-top: env(safe-area-inset-top, 0px);
+}

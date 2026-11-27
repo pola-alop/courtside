@@ -171,7 +171,7 @@ export default function EquipmentDetailModal({
   return (
     <>
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      className="app-overlay fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(2,13,25,0.9)', backdropFilter: 'blur(6px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
@@ -604,7 +604,7 @@ export default function EquipmentDetailModal({
     {/* Conferma eliminazione voce storico */}
     {historyDeleteTarget && (
       <div
-        className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+        className="app-overlay fixed inset-0 z-[60] flex items-center justify-center px-6"
         style={{ background: 'rgba(2,13,25,0.85)' }}
         onClick={e => { if (e.target === e.currentTarget) setHistoryDeleteTarget(null) }}
       >
@@ -640,7 +640,7 @@ export default function EquipmentDetailModal({
     {/* Modifica voce storico */}
     {historyEditTarget && historyEditForm && (
       <div
-        className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+        className="app-overlay fixed inset-0 z-[60] flex items-center justify-center px-6"
         style={{ background: 'rgba(2,13,25,0.85)' }}
         onClick={e => { if (e.target === e.currentTarget) { setHistoryEditTarget(null); setHistoryEditForm(null) } }}
       >
@@ -690,7 +690,7 @@ export default function EquipmentDetailModal({
     {/* Esito eliminazione voce storico */}
     {historyDeleteDone && (
       <div
-        className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+        className="app-overlay fixed inset-0 z-[60] flex items-center justify-center px-6"
         style={{ background: 'rgba(2,13,25,0.85)' }}
         onClick={e => { if (e.target === e.currentTarget) setHistoryDeleteDone(false) }}
       >

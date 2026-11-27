@@ -39,7 +39,7 @@ export default function TeamTieDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      className="app-overlay fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(2,13,25,0.9)', backdropFilter: 'blur(6px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >

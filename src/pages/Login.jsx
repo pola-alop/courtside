@@ -13,7 +13,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6"
+    <div className="app-screen flex flex-col items-center justify-center-safe overflow-y-auto px-6"
          style={{ background: 'var(--color-bg)' }}>
 
       {/* Logo */}

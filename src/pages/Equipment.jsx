@@ -255,7 +255,7 @@ export default function Equipment() {
 function DeleteToast({ onClose }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      className="app-overlay fixed inset-0 z-50 flex items-center justify-center px-6"
       style={{ background: 'rgba(2,13,25,0.7)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >

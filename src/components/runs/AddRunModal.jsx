@@ -143,7 +143,7 @@ export default function AddRunModal({ initial = null, prefill = null, workouts =
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      className="app-overlay fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(2,13,25,0.85)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >

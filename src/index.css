@@ -145,7 +145,14 @@ html.ios-app body {
 }
 
 /* ── Gesti ────────────────────────────────────────────────────────────────────
-   Dietro una finestra non si muove niente. */
+   La pagina non si ingrandisce e dietro una finestra non si muove niente.
+   Contro lo zoom serve anche `maximum-scale=1` nel viewport (index.html): è
+   quello che ferma lo zoom automatico sui campi, senza ingrandirne il testo.
+   Qui `touch-action` toglie pinch e doppio tocco anche in Safari, che per il
+   pinch ignora il viewport. */
+* {
+  touch-action: pan-x pan-y;
+}
 
 /* Il gesto su una finestra (`position: fixed`) non passa a `main` ma al
    documento, che scorre e rimbalza: va fermato lui. Basta che lo sfondo della

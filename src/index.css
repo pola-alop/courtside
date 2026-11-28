@@ -143,3 +143,14 @@ html.ios-app,
 html.ios-app body {
   overflow: hidden;
 }
+
+/* ── Gesti ────────────────────────────────────────────────────────────────────
+   Dietro una finestra non si muove niente. */
+
+/* Il gesto su una finestra (`position: fixed`) non passa a `main` ma al
+   documento, che scorre e rimbalza: va fermato lui. Basta che lo sfondo della
+   finestra abbia `app-overlay`. Nell'app installata il documento è già fermo. */
+html:has(.app-overlay),
+html:has(.app-overlay) body {
+  overflow: hidden;
+}

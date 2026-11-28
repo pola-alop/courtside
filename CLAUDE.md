@@ -528,7 +528,7 @@ Le cause sono ipotesi da verificare, salvo dove è scritto «verificato nel codi
 7. **[CORRETTO, Fase 2] Zoom automatico sui campi di testo**: toccando un campo con testo sotto i 16px (es. ricerca avversario) la pagina si ingrandisce e **resta ingrandita** anche chiusa la finestra («+» tagliato, nav sotto la barra di Safari). Causa verificata con una pagina di controllo (14px ingrandisce, 16px no). Circa 49 campi su 78, in 32 file. Si corregge insieme al punto 3.
 8. **Stats › Rendimento, tile «Margine»**: il sottotitolo `game/partita` va a capo dentro la parola («partit/a»).
 9. **Rifiniture**: (a) seed di dev, `distanceKm` in `athleticsFor` (`scripts/seed-dev/seed.mjs`) 10 volte troppo grande (Fisico mostra 45 km per ora di gioco; il calcolo dell'app è corretto); (b) decimali con il punto accanto a quelli con la virgola (`1.97×`, `1.1`, `0.5/sett.`); (c) riga in fondo a Login quasi illeggibile; (d) etichette lunghe dei passi del wizard su due righe («2. / Avversario»). Rilanciare il seed **cancella e ricrea** i dati di dev: solo con l'OK dell'utente.
-10. **Finestra del «?» del Training Effect annidata in un `<p>`** (trovato in Fase 2, non corretto, **da concordare se metterlo in Fase 5**): `FieldGroup` disegna `labelExtra` dentro il `<p>` del titolo, quindi la finestra di `TrainingEffectInfoButton` finisce lì dentro (React segnala HTML non valido in dev e il testo eredita la spaziatura del titolo). Visto nel wizard corsa; lo stesso schema è nei wizard partita e in `TrainingAthleticsEditor`.
+10. **Finestra del «?» del Training Effect annidata in un `<p>`** (trovato in Fase 2, non corretto; **da fare in Fase 5**, deciso dall'utente il 2026-11-28): `FieldGroup` disegna `labelExtra` dentro il `<p>` del titolo, quindi la finestra di `TrainingEffectInfoButton` finisce lì dentro (React segnala HTML non valido in dev e il testo eredita la spaziatura del titolo). Visto nel wizard corsa; lo stesso schema è nei wizard partita e in `TrainingAthleticsEditor`.
 
 ### Fasi di sviluppo
 L'ordine mette prima ciò che si vede a ogni apertura dell'app; si può cambiare.
@@ -537,7 +537,7 @@ L'ordine mette prima ciò che si vede a ogni apertura dell'app; si può cambiare
 - [x] **Fase 2 — Gesti** (punti 1, 3 e 7). **FATTA (2026-11-28)**: cause e rimedio in «Gesti» nello stack; le ipotesi dei punti 1, 3 e 7 qui sopra restano come storia (in particolare: i campi **non** sono stati portati a 16px e `main` non va bloccato). Resta la prova sul telefono (in «Chiusura»): scorrimento dietro le finestre, pinch, doppio tocco, focus sui campi e scorrimento di un modulo a tastiera aperta.
 - [ ] **Fase 3 — Profilo incompleto** (punto 4). Dallo screenshot alla causa; stato di caricamento ed errore visibili con possibilità di riprovare.
 - [ ] **Fase 4 — Formato AICS** (punto 6). Prima le due conferme (6 game; partite già salvate), poi modulo con test, wizard, punteggio, statistiche, seed.
-- [ ] **Fase 5 — Rifiniture** (punti 8 e 9).
+- [ ] **Fase 5 — Rifiniture** (punti 8, 9 e 10).
 - [ ] **Chiusura**: lint e build, giro completo nel simulatore, prova sul telefono dell'utente (indispensabile per i punti 1, 2, 3 e 5), `CHANGELOG`, `version` a 2.2.1 e rilascio secondo «Rilascio».
 
 ## Prove nel simulatore iOS
